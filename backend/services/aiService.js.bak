@@ -1,0 +1,48 @@
+import axios from "axios";
+
+export async function generateReply({
+  reviewText,
+  reviewerName,
+  businessName
+}) {
+  const response = await axios.post(
+    "https://api.anthropic.com/v1/messages",
+    {
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 220,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `
+Write a warm, natural, professional reply from a business owner.
+
+Rules:
+- Greet reviewer using their first name only: ${reviewerName}
+- Sign as: ${businessName} Team
+- No placeholders
+- No emojis
+- 2–4 sentences
+- Human tone
+
+Review:
+${reviewText}
+`
+            }
+          ]
+        }
+      ]
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.CLAUDE_API_KEY,
+        "anthropic-version": "2023-06-01"
+      }
+    }
+  );
+
+  return response.data.content[0].text;
+}

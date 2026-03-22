@@ -1,0 +1,962 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"
+
+
+const styles = `
+  @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Figtree:wght@300;400;500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:       #0f1623;
+    --navy-mid:   #1e2a3a;
+    --slate:      #4a5568;
+    --slate-lt:   #718096;
+    --teal:       #0ea5a0;
+    --teal-lt:    #14b8b3;
+    --teal-dim:   rgba(14,165,160,0.12);
+    --teal-glow:  rgba(14,165,160,0.22);
+    --white:      #ffffff;
+    --off-white:  #f8fafc;
+    --border:     #e2e8f0;
+    --border-mid: #cbd5e1;
+    --green:      #10b981;
+    --amber:      #f59e0b;
+    --red-soft:   #ef4444;
+    --shadow-sm:  0 1px 3px rgba(15,22,35,0.06), 0 1px 2px rgba(15,22,35,0.04);
+    --shadow-md:  0 4px 16px rgba(15,22,35,0.08), 0 2px 6px rgba(15,22,35,0.05);
+    --shadow-lg:  0 12px 40px rgba(15,22,35,0.12), 0 4px 12px rgba(15,22,35,0.07);
+    --shadow-xl:  0 24px 64px rgba(15,22,35,0.15), 0 8px 24px rgba(15,22,35,0.08);
+    --radius:     10px;
+    --radius-lg:  16px;
+    --radius-xl:  24px;
+  }
+
+  body {
+    background: var(--white);
+    color: var(--navy);
+    font-family: 'Figtree', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ── Animations ─────────────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(22px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-8px); }
+  }
+  @keyframes meshMove {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+  }
+  @keyframes ripple {
+    0%   { transform: scale(1); opacity: 0.4; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .anim-fade-up  { animation: fadeUp 0.55s cubic-bezier(.22,1,.36,1) both; }
+  .anim-fade-in  { animation: fadeIn 0.4s ease both; }
+  .d1 { animation-delay: 0.05s; }
+  .d2 { animation-delay: 0.12s; }
+  .d3 { animation-delay: 0.20s; }
+  .d4 { animation-delay: 0.28s; }
+  .d5 { animation-delay: 0.36s; }
+  .d6 { animation-delay: 0.44s; }
+
+  /* ── Navbar ─────────────────────────────────────────── */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 32px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+  }
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: 'Figtree', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--navy);
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+  .nav-logo-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--navy);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+  }
+  .nav-link {
+    padding: 6px 13px;
+    border-radius: 7px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--slate);
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+    background: none;
+    border: none;
+    font-family: inherit;
+  }
+  .nav-link:hover { color: var(--navy); background: var(--off-white); }
+  .nav-actions { display: flex; align-items: center; gap: 8px; }
+  .btn-nav-login {
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--slate);
+    background: none;
+    border: 1px solid var(--border-mid);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .btn-nav-login:hover { color: var(--navy); border-color: var(--navy); background: var(--off-white); }
+  .btn-nav-cta {
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--white);
+    background: var(--navy);
+    border: none;
+    cursor: pointer;
+    transition: all 0.18s;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-nav-cta:hover { background: var(--navy-mid); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+
+  /* ── Hero ───────────────────────────────────────────── */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding: 88px 32px 96px;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 70% 60% at 60% -10%, rgba(14,165,160,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 90% 80%, rgba(14,165,160,0.05) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 50% at 10% 100%, rgba(15,22,35,0.03) 0%, transparent 50%);
+  }
+  /* Subtle grid lines */
+  .hero-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.35;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 0%, transparent 70%);
+  }
+
+  .hero-inner {
+    max-width: 1120px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Left column */
+  .hero-left { display: flex; flex-direction: column; gap: 0; }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--teal-dim);
+    border: 1px solid rgba(14,165,160,0.25);
+    border-radius: 100px;
+    padding: 5px 13px 5px 7px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--teal);
+    margin-bottom: 28px;
+    width: fit-content;
+    letter-spacing: 0.01em;
+  }
+  .hero-badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--teal);
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  .hero-headline {
+    font-family: 'Figtree', sans-serif;
+    font-size: clamp(34px, 4vw, 52px);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--navy);
+    margin-bottom: 22px;
+  }
+  .hero-headline em {
+    font-style: italic;
+    color: var(--teal);
+  }
+
+  .hero-sub {
+    font-size: 17px;
+    font-weight: 400;
+    color: var(--slate);
+    line-height: 1.7;
+    margin-bottom: 36px;
+    max-width: 460px;
+  }
+
+  /* Steps list */
+  .hero-steps {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+  .hero-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--navy);
+    animation: slideIn 0.4s cubic-bezier(.22,1,.36,1) both;
+  }
+  .hero-step-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: var(--white);
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-family: 'Figtree', sans-serif;
+  }
+
+  /* CTA buttons */
+  .hero-cta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 26px;
+    background: var(--navy);
+    color: var(--white);
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(.22,1,.36,1);
+    font-family: inherit;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .btn-primary:hover {
+    background: var(--navy-mid);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(15,22,35,0.22);
+  }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 24px;
+    background: var(--white);
+    color: var(--navy);
+    border: 1.5px solid var(--border-mid);
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(.22,1,.36,1);
+    font-family: inherit;
+  }
+  .btn-secondary:hover {
+    border-color: var(--navy);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .hero-trust {
+    margin-top: 20px;
+    font-size: 12.5px;
+    color: var(--slate-lt);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .hero-trust-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .hero-trust-check {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ── Right column: UI preview ───────────────────────── */
+  .hero-right {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    animation: float 5s ease-in-out infinite;
+  }
+
+  .preview-shell {
+    width: 100%;
+    max-width: 440px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
+  }
+
+  /* Chrome bar */
+  .preview-chrome {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 16px;
+    background: var(--off-white);
+    border-bottom: 1px solid var(--border);
+  }
+  .chrome-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+  }
+  .chrome-dot-r { background: #ff5f57; }
+  .chrome-dot-y { background: #ffbd2e; }
+  .chrome-dot-g { background: #28c840; }
+  .chrome-url {
+    margin-left: 8px;
+    flex: 1;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: var(--slate-lt);
+    font-family: 'Figtree', monospace;
+  }
+
+  /* Preview body */
+  .preview-body { padding: 20px; }
+
+  .preview-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 14px;
+    letter-spacing: -0.01em;
+  }
+
+  .review-item {
+    background: var(--off-white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    transition: box-shadow 0.2s;
+  }
+  .review-item:last-child { margin-bottom: 0; }
+  .review-item:hover { box-shadow: var(--shadow-sm); }
+
+  .review-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .review-author-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .review-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--white);
+    flex-shrink: 0;
+  }
+  .review-author { font-size: 12.5px; font-weight: 600; color: var(--navy); }
+  .review-stars  { font-size: 12px; letter-spacing: 1px; }
+
+  .status-pill {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 100px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .status-pending  { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+  .status-replied  { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+  .status-ai       { background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; }
+
+  .review-text {
+    font-size: 12px;
+    color: var(--slate);
+    line-height: 1.5;
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .review-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .review-date { font-size: 11px; color: var(--slate-lt); }
+  .review-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .btn-generate {
+    background: var(--teal-dim);
+    color: var(--teal);
+    border: 1px solid rgba(14,165,160,0.2);
+  }
+  .btn-generate:hover { background: rgba(14,165,160,0.18); }
+  .btn-post {
+    background: var(--navy);
+    color: var(--white);
+  }
+  .btn-post:hover { background: var(--navy-mid); }
+
+  /* Reply preview bubble */
+  .reply-bubble {
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: var(--white);
+    border: 1px solid rgba(14,165,160,0.2);
+    border-left: 3px solid var(--teal);
+    border-radius: 0 8px 8px 0;
+    font-size: 11.5px;
+    color: var(--slate);
+    line-height: 1.5;
+  }
+
+  /* Stats strip */
+  .preview-stats {
+    display: flex;
+    border-top: 1px solid var(--border);
+    margin-top: 14px;
+    padding-top: 14px;
+  }
+  .stat-item {
+    flex: 1;
+    text-align: center;
+    border-right: 1px solid var(--border);
+    padding: 0 8px;
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-val {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: -0.02em;
+  }
+  .stat-lbl { font-size: 10.5px; color: var(--slate-lt); margin-top: 1px; }
+
+  /* Floating badge */
+  .preview-badge {
+    position: absolute;
+    top: -16px;
+    right: -16px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 10px 14px;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--navy);
+    white-space: nowrap;
+    animation: fadeIn 0.6s 0.8s both;
+  }
+  .preview-badge-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .preview-badge-sub { font-size: 10.5px; font-weight: 400; color: var(--slate-lt); }
+
+  /* ── Social proof strip ─────────────────────────────── */
+  .social-strip {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--off-white);
+    padding: 22px 32px;
+  }
+  .social-strip-inner {
+    max-width: 1120px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .social-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--slate-lt);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .social-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border-mid);
+    flex-shrink: 0;
+  }
+  .social-items { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; }
+  .social-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy);
+  }
+  .social-item-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  /* ── Responsive ─────────────────────────────────────── */
+  @media (max-width: 860px) {
+    .hero-inner { grid-template-columns: 1fr; gap: 48px; }
+    .hero-right { animation: none; }
+    .preview-badge { display: none; }
+    .hero { padding: 64px 20px 72px; }
+    .nav-links { display: none; }
+  }
+  @media (max-width: 540px) {
+    .social-divider { display: none; }
+    .social-strip-inner { justify-content: center; }
+    .hero-headline { font-size: 34px; }
+  }
+`;
+
+const REVIEWS = [
+  {
+    id: 1,
+    author: "Sarah M.",
+    avatar: "#0ea5a0",
+    stars: "★★★★★",
+    text: "Absolutely loved the experience! Staff were so friendly and the service was incredibly fast.",
+    date: "2 days ago",
+    status: "replied",
+    reply: "Thank you so much, Sarah! We're thrilled you had a great experience and look forward to welcoming you back soon.",
+  },
+  {
+    id: 2,
+    author: "Tom H.",
+    avatar: "#f59e0b",
+    stars: "★★★☆☆",
+    text: "Decent place but the wait time was longer than expected. Food was good though.",
+    date: "4 days ago",
+    status: "ai",
+    reply: null,
+  },
+  {
+    id: 3,
+    author: "Priya L.",
+    avatar: "#8b5cf6",
+    stars: "★★★★★",
+    text: "Best in the neighbourhood, hands down. Highly recommend to everyone looking for quality.",
+    date: "1 week ago",
+    status: "pending",
+    reply: null,
+  },
+];
+
+function CheckIcon({ size = 8, color = "#fff" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 10 10" fill="none">
+      <path d="M2 5l2.5 2.5L8 3" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ArrowIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <path d="M3 7.5h9M8 3.5l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function SparkIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+      <path d="M8 1v3M8 12v3M1 8h3M12 8h3M3.5 3.5l2.1 2.1M10.4 10.4l2.1 2.1M10.4 5.6l2.1-2.1M3.5 12.5l2.1-2.1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function SendIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
+      <path d="M13 1L6 8M13 1l-4 11-3-5-5-3 11-3z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function LogoMark() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <rect x="2" y="2" width="5" height="5" rx="1.5" fill="white" />
+      <rect x="9" y="2" width="5" height="5" rx="1.5" fill="white" opacity="0.6" />
+      <rect x="2" y="9" width="5" height="5" rx="1.5" fill="white" opacity="0.6" />
+      <rect x="9" y="9" width="5" height="5" rx="1.5" fill="white" />
+    </svg>
+  );
+}
+
+export default function HomePage() {
+  const navigate = useNavigate()
+  const [activeReview, setActiveReview] = useState(null);
+
+  return (
+    <>
+      <style>{styles}</style>
+
+      {/* ── Navbar ─────────────────────────────────────── */}
+      <nav className="nav">
+        <div className="nav-inner">
+          <a href="#" className="nav-logo">
+            <div className="nav-logo-icon">
+              <LogoMark />
+            </div>
+            ReviewPilot
+          </a>
+          <div className="nav-links">
+            <button className="nav-link">Features</button>
+            <button className="nav-link">Pricing</button>
+            <button className="nav-link">How it works</button>
+          </div>
+          <div className="nav-actions">
+            <button className="btn-nav-login">Login</button>
+            <button className="btn-nav-cta">
+              Get started <ArrowIcon />
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* ── Hero ───────────────────────────────────────── */}
+      <section className="hero">
+        <div className="hero-bg" />
+        <div className="hero-inner">
+
+          {/* Left */}
+          <div className="hero-left">
+            <div className="hero-badge anim-fade-up">
+              <span className="hero-badge-dot" />
+              AI-powered review management
+            </div>
+
+            <h1 className="hero-headline anim-fade-up d1">
+              Reply to Google Reviews<br />
+              in <em>Seconds</em> Using AI
+            </h1>
+
+            <p className="hero-sub anim-fade-up d2">
+              Automatically generate polite, professional replies to customer reviews
+              and post them with one click.
+            </p>
+
+            <ul className="hero-steps">
+              {[
+                "Connect your Google Business Profile",
+                "Generate AI replies",
+                "Approve & publish instantly",
+              ].map((step, i) => (
+                <li
+                  key={i}
+                  className="hero-step"
+                  style={{ animationDelay: `${0.24 + i * 0.08}s` }}
+                >
+                  <div className="hero-step-num">{i + 1}</div>
+                  {step}
+                </li>
+              ))}
+            </ul>
+
+            <div className="hero-cta anim-fade-up d4">
+              <button className="btn-primary">
+                Get Started <ArrowIcon />
+              </button>
+              <button className="btn-secondary">
+                Login
+              </button>
+            </div>
+
+            <div className="hero-trust anim-fade-up d5">
+              {["Free 10 replies", "No credit card", "2-min setup"].map((t) => (
+                <span key={t} className="hero-trust-item">
+                  <span className="hero-trust-check">
+                    <CheckIcon size={7} />
+                  </span>
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Right — product preview */}
+          <div className="hero-right anim-fade-in d3">
+            {/* Floating badge */}
+            <div className="preview-badge">
+              <div className="preview-badge-icon">
+                <CheckIcon size={13} />
+              </div>
+              <div>
+                <div>Reply posted to Google</div>
+                <div className="preview-badge-sub">Just now · 4.9★ response rate</div>
+              </div>
+            </div>
+
+            <div className="preview-shell">
+              {/* Chrome */}
+              <div className="preview-chrome">
+                <div className="chrome-dot chrome-dot-r" />
+                <div className="chrome-dot chrome-dot-y" />
+                <div className="chrome-dot chrome-dot-g" />
+                <div className="chrome-url">app.reviewpilot.com/reviews</div>
+              </div>
+
+              {/* Body */}
+              <div className="preview-body">
+                <div className="preview-title">Reviews Inbox</div>
+
+                {REVIEWS.map((r) => (
+                  <div
+                    key={r.id}
+                    className="review-item"
+                    onClick={() => setActiveReview(activeReview === r.id ? null : r.id)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <div className="review-top">
+                      <div className="review-author-row">
+                        <div
+                          className="review-avatar"
+                          style={{ background: r.avatar }}
+                        >
+                          {r.author[0]}
+                        </div>
+                        <div>
+                          <div className="review-author">{r.author}</div>
+                          <div className="review-stars" style={{ color: "#f59e0b" }}>
+                            {r.stars}
+                          </div>
+                        </div>
+                      </div>
+                      <span
+                        className={`status-pill ${
+                          r.status === "replied"
+                            ? "status-replied"
+                            : r.status === "ai"
+                            ? "status-ai"
+                            : "status-pending"
+                        }`}
+                      >
+                        {r.status === "replied"
+                          ? "✓ Replied"
+                          : r.status === "ai"
+                          ? "AI Ready"
+                          : "Needs reply"}
+                      </span>
+                    </div>
+
+                    <p className="review-text">{r.text}</p>
+
+                    {/* Reply bubble for replied reviews */}
+                    {r.reply && (
+                      <div className="reply-bubble">{r.reply}</div>
+                    )}
+
+                    <div className="review-footer">
+                      <span className="review-date">{r.date}</span>
+                      {r.status === "pending" && (
+                        <button
+                          className="review-action-btn btn-generate"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <SparkIcon /> Generate
+                        </button>
+                      )}
+                      {r.status === "ai" && (
+                        <button
+                          className="review-action-btn btn-post"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <SendIcon /> Post reply
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Stats */}
+                <div className="preview-stats">
+                  {[
+                    { val: "47", lbl: "Reviews synced" },
+                    { val: "4.8★", lbl: "Avg. rating" },
+                    { val: "94%", lbl: "Reply rate" },
+                  ].map((s) => (
+                    <div key={s.lbl} className="stat-item">
+                      <div className="stat-val">{s.val}</div>
+                      <div className="stat-lbl">{s.lbl}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Social proof strip ─────────────────────────── */}
+      <div className="social-strip">
+        <div className="social-strip-inner">
+          <span className="social-label">Trusted by local businesses</span>
+          <div className="social-divider" />
+          <div className="social-items">
+            {[
+              { icon: "☕", name: "Bloom Café" },
+              { icon: "🚗", name: "Riverside Auto" },
+              { icon: "💆", name: "Lotus Spa" },
+              { icon: "🍕", name: "Napoli Kitchen" },
+              { icon: "🏋️", name: "FitCore Gym" },
+            ].map((b) => (
+              <div key={b.name} className="social-item">
+                <div
+                  className="social-item-icon"
+                  style={{ background: "#f1f5f9" }}
+                >
+                  {b.icon}
+                </div>
+                {b.name}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

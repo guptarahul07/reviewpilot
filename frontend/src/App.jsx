@@ -1,0 +1,65 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import ProtectedRoute from './router/ProtectedRoute'
+
+// Layouts
+import PublicLayout from './components/layout/PublicLayout'
+import AppLayout from './components/layout/AppLayout'
+
+// Public pages
+import Home from './pages/Home'
+import Pricing from './pages/Pricing'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
+
+// Protected pages
+import ConnectGoogle from './pages/ConnectGoogle'
+import ReviewsInbox from './pages/ReviewsInbox'
+import ReviewReply from './pages/ReviewReply'
+import Settings from './pages/Settings'
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+
+          {/* ── Public routes ── */}
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/pricing" element={<Pricing />} />
+          </Route>
+
+          {/* ── Auth routes ── */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+
+          {/* ── Protected app routes ── */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/connect" element={<ConnectGoogle />} />
+            <Route path="/auth/google/callback" element={<ConnectGoogle />} />
+            <Route path="/reviews" element={<ReviewsInbox />} />
+            <Route path="/reviews/:id" element={<ReviewReply />} />
+            <Route path="/settings" element={<Settings />} />
+
+            {/* Default after login */}
+            <Route
+              path="/dashboard"
+              element={<Navigate to="/reviews" replace />}
+            />
+          </Route>
+
+          {/* ── Catch-all ── */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  )
+}

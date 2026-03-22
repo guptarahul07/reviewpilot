@@ -1,0 +1,415 @@
+// src/pages/ReviewsInbox.jsx
+
+import { useAuth } from "../context/AuthContext";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
+/* ─────────────────────────────────────────────────────────────
+   STAR RATING
+───────────────────────────────────────────────────────────── */
+function Stars({ rating }) {
+  return (
+    <div style={{ display: "flex", gap: 2 }}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span key={n} style={{ color: n <= rating ? "#f59e0b" : "#e2e8f0" }}>
+          ★
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   REVIEW CARD
+───────────────────────────────────────────────────────────── */
+function ReviewCard({ review, onStatusChange }) {
+  const [posting, setPosting] = useState(false);
+
+  async function handleConfirm() {
+    setPosting(true);
+    try {
+      const response = await fetch("/api/reviews/confirm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ reviewId: review.id }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Confirm failed");
+      }
+
+      onStatusChange(review.id, "posted");
+    } catch (err) {
+      console.error("Confirm error:", err);
+    } finally {
+      setPosting(false);
+    }
+  }
+
+  return (
+    <div
+	  style={{
+		background: "#fff",
+		border: "1px solid #e4e9f0",
+		borderRadius: 12,
+		padding: 20,
+		marginBottom: 12,
+		boxShadow: "0 4px 16px rgba(0,0,0,.04)",
+		transition: "all 0.2s ease"
+	  }}
+	  onMouseEnter={(e) => {
+		  e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.08)";
+		  e.currentTarget.style.transform = "translateY(-2px)";
+		}}
+	  onMouseLeave={(e) => {
+		  e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,.04)";
+		  e.currentTarget.style.transform = "translateY(0)";
+		}}
+	>
+	
+	
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <strong style={{ color: "#111827" }}>{review.reviewer}</strong>
+        <span style={{ fontSize: 12, color: "#718096" }}>
+          {review.date}
+        </span>
+      </div>
+
+      <Stars rating={review.rating} />
+
+      <p style={{ marginTop: 8, color: "#1f2937" }}>
+		{review.text}
+	  </p>
+
+      {review.aiReply && (
+        <div
+          style={{
+            marginTop: 12,
+            padding: 12,
+            background: "#f7f8fa",
+            borderLeft: "4px solid #0ea5a0",
+            borderRadius: 8,
+          }}
+        >
+          <strong style={{ fontSize: 12, color: "#0ea5a0" }}>
+            AI Suggested Reply
+          </strong>
+          <p style={{ marginTop: 6, color: "#1f2937" }}>
+			{review.aiReply}
+		  </p>
+        </div>
+      )}
+
+      <div style={{ marginTop: 12 }}>
+        {review.status === "auto_replied" && (
+          <span
+            style={{
+              background: "rgba(16,185,129,.1)",
+              color: "#10b981",
+              padding: "4px 10px",
+              borderRadius: 100,
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            Auto replied
+          </span>
+        )}
+
+        {review.status === "needs_attention" && (
+          <>
+            <span
+              style={{
+                background: "rgba(239,68,68,.1)",
+                color: "#ef4444",
+                padding: "4px 10px",
+                borderRadius: 100,
+                fontSize: 12,
+                fontWeight: 600,
+                marginRight: 10,
+              }}
+            >
+              Needs attention
+            </span>
+
+            <button
+              onClick={handleConfirm}
+              disabled={posting}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 8,
+                border: "none",
+                background: "#0ea5a0",
+                color: "#fff",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {posting ? "Posting..." : "Confirm & Post"}
+            </button>
+          </>
+        )}
+
+        {review.status === "posted" && (
+          <span
+            style={{
+              background: "rgba(16,185,129,.1)",
+              color: "#10b981",
+              padding: "4px 10px",
+              borderRadius: 100,
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            Posted
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MAIN PAGE
+───────────────────────────────────────────────────────────── */
+export default function ReviewsInboxPage() {
+  const navigate = useNavigate();
+  const { profile } = useAuth();
+
+  const [reviews, setReviews] = useState([]);
+  const [tab, setTab] = useState("all");
+  const [syncing, setSyncing] = useState(false);
+  const [insights, setInsights] = useState({
+	  positive: [],
+	  negative: []
+	});
+
+	useEffect(() => {
+	  if (reviews.length === 0) {
+		handleSync();
+	  }
+	}, []);
+
+  async function handleSync() {
+
+  setSyncing(true)
+
+  try {
+
+    // 1️⃣ Sync reviews
+    await fetch("/api/reviews/sync", {
+      method: "POST"
+    })
+
+    // 2️⃣ Load reviews
+    const response = await fetch("/api/reviews")
+    const data = await response.json()
+    setReviews(data.reviews)
+
+    // 3️⃣ Load insights
+    const insightsRes = await fetch("/api/reviews/insights")
+	const insightsData = await insightsRes.json()
+
+	const text = insightsData.insights
+
+	const positive = []
+	const negative = []
+
+	text.split("\n").forEach(line => {
+	  if (line.includes("-") && !line.toLowerCase().includes("negative")) {
+		positive.push(line.replace("-", "").trim())
+	  }
+	  if (line.toLowerCase().includes("slow") || line.toLowerCase().includes("wait")) {
+		negative.push(line.replace("-", "").trim())
+	  }
+	})
+
+	setInsights({ positive, negative })
+
+  } catch (err) {
+
+    console.error("Sync error:", err)
+
+  } finally {
+
+    setSyncing(false)
+
+  }
+
+}
+
+  function handleStatusChange(id, newStatus) {
+    setReviews((prev) =>
+      prev.map((r) =>
+        r.id === id ? { ...r, status: newStatus } : r
+      )
+    );
+  }
+
+  const counts = useMemo(() => ({
+    all: reviews.length,
+    needs_attention: reviews.filter(r => r.status === "needs_attention").length,
+    replied: reviews.filter(r => r.status === "auto_replied" || r.status === "posted").length,
+  }), [reviews]);
+
+  const filtered = useMemo(() => {
+    if (tab === "all") return reviews;
+    if (tab === "needs_attention")
+      return reviews.filter(r => r.status === "needs_attention");
+    if (tab === "replied")
+      return reviews.filter(r => r.status !== "needs_attention");
+  }, [reviews, tab]);
+
+  return (
+    <div style={{ padding: 28 }}>
+      <div style={{ marginBottom: 16 }}>
+		  <h2 style={{ marginBottom: 4 }}>Reviews Inbox</h2>
+
+		  <p style={{ color: "#6b7280", fontSize: 14 }}>
+			Automatically monitor and respond to your customer reviews.
+		  </p>
+	  </div>
+	  
+	  {insights && (
+  <div
+  style={{
+    background: "#ffffff",
+    border: "1px solid #e4e9f0",
+    borderRadius: 12,
+    padding: 20,
+    marginTop: 20,
+    marginBottom: 20,
+    boxShadow: "0 4px 16px rgba(0,0,0,.04)",
+    color: "#1f2937"   // 🔥 important fix
+  }}
+>
+    <h3 style={{ marginBottom: 10 }}>Customer Insights</h3>
+
+    <div
+  style={{
+    background: "#ffffff",
+    border: "1px solid #e4e9f0",
+    borderRadius: 12,
+    padding: 20,
+    marginTop: 20,
+    marginBottom: 20,
+    boxShadow: "0 4px 16px rgba(0,0,0,.04)",
+    color: "#1f2937"   // 🔥 important fix
+  }}
+>
+
+  <h3 style={{ marginBottom: 16 }}>Customer Insights</h3>
+
+  <div style={{ display: "flex", gap: 40, marginTop: 10 }}>
+
+		{/* Positive */}
+		<div>
+		  <h4
+			  style={{
+				color: "#059669",
+				marginBottom: 12,
+				fontWeight: 600,
+				borderLeft: "3px solid #e5e7eb",
+				paddingLeft: 12
+			  }}
+			>
+			  👍 Positive Trends
+			</h4>
+
+		  {insights.positive.map((item, i) => (
+			<div
+			  key={i}
+			  style={{
+				marginBottom: 6,
+				color: "#374151",
+				fontSize: 14,
+				borderLeft: "3px solid #e5e7eb",
+				paddingLeft: 12
+			  }}
+			>
+			  • {item}
+			</div>
+		  ))}
+		</div>
+
+		{/* Negative */}
+		<div>
+		  <h4
+		  style={{
+			color: "#dc2626",
+			marginBottom: 12,
+			fontWeight: 600
+		  }}
+		>
+		  ⚠ Areas to Improve
+		</h4>
+
+		  {insights.negative.map((item, i) => (
+			<div
+			  key={i}
+			  style={{
+				marginBottom: 6,
+				color: "#374151",
+				fontSize: 14
+			  }}
+			>
+			  • {item}
+			</div>
+		  ))}
+		</div>
+
+	  </div>
+
+	</div>
+  </div>
+)}
+
+      <div style={{ marginTop: 16, marginBottom: 20 }}>
+        <button
+		  onClick={handleSync}
+		  disabled={syncing}
+		  style={{
+			background: "#0ea5a0",
+			color: "white",
+			border: "none",
+			padding: "8px 16px",
+			borderRadius: 8,
+			fontWeight: 600,
+			cursor: "pointer",
+			boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
+		  }}
+		>
+		  {syncing ? "Syncing..." : "🔄 Sync Reviews"}
+		</button>
+      </div>
+
+      <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+        <button onClick={() => setTab("all")}>
+          All ({counts.all})
+        </button>
+        <button onClick={() => setTab("needs_attention")}>
+          Needs attention ({counts.needs_attention})
+        </button>
+        <button onClick={() => setTab("replied")}>
+          Replied ({counts.replied})
+        </button>
+      </div>
+
+      {filtered?.map((review) => (
+        <ReviewCard
+          key={review.id}
+          review={review}
+          onStatusChange={handleStatusChange}
+        />
+      ))}
+
+      {filtered?.length === 0 && (
+        <p style={{ marginTop: 20, color: "#718096" }}>
+          No reviews in this category.
+        </p>
+      )}
+    </div>
+  );
+}

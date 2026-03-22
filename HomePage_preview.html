@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ReviewPilot Homepage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Figtree:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:      #0f1623;
+  --navy-mid:  #1e2a3a;
+  --slate:     #4a5568;
+  --slate-lt:  #718096;
+  --teal:      #0ea5a0;
+  --teal-lt:   #14b8b3;
+  --teal-dim:  rgba(14,165,160,0.12);
+  --white:     #ffffff;
+  --off-white: #f8fafc;
+  --border:    #e2e8f0;
+  --border-mid:#cbd5e1;
+  --green:     #10b981;
+  --amber:     #f59e0b;
+  --shadow-sm: 0 1px 3px rgba(15,22,35,0.06),0 1px 2px rgba(15,22,35,0.04);
+  --shadow-md: 0 4px 16px rgba(15,22,35,0.08),0 2px 6px rgba(15,22,35,0.05);
+  --shadow-lg: 0 12px 40px rgba(15,22,35,0.12),0 4px 12px rgba(15,22,35,0.07);
+  --shadow-xl: 0 24px 64px rgba(15,22,35,0.15),0 8px 24px rgba(15,22,35,0.08);
+  --radius:    10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+}
+body { background:#fff; color:var(--navy); font-family:'Figtree',sans-serif; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+
+@keyframes fadeUp  { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+@keyframes float   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+@keyframes blink   { 0%,100%{opacity:1} 50%{opacity:0.3} }
+@keyframes slideIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+
+.afu{animation:fadeUp  0.55s cubic-bezier(.22,1,.36,1) both}
+.afi{animation:fadeIn  0.4s ease both}
+.d1{animation-delay:.06s} .d2{animation-delay:.13s} .d3{animation-delay:.20s}
+.d4{animation-delay:.28s} .d5{animation-delay:.36s} .d6{animation-delay:.44s}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:1120px;margin:0 auto;padding:0 32px;height:64px;display:flex;align-items:center;gap:40px}
+.nav-logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px;color:var(--navy);text-decoration:none;flex-shrink:0}
+.nav-logo-icon{width:32px;height:32px;background:var(--navy);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.nav-links{display:flex;align-items:center;gap:4px;flex:1}
+.nav-link{padding:6px 13px;border-radius:7px;font-size:14px;font-weight:500;color:var(--slate);cursor:pointer;transition:color .15s,background .15s;background:none;border:none;font-family:inherit}
+.nav-link:hover{color:var(--navy);background:var(--off-white)}
+.nav-actions{display:flex;align-items:center;gap:8px}
+.btn-nav-login{padding:7px 16px;border-radius:8px;font-size:14px;font-weight:600;color:var(--slate);background:none;border:1px solid var(--border-mid);cursor:pointer;transition:all .15s;font-family:inherit}
+.btn-nav-login:hover{color:var(--navy);border-color:var(--navy);background:var(--off-white)}
+.btn-nav-cta{padding:8px 18px;border-radius:8px;font-size:14px;font-weight:600;color:#fff;background:var(--navy);border:none;cursor:pointer;transition:all .18s;font-family:inherit;display:flex;align-items:center;gap:6px}
+.btn-nav-cta:hover{background:var(--navy-mid);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+
+/* HERO */
+.hero{position:relative;overflow:hidden;padding:88px 32px 96px}
+.hero-bg{position:absolute;inset:0;background:
+  radial-gradient(ellipse 70% 60% at 60% -10%,rgba(14,165,160,.07) 0%,transparent 60%),
+  radial-gradient(ellipse 40% 40% at 90% 80%,rgba(14,165,160,.05) 0%,transparent 50%),
+  radial-gradient(ellipse 50% 50% at 10% 100%,rgba(15,22,35,.03) 0%,transparent 50%)}
+.hero-bg::after{content:'';position:absolute;inset:0;
+  background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:48px 48px;opacity:.35;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 0%,black 0%,transparent 70%);
+  -webkit-mask-image:radial-gradient(ellipse 80% 80% at 50% 0%,black 0%,transparent 70%)}
+.hero-inner{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:80px;position:relative;z-index:1}
+.hero-left{display:flex;flex-direction:column}
+.hero-badge{display:inline-flex;align-items:center;gap:7px;background:var(--teal-dim);border:1px solid rgba(14,165,160,.25);border-radius:100px;padding:5px 13px 5px 7px;font-size:12.5px;font-weight:600;color:var(--teal);margin-bottom:28px;width:fit-content;letter-spacing:.01em}
+.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:blink 2s ease-in-out infinite;flex-shrink:0}
+.hero-headline{font-family:'Instrument Serif',serif;font-size:clamp(36px,4.2vw,56px);font-weight:400;line-height:1.1;letter-spacing:-.02em;color:var(--navy);margin-bottom:22px}
+.hero-headline em{font-style:italic;color:var(--teal)}
+.hero-sub{font-size:17px;font-weight:400;color:var(--slate);line-height:1.7;margin-bottom:36px;max-width:460px}
+.hero-steps{list-style:none;display:flex;flex-direction:column;gap:12px;margin-bottom:40px}
+.hero-step{display:flex;align-items:center;gap:12px;font-size:15px;font-weight:500;color:var(--navy);animation:slideIn .4s cubic-bezier(.22,1,.36,1) both}
+.hero-step-num{width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hero-cta{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s cubic-bezier(.22,1,.36,1);font-family:inherit;position:relative;overflow:hidden}
+.btn-primary:hover{background:var(--navy-mid);transform:translateY(-2px);box-shadow:0 8px 28px rgba(15,22,35,.22)}
+.btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:13px 24px;background:#fff;color:var(--navy);border:1.5px solid var(--border-mid);border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s cubic-bezier(.22,1,.36,1);font-family:inherit}
+.btn-secondary:hover{border-color:var(--navy);transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.hero-trust{margin-top:20px;font-size:12.5px;color:var(--slate-lt);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.hero-trust-item{display:flex;align-items:center;gap:5px}
+.hero-trust-check{width:14px;height:14px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* PREVIEW */
+.hero-right{position:relative;display:flex;justify-content:center;animation:float 5s ease-in-out infinite}
+.preview-shell{width:100%;max-width:440px;background:#fff;border:1px solid var(--border);border-radius:var(--radius-xl);box-shadow:var(--shadow-xl);overflow:hidden}
+.preview-chrome{display:flex;align-items:center;gap:6px;padding:12px 16px;background:var(--off-white);border-bottom:1px solid var(--border)}
+.chrome-dot{width:9px;height:9px;border-radius:50%}
+.chrome-dot-r{background:#ff5f57}.chrome-dot-y{background:#ffbd2e}.chrome-dot-g{background:#28c840}
+.chrome-url{margin-left:8px;flex:1;background:#fff;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--slate-lt)}
+.preview-body{padding:20px}
+.preview-title{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px;letter-spacing:-.01em}
+.review-item{background:var(--off-white);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;transition:box-shadow .2s;cursor:pointer}
+.review-item:last-of-type{margin-bottom:0}
+.review-item:hover{box-shadow:var(--shadow-sm)}
+.review-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.review-author-row{display:flex;align-items:center;gap:8px}
+.review-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.review-author{font-size:12.5px;font-weight:600;color:var(--navy)}
+.review-stars{font-size:12px;letter-spacing:1px;color:var(--amber)}
+.status-pill{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:100px;white-space:nowrap;flex-shrink:0}
+.status-pending{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
+.status-replied{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
+.status-ai{background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd}
+.review-text{font-size:12px;color:var(--slate);line-height:1.5;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.reply-bubble{margin-top:8px;padding:10px 12px;background:#fff;border:1px solid rgba(14,165,160,.2);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;font-size:11.5px;color:var(--slate);line-height:1.5}
+.review-footer{display:flex;align-items:center;justify-content:space-between}
+.review-date{font-size:11px;color:var(--slate-lt)}
+.review-action-btn{display:flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:6px;border:none;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn-generate{background:var(--teal-dim);color:var(--teal);border:1px solid rgba(14,165,160,.2)}
+.btn-generate:hover{background:rgba(14,165,160,.18)}
+.btn-post{background:var(--navy);color:#fff}
+.btn-post:hover{background:var(--navy-mid)}
+.preview-stats{display:flex;border-top:1px solid var(--border);margin-top:14px;padding-top:14px}
+.stat-item{flex:1;text-align:center;border-right:1px solid var(--border);padding:0 8px}
+.stat-item:last-child{border-right:none}
+.stat-val{font-size:17px;font-weight:700;color:var(--navy);letter-spacing:-.02em}
+.stat-lbl{font-size:10.5px;color:var(--slate-lt);margin-top:1px}
+
+.preview-badge{position:absolute;top:-16px;right:-16px;background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:10px 14px;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:9px;font-size:12px;font-weight:600;color:var(--navy);white-space:nowrap;animation:fadeIn .6s .8s both}
+.preview-badge-icon{width:30px;height:30px;border-radius:8px;background:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.preview-badge-sub{font-size:10.5px;font-weight:400;color:var(--slate-lt)}
+
+/* SOCIAL */
+.social-strip{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--off-white);padding:22px 32px}
+.social-strip-inner{max-width:1120px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.social-label{font-size:12.5px;font-weight:600;color:var(--slate-lt);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.social-divider{width:1px;height:24px;background:var(--border-mid);flex-shrink:0}
+.social-items{display:flex;align-items:center;gap:32px;flex-wrap:wrap}
+.social-item{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--navy)}
+.social-item-icon{width:28px;height:28px;border-radius:7px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:14px}
+
+@media(max-width:860px){
+  .hero-inner{grid-template-columns:1fr;gap:48px}
+  .hero-right{animation:none}
+  .preview-badge{display:none}
+  .hero{padding:64px 20px 72px}
+  .nav-links{display:none}
+}
+@media(max-width:540px){
+  .social-divider{display:none}
+  .social-strip-inner{justify-content:center}
+  .hero-headline{font-size:34px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-icon">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <rect x="2" y="2" width="5" height="5" rx="1.5" fill="white"/>
+          <rect x="9" y="2" width="5" height="5" rx="1.5" fill="white" opacity=".6"/>
+          <rect x="2" y="9" width="5" height="5" rx="1.5" fill="white" opacity=".6"/>
+          <rect x="9" y="9" width="5" height="5" rx="1.5" fill="white"/>
+        </svg>
+      </div>
+      ReviewPilot
+    </a>
+    <div class="nav-links">
+      <button class="nav-link">Features</button>
+      <button class="nav-link">Pricing</button>
+      <button class="nav-link">How it works</button>
+    </div>
+    <div class="nav-actions">
+      <button class="btn-nav-login">Login</button>
+      <button class="btn-nav-cta">
+        Get started
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M3 7.5h9M8 3.5l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-inner">
+
+    <!-- Left -->
+    <div class="hero-left">
+      <div class="hero-badge afu">
+        <span class="hero-badge-dot"></span>
+        AI-powered review management
+      </div>
+
+      <h1 class="hero-headline afu d1">
+        Reply to Google Reviews<br>
+        in <em>Seconds</em> Using AI
+      </h1>
+
+      <p class="hero-sub afu d2">
+        Automatically generate polite, professional replies to customer reviews
+        and post them with one click.
+      </p>
+
+      <ul class="hero-steps">
+        <li class="hero-step" style="animation-delay:.24s">
+          <div class="hero-step-num">1</div>
+          Connect your Google Business Profile
+        </li>
+        <li class="hero-step" style="animation-delay:.32s">
+          <div class="hero-step-num">2</div>
+          Generate AI replies
+        </li>
+        <li class="hero-step" style="animation-delay:.40s">
+          <div class="hero-step-num">3</div>
+          Approve &amp; publish instantly
+        </li>
+      </ul>
+
+      <div class="hero-cta afu d4">
+        <button class="btn-primary">
+          Get Started
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M3 7.5h9M8 3.5l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="btn-secondary">Login</button>
+      </div>
+
+      <div class="hero-trust afu d5">
+        <span class="hero-trust-item">
+          <span class="hero-trust-check">
+            <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          Free 10 replies
+        </span>
+        <span class="hero-trust-item">
+          <span class="hero-trust-check">
+            <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          No credit card
+        </span>
+        <span class="hero-trust-item">
+          <span class="hero-trust-check">
+            <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          2-min setup
+        </span>
+      </div>
+    </div>
+
+    <!-- Right -->
+    <div class="hero-right afi d3">
+      <div class="preview-badge">
+        <div class="preview-badge-icon">
+          <svg width="14" height="14" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <div>Reply posted to Google</div>
+          <div class="preview-badge-sub">Just now · 4.9★ response rate</div>
+        </div>
+      </div>
+
+      <div class="preview-shell">
+        <div class="preview-chrome">
+          <div class="chrome-dot chrome-dot-r"></div>
+          <div class="chrome-dot chrome-dot-y"></div>
+          <div class="chrome-dot chrome-dot-g"></div>
+          <div class="chrome-url">app.reviewpilot.com/reviews</div>
+        </div>
+
+        <div class="preview-body">
+          <div class="preview-title">Reviews Inbox</div>
+
+          <!-- Review 1 -->
+          <div class="review-item">
+            <div class="review-top">
+              <div class="review-author-row">
+                <div class="review-avatar" style="background:#0ea5a0">S</div>
+                <div>
+                  <div class="review-author">Sarah M.</div>
+                  <div class="review-stars">★★★★★</div>
+                </div>
+              </div>
+              <span class="status-pill status-replied">✓ Replied</span>
+            </div>
+            <p class="review-text">Absolutely loved the experience! Staff were so friendly and the service was incredibly fast.</p>
+            <div class="reply-bubble">Thank you so much, Sarah! We're thrilled you had a great experience and look forward to welcoming you back soon.</div>
+            <div class="review-footer" style="margin-top:8px">
+              <span class="review-date">2 days ago</span>
+            </div>
+          </div>
+
+          <!-- Review 2 -->
+          <div class="review-item">
+            <div class="review-top">
+              <div class="review-author-row">
+                <div class="review-avatar" style="background:#f59e0b">T</div>
+                <div>
+                  <div class="review-author">Tom H.</div>
+                  <div class="review-stars">★★★☆☆</div>
+                </div>
+              </div>
+              <span class="status-pill status-ai">AI Ready</span>
+            </div>
+            <p class="review-text">Decent place but the wait time was longer than expected. Food was good though.</p>
+            <div class="review-footer">
+              <span class="review-date">4 days ago</span>
+              <button class="review-action-btn btn-post">
+                <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><path d="M13 1L6 8M13 1l-4 11-3-5-5-3 11-3z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Post reply
+              </button>
+            </div>
+          </div>
+
+          <!-- Review 3 -->
+          <div class="review-item">
+            <div class="review-top">
+              <div class="review-author-row">
+                <div class="review-avatar" style="background:#8b5cf6">P</div>
+                <div>
+                  <div class="review-author">Priya L.</div>
+                  <div class="review-stars">★★★★★</div>
+                </div>
+              </div>
+              <span class="status-pill status-pending">Needs reply</span>
+            </div>
+            <p class="review-text">Best in the neighbourhood, hands down. Highly recommend to everyone looking for quality.</p>
+            <div class="review-footer">
+              <span class="review-date">1 week ago</span>
+              <button class="review-action-btn btn-generate">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v3M8 12v3M1 8h3M12 8h3M3.5 3.5l2.1 2.1M10.4 10.4l2.1 2.1M10.4 5.6l2.1-2.1M3.5 12.5l2.1-2.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                Generate
+              </button>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div class="preview-stats">
+            <div class="stat-item"><div class="stat-val">47</div><div class="stat-lbl">Reviews synced</div></div>
+            <div class="stat-item"><div class="stat-val">4.8★</div><div class="stat-lbl">Avg. rating</div></div>
+            <div class="stat-item"><div class="stat-val">94%</div><div class="stat-lbl">Reply rate</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- SOCIAL STRIP -->
+<div class="social-strip">
+  <div class="social-strip-inner">
+    <span class="social-label">Trusted by local businesses</span>
+    <div class="social-divider"></div>
+    <div class="social-items">
+      <div class="social-item"><div class="social-item-icon">☕</div>Bloom Café</div>
+      <div class="social-item"><div class="social-item-icon">🚗</div>Riverside Auto</div>
+      <div class="social-item"><div class="social-item-icon">💆</div>Lotus Spa</div>
+      <div class="social-item"><div class="social-item-icon">🍕</div>Napoli Kitchen</div>
+      <div class="social-item"><div class="social-item-icon">🏋️</div>FitCore Gym</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

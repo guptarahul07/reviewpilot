@@ -1,0 +1,293 @@
+// src/pages/Signup.jsx
+import { signInWithPopup } from "firebase/auth"
+import { auth, googleProvider } from "../services/firebase"
+import { useState } from "react"
+import { createUserWithEmailAndPassword } from "firebase/auth"
+import { Link, useNavigate } from "react-router-dom"
+import { STYLES } from "./Login"
+
+import { doc, setDoc, serverTimestamp } from "firebase/firestore"
+import { db } from "../services/firebase"
+
+
+function capitalizeName(name) {
+  return name
+    .split(" ")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
+}
+
+
+/* password-strength helper */
+function getStrength(pwd) {
+  if (!pwd) return { pct: "0%", color: "transparent", label: "", checks: {} }
+  const checks = {
+    len: pwd.length >= 8,
+    upper: /[A-Z]/.test(pwd),
+    lower: /[a-z]/.test(pwd),
+    digit: /\d/.test(pwd),
+    special: /[^A-Za-z0-9]/.test(pwd),
+  }
+  const score = Object.values(checks).filter(Boolean).length
+  const LEVELS = [
+    { min: 0, label: "", color: "transparent", pct: "0%" },
+    { min: 1, label: "Weak", color: "#ef4444", pct: "22%" },
+    { min: 2, label: "Fair", color: "#f59e0b", pct: "44%" },
+    { min: 3, label: "Good", color: "#3b82f6", pct: "66%" },
+    { min: 4, label: "Strong", color: "#10b981", pct: "84%" },
+    { min: 5, label: "Very strong", color: "#059669", pct: "100%" },
+  ]
+  const lvl = [...LEVELS].reverse().find(l => score >= l.min)
+  return { ...lvl, checks }
+}
+
+export default function SignupPage() {
+  const navigate = useNavigate()
+
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [showPwd, setShowPwd] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [fieldErr, setFieldErr] = useState({})
+
+  const strength = getStrength(password)
+
+  function validate() {
+    const e = {}
+    if (!email.trim()) e.email = "Email is required."
+    if (!password) e.password = "Password is required."
+    return e
+  }
+
+  async function handleSignup(e) {
+    e.preventDefault()
+    setError("")
+
+    const errs = validate()
+    if (Object.keys(errs).length) {
+      setFieldErr(errs)
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await createUserWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password
+      )
+
+      // Create user profile in Firestore
+      await setDoc(doc(db, "users", res.user.uid), {
+        uid: res.user.uid,
+        email: res.user.email,
+        name: capitalizeName(res.user.email.split("@")[0]),
+        plan: "free",
+        createdAt: serverTimestamp()
+      })
+
+      navigate("/connect")
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleGoogleSignup() {
+    try {
+      const res = await signInWithPopup(auth, googleProvider)
+
+      // Create user doc if Google signup
+      await setDoc(doc(db, "users", res.user.uid), {
+        uid: res.user.uid,
+        email: res.user.email,
+        name: res.user.displayName || "User",
+        plan: "free",
+        createdAt: serverTimestamp()
+      })
+
+      navigate("/connect")
+    } catch {
+      setError("Google sign-up failed.")
+    }
+  }
+  
+
+  return (
+    <>
+      <style>{STYLES}</style>
+	  <style>{`
+	  body, input, button, textarea {
+		font-family: 'Figtree', sans-serif;
+	  }
+
+	  h1, h2, h3 {
+		font-family: 'Instrument Serif', serif;
+	  }
+
+	  input {
+		font-size: 14.5px;
+		padding: 11px 14px;
+		border-radius: 10px;
+		border: 1.5px solid #cbd5e1;
+	  }
+
+	  button {
+		font-size: 15px;
+		font-weight: 600;
+		border-radius: 10px;
+	  }
+	`}</style>
+
+
+	<div className="auth-root">
+
+    <SignupBrandPanel />
+
+      <div className="panel-right">
+        <div className="form-shell">
+
+          <h1 className="form-title" style={{ fontSize: "32px", marginBottom: "18px" }}>Create Account</h1>
+
+          {error && <p style={{ color: "red" }}>{error}</p>}
+
+          <button
+            type="button"
+            className="cta-btn"
+            style={{ background: "#fff", color: "#000", border: "1px solid #ccc" }}
+            onClick={handleGoogleSignup}
+          >
+            Continue with Google
+          </button>
+
+          <div className="divider">or</div>
+
+          <form onSubmit={handleSignup}>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+
+			  <input
+				  placeholder="Email"
+				  value={email}
+				  onChange={e => setEmail(e.target.value)}
+				  style={{ marginBottom: "12px" }}
+			  />
+
+			  <input
+				  type={showPwd ? "text" : "password"}
+				  placeholder="Password"
+				  value={password}
+				  onChange={e => setPassword(e.target.value)}
+				  style={{ marginBottom: "16px" }}
+			  />
+
+
+			</div>
+
+
+            <button
+			  type="submit"
+			  disabled={loading}
+			  className="cta-btn"
+			  style={{
+				width: "100%",
+				marginTop: "10px"
+			  }}
+			>
+			  {loading ? "Creating..." : "Create Account"}
+			</button>
+
+          </form>
+
+          <p className="form-sub" style={{ marginTop: "18px", color: "#64748b" }}>
+            Already have an account?{" "}
+            <Link to="/login" className="text-link" style={{ color: "#0ea5a0", fontWeight: 600 }}>Login</Link>
+          </p>
+
+        </div>
+      </div>
+	  </div>
+    </>
+  )
+}
+
+
+  /* ─── Signup-specific left panel ─────────────────────────── */
+function SignupBrandPanel() {
+  const STEPS = [
+    { label: "Create your account", desc: "Enter your email and a secure password." },
+    { label: "Connect Google Business", desc: "Link your profile securely via OAuth." },
+    { label: "Reply with AI", desc: "Start replying to reviews in seconds." },
+  ];
+
+  return (
+    <div className="panel-left">
+      <span className="teal-bar" />
+
+      <a href="/" className="brand-logo">
+        <div className="brand-icon">
+          <LogoMark size={18} />
+        </div>
+        ReviewPilot
+      </a>
+
+      <div className="steps-wrap">
+        <h2 className="steps-title">
+          Get started in <br />
+          <em>3 simple steps</em>
+        </h2>
+
+        <p className="steps-sub">
+          From sign-up to your first AI reply in under 5 minutes.
+        </p>
+
+        <div className="steps">
+          {STEPS.map((s, i) => (
+            <div key={i} className="step">
+              <div className={`step-num ${i === 0 ? "active" : "upcoming"}`}>
+                {i === 0 ? "✓" : i + 1}
+              </div>
+
+              <div className="step-info">
+                <div className="step-name">{s.label}</div>
+                <div className="step-desc">{s.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="perks">
+        {[
+          "Free 10 AI replies — no card needed",
+          "Takes less than 2 minutes",
+          "Cancel anytime",
+        ].map((p) => (
+          <div key={p} className="perk">
+            <span className="perk-dot" />
+            {p}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── LogoMark icon ─────────────────────────── */
+function LogoMark({ size = 16 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+    >
+      <rect x="2" y="2" width="5" height="5" rx="1.5" fill="white" />
+      <rect x="9" y="2" width="5" height="5" rx="1.5" fill="white" opacity="0.6" />
+      <rect x="2" y="9" width="5" height="5" rx="1.5" fill="white" opacity="0.6" />
+      <rect x="9" y="9" width="5" height="5" rx="1.5" fill="white" />
+    </svg>
+  )
+}

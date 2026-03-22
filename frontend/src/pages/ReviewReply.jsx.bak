@@ -1,0 +1,202 @@
+import { useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { Wand2, Send, ArrowLeft, RotateCcw, Copy, Check } from 'lucide-react'
+import Stars from '../components/ui/Stars'
+import Button from '../components/ui/Button'
+import Toast from '../components/ui/Toast'
+import './ReviewReply.css'
+
+// Mock — replace with api.get(`/reviews/${id}`)
+const MOCK = {
+  '1': { id: '1', author: 'Sarah M.', rating: 5, comment: 'Absolutely loved the experience! Staff was incredibly friendly and the product quality exceeded my expectations. Will definitely be back!', date: '2026-02-12', status: 'pending' },
+  '2': { id: '2', author: 'Tom H.',   rating: 2, comment: 'Disappointing visit. Waited 30 minutes and the item I ordered was out of stock. No one apologised or offered an alternative.', date: '2026-02-11', status: 'pending' },
+  '5': { id: '5', author: 'Yuki T.',  rating: 4, comment: 'Great service as always. Minor delay this time but the staff more than made up for it with their friendly attitude.', date: '2026-02-08', status: 'pending' },
+}
+
+const TONES = [
+  { value: 'friendly',     label: 'Friendly',     emoji: '😊' },
+  { value: 'professional', label: 'Professional',  emoji: '💼' },
+  { value: 'apologetic',   label: 'Apologetic',    emoji: '🙏' },
+]
+
+// Fake AI reply generator (replace with api.post('/replies/generate'))
+function fakeGenerate(tone, rating, comment) {
+  const map = {
+    friendly: {
+      5: `Thank you so much for your wonderful review! We're thrilled to hear you had such a great experience with us. Our team works hard to make every visit special, and it means the world to know it shows. We can't wait to welcome you back soon! 😊`,
+      4: `Thanks for the kind words! We're so glad you enjoyed your visit overall. We noted your feedback about the minor delay and will keep working to make things even smoother. See you next time! 😊`,
+      2: `Hi there! Thank you for taking the time to share your feedback. We're really sorry to hear about your experience — that's definitely not the standard we aim for. Please reach out to us directly so we can make it right for you! 💙`,
+      1: `We're truly sorry to hear about your experience. This is not at all the standard we hold ourselves to. Please contact us so we can personally address what happened and make it right. 💙`,
+    },
+    professional: {
+      5: `Thank you for your positive review. We appreciate you taking the time to share your experience with us. Delivering exceptional service is our top priority, and your feedback confirms we are on the right track. We look forward to serving you again.`,
+      4: `Thank you for your feedback. We are pleased you had a positive experience overall, and we take note of your comments regarding the delay. We are committed to continuous improvement and look forward to exceeding your expectations on your next visit.`,
+      2: `Thank you for bringing this to our attention. We sincerely apologise for the inconvenience you experienced. This does not reflect our service standards, and we would welcome the opportunity to discuss this further. Please contact us at your earliest convenience.`,
+      1: `We sincerely apologise for the experience you had during your visit. This falls significantly below our standards. We would appreciate the opportunity to understand what occurred and work toward a resolution. Please do not hesitate to contact us directly.`,
+    },
+    apologetic: {
+      5: `We're so grateful for your kind words! It's moments like these that remind us why we love what we do. Thank you for choosing us and for sharing your experience — it truly means everything to our team. 🙏`,
+      4: `Thank you for your generous review! We're sorry for the slight delay during your visit — that's on us, and we genuinely appreciate your patience. We'll make sure your next visit is even better. 🙏`,
+      2: `We're so sorry for letting you down. Reading your experience is difficult for us because it means we failed you, and that's completely unacceptable. Please allow us to make it right — reach out and we will do everything we can. We sincerely apologise. 🙏`,
+      1: `We are deeply sorry for your experience. There is no excuse for what you went through, and we take full responsibility. We want to personally make this right. Please contact us directly — your satisfaction matters more to us than anything. We apologise wholeheartedly. 🙏`,
+    },
+  }
+  const ratingKey = rating >= 4 ? (rating === 4 ? 4 : 5) : (rating >= 2 ? 2 : 1)
+  return map[tone]?.[ratingKey] || map.friendly[5]
+}
+
+export default function ReviewReply() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const review = MOCK[id]
+
+  const [tone, setTone]       = useState('friendly')
+  const [reply, setReply]     = useState('')
+  const [generating, setGenerating] = useState(false)
+  const [posting, setPosting]       = useState(false)
+  const [copied, setCopied]         = useState(false)
+  const [toast, setToast]           = useState(null)
+
+  if (!review) {
+    return (
+      <div className="rr-not-found">
+        <p>Review not found.</p>
+        <Button variant="ghost" onClick={() => navigate('/reviews')}>
+          <ArrowLeft size={14} /> Back to inbox
+        </Button>
+      </div>
+    )
+  }
+
+  async function handleGenerate() {
+    setGenerating(true)
+    // TODO: const { data } = await api.post('/replies/generate', { reviewId: id, tone })
+    await new Promise((r) => setTimeout(r, 1200))
+    setReply(fakeGenerate(tone, review.rating, review.comment))
+    setGenerating(false)
+  }
+
+  async function handlePost() {
+    if (!reply.trim()) return
+    setPosting(true)
+    // TODO: await api.post('/replies/post', { reviewId: id, finalText: reply })
+    await new Promise((r) => setTimeout(r, 1000))
+    setPosting(false)
+    setToast({ message: 'Reply posted to Google!', type: 'success' })
+    setTimeout(() => navigate('/reviews'), 1800)
+  }
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(reply)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="rr animate-fade-in">
+
+      {/* Back */}
+      <button className="rr__back" onClick={() => navigate('/reviews')}>
+        <ArrowLeft size={15} />
+        Back to inbox
+      </button>
+
+      <div className="rr__grid">
+
+        {/* Left: review card */}
+        <div className="rr__review-card">
+          <div className="rr__review-header">
+            <div className="rr__avatar">{review.author[0]}</div>
+            <div>
+              <p className="rr__author">{review.author}</p>
+              <Stars rating={review.rating} />
+            </div>
+            <p className="rr__date">
+              {new Date(review.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </p>
+          </div>
+          <p className="rr__comment">"{review.comment}"</p>
+        </div>
+
+        {/* Right: reply editor */}
+        <div className="rr__editor">
+
+          {/* Tone selector */}
+          <div className="rr__section-label">Reply tone</div>
+          <div className="rr__tones">
+            {TONES.map(({ value, label, emoji }) => (
+              <button
+                key={value}
+                className={`rr__tone ${tone === value ? 'rr__tone--active' : ''}`}
+                onClick={() => setTone(value)}
+              >
+                <span>{emoji}</span>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Generate button */}
+          <Button
+            fullWidth
+            onClick={handleGenerate}
+            loading={generating}
+            variant={reply ? 'secondary' : 'primary'}
+          >
+            {reply ? (
+              <><RotateCcw size={14} /> Regenerate reply</>
+            ) : (
+              <><Wand2 size={14} /> Generate AI reply</>
+            )}
+          </Button>
+
+          {/* Reply textarea */}
+          {reply && (
+            <>
+              <div className="rr__section-label" style={{ marginTop: 20 }}>
+                Edit reply
+              </div>
+              <div className="rr__textarea-wrap">
+                <textarea
+                  className="rr__textarea"
+                  value={reply}
+                  onChange={(e) => setReply(e.target.value)}
+                  rows={6}
+                  placeholder="Your reply will appear here…"
+                />
+                <div className="rr__char-count">{reply.length} chars</div>
+              </div>
+
+              <div className="rr__actions">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCopy}
+                >
+                  {copied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy</>}
+                </Button>
+                <Button
+                  size="md"
+                  onClick={handlePost}
+                  loading={posting}
+                >
+                  <Send size={14} /> Post to Google
+                </Button>
+              </div>
+            </>
+          )}
+
+        </div>
+      </div>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+    </div>
+  )
+}

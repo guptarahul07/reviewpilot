@@ -1,0 +1,137 @@
+.pricing {
+  padding: 80px 24px;
+  max-width: 820px;
+}
+
+.pricing__header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.pricing__title {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.03em;
+  margin-bottom: 14px;
+}
+
+.pricing__sub {
+  font-size: 17px;
+  color: var(--ink-2);
+}
+
+/* Grid */
+.pricing__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+/* Plan card */
+.plan-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: relative;
+  transition: border-color 0.2s;
+}
+.plan-card:hover { border-color: var(--border-lit); }
+
+.plan-card--highlight {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), var(--shadow-glow);
+}
+
+.plan-card__badge {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 100px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.plan-card__name {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.plan-card__price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.plan-card__amount {
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.03em;
+}
+
+.plan-card__period {
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+.plan-card__desc {
+  font-size: 14px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+/* Features list */
+.plan-card__features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plan-card__feature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.plan-card__check {
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+/* Note */
+.pricing__note {
+  text-align: center;
+  font-size: 14px;
+  color: var(--ink-3);
+}
+.pricing__link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.pricing__link:hover { color: var(--ink); }

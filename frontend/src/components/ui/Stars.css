@@ -1,0 +1,4 @@
+.stars { display: inline-flex; gap: 2px; }
+.star { font-size: 14px; line-height: 1; }
+.star--filled { color: var(--amber); }
+.star--empty  { color: var(--ink-3); }
