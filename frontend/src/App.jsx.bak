@@ -3,25 +3,21 @@ import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './router/ProtectedRoute'
 
 // Layouts
-import PublicLayout  from './components/layout/PublicLayout'
-import AppLayout     from './components/layout/AppLayout'
+import PublicLayout from './components/layout/PublicLayout'
+import AppLayout from './components/layout/AppLayout'
 
 // Public pages
-import Home     from './pages/Home'
-import Pricing  from './pages/Pricing'
-import Login    from './pages/Login'
-import Signup   from './pages/Signup'
+import Home from './pages/Home'
+import Pricing from './pages/Pricing'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
 
 // Protected pages
-import ConnectGoogle  from './pages/ConnectGoogle'
-import ReviewsInbox   from './pages/ReviewsInbox'
-import ReviewReply    from './pages/ReviewReply'
-import Settings       from './pages/Settings'
-
-import HomePage from './pages/HomePage'
-import ConnectGooglePage from './pages/ConnectGoogle';
-
-
+import ConnectGoogle from './pages/ConnectGoogle'
+import ReviewsInbox from './pages/ReviewsInbox'
+import ReviewReply from './pages/ReviewReply'
+import Settings from './pages/Settings'
+import Contact from './pages/Contact';
 
 export default function App() {
   return (
@@ -29,17 +25,17 @@ export default function App() {
       <AuthProvider>
         <Routes>
 
-          {/* ── Public routes (marketing layout) ── */}
+          {/* ── Public routes ── */}
           <Route element={<PublicLayout />}>
-            <Route path="/"        element={<Home />} />
+            <Route path="/" element={<Home />} />
             <Route path="/pricing" element={<Pricing />} />
           </Route>
 
-          {/* ── Auth routes (no layout) ── */}
-          <Route path="/login"  element={<Login />} />
+          {/* ── Auth routes ── */}
+          <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
-          {/* ── Protected app routes (dashboard layout) ── */}
+          {/* ── Protected app routes ── */}
           <Route
             element={
               <ProtectedRoute>
@@ -47,40 +43,27 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/connect"        element={<ConnectGoogle />} />
-            <Route path="/reviews"        element={<ReviewsInbox />} />
-            <Route path="/reviews/:id"    element={<ReviewReply />} />
-            <Route path="/settings"       element={<Settings />} />
+            <Route path="/connect" element={<ConnectGoogle />} />
+            <Route path="/auth/google/callback" element={<ConnectGoogle />} />
+            <Route path="/reviews" element={<ReviewsInbox />} />
+            <Route path="/reviews/:id" element={<ReviewReply />} />
+            <Route path="/settings" element={<Settings />} />
+
             {/* Default after login */}
-            <Route path="/dashboard"      element={<Navigate to="/reviews" replace />} />
+            <Route
+              path="/dashboard"
+              element={<Navigate to="/reviews" replace />}
+            />
           </Route>
 
           {/* ── Catch-all ── */}
-          <Route path="*" element={<Navigate to="/" replace />} />	
+          <Route path="*" element={<Navigate to="/" replace />} />
 		  
-		  <Route path="/" element={<HomePage />} />
-		  
-		  <Route path="/pricing" element={<Pricing />} />
-		  
-		  <Route
-			  path="/connect"
-			  element={
-				<ProtectedRoute>
-				  <ConnectGooglePage />
-				</ProtectedRoute>
-			  }
-			/>
-
-			<Route
-			  path="/auth/google/callback"
-			  element={
-				<ProtectedRoute>
-				  <ConnectGooglePage />
-				</ProtectedRoute>
-			  }
-			/>
-
-
+		  <Route element={<PublicLayout />}>
+			  <Route path="/" element={<Home />} />
+			  <Route path="/pricing" element={<Pricing />} />
+			  <Route path="/contact" element={<Contact />} />  {/* ← ADD THIS */}
+     	  </Route>
 
         </Routes>
       </AuthProvider>

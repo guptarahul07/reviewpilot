@@ -1,5 +1,7 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
+import analyticsRoutes from './routes/analytics.js';
+import { trackEvent } from './utils/analytics.js';
 import { db } from "./firebaseAdmin.js"
 import dotenv from "dotenv";
 dotenv.config();
@@ -11,6 +13,8 @@ import axios from "axios";
 const app = express();
 app.use(cors());
 app.use(express.json());
+// Analytics routes
+app.use('/api', analyticsRoutes);
 
 /* ─────────────────────────────────────────────
    MOCK REVIEWS FOR MVP (Replace later with Google API)
@@ -179,9 +183,8 @@ app.post("/api/reviews/sync", async (req, res) => {
 
     const results = [];
 
-    for (const review of mockReviews) {
-
-      const pastReplies = await getRecentReplies(uid);
+	const pastReplies = await getRecentReplies(uid);
+    for (const review of mockReviews) {      
 	  const aiReply = await generateAIReply(review, pastReplies);
 
       const status =

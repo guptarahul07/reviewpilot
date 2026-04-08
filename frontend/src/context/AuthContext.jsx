@@ -150,6 +150,7 @@ export function AuthProvider({ children }) {
     signup,
     login,
     logout,
+    fetchProfile,
     isGoogleConnected: profile?.google?.connected ?? false,
   }
 

@@ -1,0 +1,64 @@
+import { Outlet, Link, NavLink } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
+import { Zap } from 'lucide-react'
+import Button from '../ui/Button'
+import './PublicLayout.css'
+
+export default function PublicLayout() {
+  const { user } = useAuth()
+
+  return (
+    <div className="pub-layout">
+      <header className="pub-header">
+        <nav className="pub-nav container">
+          <Link to="/" className="pub-nav__brand">
+            <Zap size={20} fill="currentColor" />
+            ReviewPilot
+          </Link>
+
+          <div className="pub-nav__links">
+            <NavLink to="/pricing" className={({ isActive }) => isActive ? 'pub-nav__link active' : 'pub-nav__link'}>
+              Pricing
+            </NavLink>
+          </div>
+
+          <div className="pub-nav__cta">
+            {user ? (
+              <Link to="/reviews">
+                <Button size="sm">Open Dashboard</Button>
+              </Link>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="ghost" size="sm">Sign in</Button>
+                </Link>
+                <Link to="/signup">
+                  <Button size="sm">Get started</Button>
+                </Link>
+              </>
+            )}
+          </div>
+        </nav>
+		
+		<nav>
+		  <Link to="/">Home</Link>
+		  <Link to="/pricing">Pricing</Link>
+		  <Link to="/contact">Contact</Link>  {/* ← ADD THIS */}
+		  <Link to="/login">Login</Link>
+		</nav>
+		
+      </header>
+
+      <main className="pub-main">
+        <Outlet />
+      </main>
+
+      <footer className="pub-footer container">
+        <span className="pub-footer__brand">
+          <Zap size={14} fill="currentColor" /> ReviewPilot
+        </span>
+        <p className="pub-footer__copy">© 2026 ReviewPilot. All rights reserved.</p>
+      </footer>
+    </div>
+  )
+}

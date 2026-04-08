@@ -17,6 +17,10 @@ import ConnectGoogle from './pages/ConnectGoogle'
 import ReviewsInbox from './pages/ReviewsInbox'
 import ReviewReply from './pages/ReviewReply'
 import Settings from './pages/Settings'
+import Contact from './pages/Contact';
+import AdminDashboard from './pages/AdminDashboard';
+import TermsOfServicePage from './pages/TermsOfService';
+import PrivacyPolicyPage from './pages/PrivacyPolicy';
 
 export default function App() {
   return (
@@ -47,6 +51,7 @@ export default function App() {
             <Route path="/reviews" element={<ReviewsInbox />} />
             <Route path="/reviews/:id" element={<ReviewReply />} />
             <Route path="/settings" element={<Settings />} />
+			<Route path="/admin" element={<AdminDashboard />} />
 
             {/* Default after login */}
             <Route
@@ -57,6 +62,14 @@ export default function App() {
 
           {/* ── Catch-all ── */}
           <Route path="*" element={<Navigate to="/" replace />} />
+		  
+		  <Route element={<PublicLayout />}>
+			  <Route path="/" element={<Home />} />
+			  <Route path="/pricing" element={<Pricing />} />
+			  <Route path="/contact" element={<Contact />} />  {/* ← ADD THIS */}
+        <Route path="/terms" element={<TermsOfServicePage />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+     	  </Route>
 
         </Routes>
       </AuthProvider>

@@ -10,7 +10,7 @@
 //
 // For local demo: simulated with a 1.8s loader then mock business data.
 // Replace `handleConnect` and `useEffect` callback hook with real API calls.
-
+import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -451,6 +451,8 @@ function AlertCircleIcon() {
    MAIN COMPONENT
 ────────────────────────────────────────────────────────────────────────── */
 export default function ConnectGooglePage() {
+  const { user, fetchProfile } = useAuth();
+  console.log('👤 Current user:', user?.uid);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -461,47 +463,112 @@ export default function ConnectGooglePage() {
 
   /* ── Handle OAuth callback ──────────────────────────────────────────── */
   useEffect(() => {
-    const code    = searchParams.get("code");
-    const success = searchParams.get("connected"); // our own flag set by backend redirect
-
-    if (code || success) {
-      setState("loading");
-      // Exchange code for tokens via your backend
-      exchangeCodeForTokens(code).then(biz => {
-        setBusiness(biz);
-        setState("connected");
-      }).catch(err => {
-        setErrorMsg(err.message || "Failed to connect. Please try again.");
-        setState("error");
-      });
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get('connected');
+    const error = params.get('error');
+    
+    if (error) {
+      const errorMessages = {
+        'auth_denied': 'You denied access to Google Business Profile',
+        'connection_failed': 'Failed to connect. Please try again.',
+        'missing_params': 'Invalid OAuth response',
+        'rate_limit': 'Too many attempts. Please wait 1 minute and try again.'
+      };
+      
+      setErrorMsg(errorMessages[error] || 'Connection failed');
+      setState('error');
+      
+      // Clear URL params after showing error
+      window.history.replaceState({}, '', '/connect');
+      return;
     }
-  }, [searchParams]);
+    
+    if (connected === 'true') {
+      console.log('✅ OAuth callback: connected=true');
+      setState('loading');
+      
+      // Fetch user's updated profile
+      if (user) {
+        fetchProfile(user.uid)
+          .then((profile) => {
+            console.log('✅ Profile fetched:', profile);
+            
+            // Set business data from profile
+            setBusiness({
+              name: profile?.settings?.businessName || 'Test Cafe (Pending API Sync)',
+              address: profile?.businessAddress || 'Second Floor, E 3, East Ram Nagar, Mansarovar',
+              rating: 0,
+              reviews: 0,
+              initials: getInitials(profile?.settings?.businessName || 'TC')
+            });
+            
+            setState('connected');
+            
+            // Clear URL params
+            window.history.replaceState({}, '', '/connect');
+          })
+          .catch(err => {
+            console.error('❌ Failed to fetch profile:', err);
+            
+            // Even if profile fetch fails, show success with mock data
+            setBusiness({
+              name: 'Test Cafe (Pending API Sync)',
+              address: 'Second Floor, E 3, East Ram Nagar, Mansarovar',
+              rating: 0,
+              reviews: 0,
+              initials: 'TC'
+            });
+            
+            setState('connected');
+            window.history.replaceState({}, '', '/connect');
+          });
+      }
+    }
+  }, [user, fetchProfile]);
+  
+  // Add this helper function at the bottom of the file
+  function getInitials(name) {
+    if (!name) return 'TC';
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  }
 
   /* ── Start OAuth flow ───────────────────────────────────────────────── */
   async function handleConnect() {
     setState("loading");
     setErrorMsg("");
+    
     try {
-      // Real implementation:
-      // const res = await fetch("/auth/google/connect", {
-      //   headers: { Authorization: `Bearer ${await getIdToken()}` }
-      // });
-      // const { url } = await res.json();
-      // window.location.href = url;
-      //
-      // ↓ Simulated for demo — remove and use real API:
-      await new Promise(r => setTimeout(r, 1800));
-      const mockBusiness = {
-        name:    "Bloom Café",
-        address: "12 MG Road, Bengaluru, Karnataka 560001",
-        rating:  4.8,
-        reviews: 147,
-        initials:"BC",
-      };
-      setBusiness(mockBusiness);
-      setState("connected");
+      const token = await user.getIdToken();
+      console.log('🔵 Calling backend OAuth endpoint...');
+      // Get OAuth URL from backend
+      const res = await fetch('http://localhost:5000/api/auth/google/connect', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('🔵 Backend response status:', res.status);
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to get authorization URL');
+      }
+      
+      const { url } = await res.json();
+      console.log('🔵 Got OAuth URL, redirecting...');
+      // Redirect user to Google OAuth
+      window.location.href = url;
+      
     } catch (err) {
-      setErrorMsg("Could not reach Google. Please try again.");
+      console.error('❌ OAuth error:', err);
+      setErrorMsg(err.message || "Could not connect to Google");
       setState("error");
     }
   }
