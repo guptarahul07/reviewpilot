@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // Step 2: Now set environment variable (after dotenv loads)
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+//process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 // Step 3: Now all other imports
 import { db } from "./firebaseAdmin.js";
@@ -18,7 +18,17 @@ import axios from "axios";
 import admin from 'firebase-admin';
 
 const app = express();
-app.use(cors());
+
+// Update CORS to allow Vercel domain
+app.use(cors({
+  origin: [
+    'http://localhost:5173',  // Local development
+    'https://reviewpilot.vercel.app',  // Vercel preview
+    'https://reviewpilot.live'  // Production domain
+  ],
+  credentials: true
+}));
+
 app.use(express.json());
 
 async function verifyFirebaseToken(req, res, next) {
