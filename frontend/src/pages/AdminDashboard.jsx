@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import './AdminDashboard.css';
+import { API_URL } from '../config/api';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -25,7 +26,7 @@ export default function AdminDashboard() {
     
     try {
       const token = await user.getIdToken();
-      const res = await fetch('/api/admin/analytics', {
+      const res = await fetch('${API_URL}/api/admin/analytics', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

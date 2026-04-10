@@ -9,6 +9,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config/api';  // Add at top
 import './FeedbackWidget.css';
 
 export default function FeedbackWidget() {
@@ -28,7 +29,7 @@ export default function FeedbackWidget() {
     try {
       const token = await user.getIdToken();
       
-      const res = await fetch('/api/feedback', {
+      const res = await fetch('${API_URL}/api/feedback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

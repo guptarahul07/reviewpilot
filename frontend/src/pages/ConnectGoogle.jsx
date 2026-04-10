@@ -13,6 +13,7 @@
 import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { API_URL } from '../config/api';
 
 /* ──────────────────────────────────────────────────────────────────────────
    STYLES
@@ -546,7 +547,7 @@ export default function ConnectGooglePage() {
       const token = await user.getIdToken();
       console.log('🔵 Calling backend OAuth endpoint...');
       // Get OAuth URL from backend
-      const res = await fetch('http://localhost:5000/api/auth/google/connect', {
+      const res = await fetch('${API_URL}/api/auth/google/connect', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
