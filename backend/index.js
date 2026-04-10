@@ -183,7 +183,7 @@ Reply (max 25 words):
    SYNC REVIEWS (SEMI-AUTOMATED LOGIC)
 ───────────────────────────────────────────── */
 app.post("/api/reviews/sync", verifyFirebaseToken, async (req, res) => {
-  console.log("🔥 HIT /api/reviews/sync");
+  //console.log("🔥 HIT /api/reviews/sync");
 
   try {
     const uid = req.uid;
@@ -202,7 +202,7 @@ app.post("/api/reviews/sync", verifyFirebaseToken, async (req, res) => {
   const { generateMockReviews } = await import('./services/googleReviews.js');
   googleReviews = generateMockReviews();  // ← Continue with mock data
   
-  console.log(`✅ Generated ${googleReviews.length} mock reviews`);
+  //console.log(`✅ Generated ${googleReviews.length} mock reviews`);
     }
 
     const results = [];
@@ -216,7 +216,7 @@ app.post("/api/reviews/sync", verifyFirebaseToken, async (req, res) => {
       }
 
       // Generate AI reply
-      console.log(`🤖 Generating AI reply for review ${review.id}`);
+      //console.log(`🤖 Generating AI reply for review ${review.id}`);
       const aiReply = await generateAIReply(review, pastReplies);
 
       // Check sentiment
@@ -282,7 +282,7 @@ app.post("/api/reviews/sync", verifyFirebaseToken, async (req, res) => {
    REGENERATE AI REPLY
 ───────────────────────────────────────────── */
 app.post("/api/reviews/regenerate", verifyFirebaseToken, async (req, res) => {
-  console.log("🔥 HIT /api/reviews/regenerate");
+  //console.log("🔥 HIT /api/reviews/regenerate");
 
   try {
     const { reviewId } = req.body;
@@ -307,7 +307,7 @@ app.post("/api/reviews/regenerate", verifyFirebaseToken, async (req, res) => {
 
     const review = reviewDoc.data();
     
-    console.log(`🔄 Regenerating reply for review: ${reviewId}`);
+    //console.log(`🔄 Regenerating reply for review: ${reviewId}`);
     
     // Get recent replies for context
     const pastReplies = await getRecentReplies(uid);
@@ -315,7 +315,7 @@ app.post("/api/reviews/regenerate", verifyFirebaseToken, async (req, res) => {
     // Generate new AI reply
     const newReply = await generateAIReply(review, pastReplies);
 
-    console.log(`✅ New reply generated: ${newReply}`);
+    //console.log(`✅ New reply generated: ${newReply}`);
 
     // Update in Firestore
     await db
@@ -439,7 +439,7 @@ app.listen(5000, () => {
 });
 
 app.get("/api/reviews", verifyFirebaseToken, async (req, res) => {
-  console.log("🔥 HIT /api/reviews");
+  //console.log("🔥 HIT /api/reviews");
   
   try {
     const uid = req.uid;  // ✅ From token
