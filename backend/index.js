@@ -23,7 +23,7 @@ const app = express();
 app.use(cors({
   origin: [
     'http://localhost:5173',  // Local development
-    'https://reviewpilot.vercel.app',  // Vercel preview
+    'https://reviewpilot-one.vercel.app',  // Vercel preview
     'https://reviewpilot.live'  // Production domain
   ],
   credentials: true
