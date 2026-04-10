@@ -1,5 +1,4 @@
-import admin from "firebase-admin";
-//import fs from "fs"
+import admin from 'firebase-admin';
 
 const serviceAccount = {
   type: "service_account",
@@ -13,10 +12,15 @@ const serviceAccount = {
   auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
   client_x509_cert_url: process.env.FIREBASE_CERT_URL,
   universe_domain: "googleapis.com"
-}
+};
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
-})
+});
 
+// Create Firestore instance
+const db = admin.firestore();
+
+// Export both
+export { db };
 export default admin;
