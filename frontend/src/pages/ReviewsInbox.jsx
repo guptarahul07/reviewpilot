@@ -281,7 +281,7 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
     try {
       const token = await user.getIdToken();
       
-      const response = await fetch("${API_URL}/api/reviews/regenerate", {
+      const response = await fetch(`${API_URL}/api/reviews/regenerate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -311,7 +311,7 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
     try {
       const token = await user.getIdToken();
       
-      const response = await fetch("${API_URL}/api/reviews/post", {
+      const response = await fetch(`${API_URL}/api/reviews/post`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -565,7 +565,7 @@ export default function ReviewsInboxPage() {
       const token = await user.getIdToken();
 
       // 1️⃣ Sync reviews
-      await fetch("${API_URL}/api/reviews/sync", {
+      await fetch(`${API_URL}/api/reviews/sync`, {
         method: "POST",
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -574,7 +574,7 @@ export default function ReviewsInboxPage() {
       });
 
       // 2️⃣ Load reviews
-      const response = await fetch("${API_URL}/api/reviews", {
+      const response = await fetch(`${API_URL}/api/reviews`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -583,7 +583,7 @@ export default function ReviewsInboxPage() {
       setReviews(data.reviews);
 
       // 3️⃣ Load insights
-      const insightsRes = await fetch("${API_URL}/api/reviews/insights", {
+      const insightsRes = await fetch(`${API_URL}/api/reviews/insights`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

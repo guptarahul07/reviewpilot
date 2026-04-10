@@ -547,7 +547,7 @@ export default function ConnectGooglePage() {
       const token = await user.getIdToken();
       console.log('🔵 Calling backend OAuth endpoint...');
       // Get OAuth URL from backend
-      const res = await fetch('${API_URL}/api/auth/google/connect', {
+      const res = await fetch(`${API_URL}/api/auth/google/connect`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -29,7 +29,7 @@ export default function FeedbackWidget() {
     try {
       const token = await user.getIdToken();
       
-      const res = await fetch('${API_URL}/api/feedback', {
+      const res = await fetch(`${API_URL}/api/feedback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

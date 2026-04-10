@@ -26,7 +26,7 @@ export default function AdminDashboard() {
     
     try {
       const token = await user.getIdToken();
-      const res = await fetch('${API_URL}/api/admin/analytics', {
+      const res = await fetch(`${API_URL}/api/admin/analytics`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
