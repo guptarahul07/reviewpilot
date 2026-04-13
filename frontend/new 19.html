@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Python + JS + HTML</title>
+</head>
+<body>
+
+<h2>Add Two Numbers</h2>
+
+<input type="number" id="num1">
+<input type="number" id="num2">
+<button onclick="addNumbers()">Add</button>
+
+<p id="result"></p>
+
+<script>
+function addNumbers() {
+    let a = document.getElementById("num1").value;
+    let b = document.getElementById("num2").value;
+
+    fetch("/add", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({a: Number(a), b: Number(b)})
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById("result").innerText = "Result: " + data.result;
+    });
+}
+</script>
+
+</body>
+</html>

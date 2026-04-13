@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // Step 2: Now set environment variable (after dotenv loads)
-//process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 // Step 3: Now all other imports
 import { db } from "./firebaseAdmin.js";
@@ -592,6 +592,70 @@ app.get('/api/test/google-business', verifyFirebaseToken, async (req, res) => {
       message: 'Google Business API not ready yet',
       error: err.message,
       suggestion: 'Your business might still be pending verification or API propagation (24-48 hours)'
+    });
+  }
+});
+
+// Check Google connection status
+app.get('/api/auth/google/status', verifyFirebaseToken, async (req, res) => {
+  try {
+    const uid = req.uid;
+    const userDoc = await db.collection('users').doc(uid).get();
+    
+    if (!userDoc.exists) {
+      return res.json({ connected: false });
+    }
+
+    const userData = userDoc.data();
+
+    // Check if Google refresh token exists
+    if (userData.googleRefreshToken) {
+      return res.json({
+        connected: true,
+        accountName: userData.settings?.businessName || 'Google Business Profile',  // ← YOUR FIELD
+        locationName: userData.businessAddress || 'Verified',                        // ← YOUR FIELD
+        connectedAt: userData.googleConnectedAt 
+          ? userData.googleConnectedAt.toDate().toISOString() 
+          : null
+      });
+    } else {
+      return res.json({ connected: false });
+    }
+
+  } catch (error) {
+    console.error('Error checking connection status:', error);
+    res.status(500).json({ 
+      error: 'Failed to check connection status',
+      connected: false 
+    });
+  }
+});
+
+// Disconnect Google Business
+app.post('/api/auth/google/disconnect', verifyFirebaseToken, async (req, res) => {
+  try {
+    const uid = req.uid;
+
+    // Remove Google OAuth data using YOUR field names
+    await db.collection('users').doc(uid).update({
+      googleRefreshToken: null,
+      googleAccountId: null,           // ← YOUR FIELD
+      googleLocationId: null,          // ← YOUR FIELD
+      'settings.businessName': null,   // ← YOUR FIELD
+      businessAddress: null,           // ← YOUR FIELD
+      googleConnectedAt: null,
+      googleDisconnectedAt: new Date()
+    });
+
+    res.json({ 
+      success: true,
+      message: 'Google Business Profile disconnected successfully' 
+    });
+
+  } catch (error) {
+    console.error('Error disconnecting:', error);
+    res.status(500).json({ 
+      error: 'Failed to disconnect Google Business Profile' 
     });
   }
 });
