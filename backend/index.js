@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // Step 2: Now set environment variable (after dotenv loads)
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+//process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 // Step 3: Now all other imports
 import { db } from "./firebaseAdmin.js";
@@ -193,7 +193,7 @@ app.post("/api/reviews/sync", verifyFirebaseToken, async (req, res) => {
     
     try {
       googleReviews = await fetchGoogleReviews(uid);
-      console.log(`✅ Fetched ${googleReviews.length} reviews from Google`);
+    //  console.log(`✅ Fetched ${googleReviews.length} reviews from Google`);
     } catch (err) {
       console.warn('⚠️ Google Business API not ready yet');
   console.warn('⚠️ Using mock reviews for testing');
@@ -264,7 +264,7 @@ app.post("/api/reviews/sync", verifyFirebaseToken, async (req, res) => {
       lastSyncAt: new Date()
     });
 
-    console.log(`✅ Synced ${results.length} new reviews`);
+    //console.log(`✅ Synced ${results.length} new reviews`);
 
     res.json({ 
       reviews: results, 
@@ -338,7 +338,7 @@ app.post("/api/reviews/regenerate", verifyFirebaseToken, async (req, res) => {
 
 
 app.post("/api/reviews/post", verifyFirebaseToken, async (req, res) => {
-  console.log("🔥 HIT /api/reviews/post");
+  //console.log("🔥 HIT /api/reviews/post");
 
   try {
     const { reviewId, replyText } = req.body;
@@ -353,7 +353,7 @@ app.post("/api/reviews/post", verifyFirebaseToken, async (req, res) => {
       return res.status(400).json({ error: 'Reply too long (max 4096 chars)' });
     }
 
-    console.log(`📤 Posting reply to review ${reviewId}`);
+    //console.log(`📤 Posting reply to review ${reviewId}`);
 
     // Post to Google
     await postReplyToGoogle(uid, reviewId, replyText);
@@ -375,7 +375,7 @@ app.post("/api/reviews/post", verifyFirebaseToken, async (req, res) => {
       reviewId
     });
 
-    console.log(`✅ Reply posted successfully`);
+    //console.log(`✅ Reply posted successfully`);
 
     res.json({ success: true });
 
@@ -407,7 +407,7 @@ app.get("/api/test/sentiment", (req, res) => {
    CONFIRM LOW RATING REPLY
 ───────────────────────────────────────────── */
 app.post("/api/reviews/confirm", verifyFirebaseToken, async (req, res) => {
-  console.log("🔥 HIT /api/reviews/confirm");
+  //console.log("🔥 HIT /api/reviews/confirm");
 
   try {
     const { reviewId } = req.body;
@@ -472,7 +472,7 @@ app.get("/api/reviews", verifyFirebaseToken, async (req, res) => {
 ───────────────────────────────────────────── */
 
 app.get("/api/reviews/insights", verifyFirebaseToken, async (req, res) => {
-  console.log("🔥 HIT /api/reviews/insights");
+  //console.log("🔥 HIT /api/reviews/insights");
 
   try {
     const uid = req.uid;
@@ -574,7 +574,7 @@ app.get('/api/test/google-business', verifyFirebaseToken, async (req, res) => {
   try {
     const uid = req.uid;
     
-    console.log('🧪 Testing Google Business API access...');
+    //console.log('🧪 Testing Google Business API access...');
     
     // Try to fetch reviews
     const reviews = await fetchGoogleReviews(uid);
