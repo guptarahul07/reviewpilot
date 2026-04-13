@@ -53,7 +53,7 @@ async function verifyFirebaseToken(req, res, next) {
 
 // Analytics routes
 app.use('/api', analyticsRoutes);
-app.use('/api', oauthRoutes);
+app.use('/', oauthRoutes);
 
 /* ─────────────────────────────────────────────
    MOCK REVIEWS FOR MVP (Replace later with Google API)
