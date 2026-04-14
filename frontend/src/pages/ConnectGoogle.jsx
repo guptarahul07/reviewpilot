@@ -13,6 +13,7 @@
 import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { API_URL } from '../config/api';
 
 /* ──────────────────────────────────────────────────────────────────────────
    STYLES
