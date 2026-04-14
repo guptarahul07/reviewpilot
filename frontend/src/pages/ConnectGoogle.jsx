@@ -469,8 +469,9 @@ export default function ConnectGoogle() {
       return;
     }
 
-    // Case B: user navigated to /connect while already connected — show it immediately
-    if (isGoogleConnected && profile && !pendingCallback && state === 'idle') {
+    // Case B: already connected (navigated back to /connect, or profile loaded async)
+    // No state guard — always sync UI to match the real connection status
+    if (isGoogleConnected && profile && !pendingCallback) {
       populateBusiness(profile);
       setState('connected');
       setFreshConnect(false);
