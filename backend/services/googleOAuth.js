@@ -34,8 +34,9 @@ function getOAuth2Client() {
 /**
  * Generate OAuth authorization URL for user to grant access
  */
-export function getAuthUrl(uid) {
-  console.log('🔧 getAuthUrl called for user:', uid);
+// Change this function signature and state encoding
+export function getAuthUrl(uid, origin) {
+  console.log('🔧 getAuthUrl called for user:', uid, 'origin:', origin);
   
   try {
     const client = getOAuth2Client();
@@ -43,11 +44,14 @@ export function getAuthUrl(uid) {
     const scopes = [
       'https://www.googleapis.com/auth/business.manage'
     ];
+
+    // Encode uid + origin together in state
+    const state = Buffer.from(JSON.stringify({ uid, origin })).toString('base64');
     
     const authUrl = client.generateAuthUrl({
       access_type: 'offline',
       scope: scopes,
-      state: uid,
+      state,
       prompt: 'consent'
     });
     
