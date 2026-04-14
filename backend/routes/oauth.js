@@ -36,6 +36,7 @@ async function verifyFirebaseToken(req, res, next) {
  */
 router.get('/auth/google/connect', verifyFirebaseToken, (req, res) => {
   try {
+    console.log('🧪 CONNECT ROUTE HIT - origin header:', req.headers.origin);
     // Capture origin from request header (e.g. https://reviewpilot-one.vercel.app)
     const origin = req.headers.origin || req.headers.referer || 'https://reviewpilot.live';
     
