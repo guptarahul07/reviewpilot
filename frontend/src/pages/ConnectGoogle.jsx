@@ -404,11 +404,13 @@ export default function ConnectGoogle() {
   const [searchParams] = useSearchParams();
 
   // 'idle' | 'loading' | 'connected' | 'error' | 'disconnecting'
-  const [state, setState]       = useState('idle');
-  const [business, setBusiness] = useState(null);
-  const [errorMsg, setErrorMsg] = useState('');
-  // Track if this is a fresh connection (show confetti) vs already connected (no confetti)
+  const [state, setState]               = useState('idle');
+  const [business, setBusiness]         = useState(null);
+  const [errorMsg, setErrorMsg]         = useState('');
+  // Track if this is a fresh OAuth connection (show confetti) vs revisit (no confetti)
   const [freshConnect, setFreshConnect] = useState(false);
+  // True when connected=true param arrives before Firebase user is ready
+  const [pendingCallback, setPendingCallback] = useState(false);
 
   /* ── Helper: populate business card from a profile object ───────────── */
   function populateBusiness(prof) {
@@ -419,18 +421,11 @@ export default function ConnectGoogle() {
     });
   }
 
-  /* ── Effect: detect already-connected OR handle OAuth callback ──────── */
+  /* ── Effect 1: parse URL params on mount only ───────────────────────── */
   useEffect(() => {
-    // 1. Already connected on page load — show connected state immediately
-    if (isGoogleConnected && profile && !searchParams.get('connected')) {
-      populateBusiness(profile);
-      setState('connected');
-      setFreshConnect(false);
-      return;
-    }
+    const error     = searchParams.get('error');
+    const connected = searchParams.get('connected');
 
-    // 2. OAuth error callback
-    const error = searchParams.get('error');
     if (error) {
       const msgs = {
         'auth_denied':       'You denied access to Google Business Profile.',
@@ -444,29 +439,43 @@ export default function ConnectGoogle() {
       return;
     }
 
-    // 3. Successful OAuth callback
-    const connected = searchParams.get('connected');
-    if (connected === 'true' && user) {
+    if (connected === 'true') {
+      // Mark as pending — Firebase may not have restored user session yet
       setState('loading');
       setFreshConnect(true);
+      setPendingCallback(true);
+      window.history.replaceState({}, '', '/connect');
+    }
+  }, []); // eslint-disable-line
+
+  /* ── Effect 2: react when user/profile/connection status changes ─────── */
+  useEffect(() => {
+    // Case A: pending OAuth callback — user just became available, finish the flow
+    if (pendingCallback && user) {
+      setPendingCallback(false);
       fetchProfile(user.uid)
         .then((prof) => {
           populateBusiness(prof);
           setState('connected');
-          window.history.replaceState({}, '', '/connect');
         })
         .catch(() => {
-          // Profile refresh failed but OAuth succeeded — show generic success
           setBusiness({
             name:     'Your Business',
             address:  'Google Business Profile connected',
             initials: 'YB',
           });
           setState('connected');
-          window.history.replaceState({}, '', '/connect');
         });
+      return;
     }
-  }, [user, profile, isGoogleConnected]); // eslint-disable-line
+
+    // Case B: user navigated to /connect while already connected — show it immediately
+    if (isGoogleConnected && profile && !pendingCallback && state === 'idle') {
+      populateBusiness(profile);
+      setState('connected');
+      setFreshConnect(false);
+    }
+  }, [user, profile, isGoogleConnected, pendingCallback]); // eslint-disable-line
 
   /* ── Start OAuth flow ───────────────────────────────────────────────── */
   async function handleConnect() {
