@@ -644,7 +644,10 @@ app.post('/api/auth/google/disconnect', verifyFirebaseToken, async (req, res) =>
       'settings.businessName': null,   // ← YOUR FIELD
       businessAddress: null,           // ← YOUR FIELD
       googleConnectedAt: null,
-      googleDisconnectedAt: new Date()
+      googleDisconnectedAt: new Date(),
+      // ✅ ADD THESE
+    'google.connected': false,
+    'google.refreshToken': admin.firestore.FieldValue.delete()
     });
 
     res.json({ 

@@ -117,6 +117,13 @@ router.get('/auth/google/callback', async (req, res) => {
     
     await storeUserTokens(uid, tokens, businessInfo);
     console.log('✅ Tokens stored in Firestore');
+
+    // ✅ ADD THIS — mark google as connected for frontend
+    const { db } = await import('../firebaseAdmin.js');
+    await db.collection('users').doc(uid).update({
+      'google.connected': true,
+      'google.connectedAt': admin.firestore.FieldValue.serverTimestamp(),
+    });
     
     await trackEvent(uid, 'google_connected', {
       businessName: businessInfo.businessName,
