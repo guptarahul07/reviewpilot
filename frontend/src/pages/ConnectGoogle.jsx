@@ -421,11 +421,12 @@ export default function ConnectGoogle() {
     });
   }
 
-  /* ── Effect 1: parse URL params on mount only ───────────────────────── */
+  /* ── Effect 1: runs on mount — check URL params AND existing connection ─ */
   useEffect(() => {
     const error     = searchParams.get('error');
     const connected = searchParams.get('connected');
 
+    // OAuth error callback
     if (error) {
       const msgs = {
         'auth_denied':       'You denied access to Google Business Profile.',
@@ -439,18 +440,28 @@ export default function ConnectGoogle() {
       return;
     }
 
+    // Successful OAuth callback — mark pending until Firebase user is ready
     if (connected === 'true') {
-      // Mark as pending — Firebase may not have restored user session yet
       setState('loading');
       setFreshConnect(true);
       setPendingCallback(true);
       window.history.replaceState({}, '', '/connect');
+      return;
     }
-  }, []); // eslint-disable-line
 
-  /* ── Effect 2: react when user/profile/connection status changes ─────── */
+    // Already connected — profile & user are available from AuthContext on revisit
+    if (isGoogleConnected && profile) {
+      populateBusiness(profile);
+      setState('connected');
+      setFreshConnect(false);
+    }
+  }, []); // eslint-disable-line — intentionally runs once on mount
+
+  /* ── Effect 2: fallback for when profile loads async after mount ────── */
   useEffect(() => {
-    // Case A: pending OAuth callback — user just became available, finish the flow
+    console.log('[ConnectGoogle] Effect2:', { user: !!user, isGoogleConnected, pendingCallback, state, hasProfile: !!profile });
+
+    // Case A: pending OAuth callback — user just became available
     if (pendingCallback && user) {
       setPendingCallback(false);
       fetchProfile(user.uid)
@@ -469,9 +480,8 @@ export default function ConnectGoogle() {
       return;
     }
 
-    // Case B: already connected (navigated back to /connect, or profile loaded async)
-    // No state guard — always sync UI to match the real connection status
-    if (isGoogleConnected && profile && !pendingCallback) {
+    // Case B: profile arrived async after mount (slow auth restore) — sync UI
+    if (isGoogleConnected && profile && !pendingCallback && state !== 'connected') {
       populateBusiness(profile);
       setState('connected');
       setFreshConnect(false);
