@@ -24,7 +24,8 @@ app.use(cors({
   origin: [
     'http://localhost:5173',  // Local development
     'https://reviewpilot-one.vercel.app',  // Vercel preview
-    'https://reviewpilot.live'  // Production domain
+    'https://reviewpilot.live',  // Production domain
+    'https://www.reviewpilot.live' 
   ],
   credentials: true
 }));
