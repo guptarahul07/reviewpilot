@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from '../config/api';
+import './ReviewsInbox.css';
 
 /* ─────────────────────────────────────────────────────────────
    STAR RATING
@@ -679,66 +680,38 @@ export default function ReviewsInboxPage() {
       
       {/* Quick Insights Card */}
       {reviews.length > 0 && insights && (
-        <div
-          style={{
-            background: "linear-gradient(135deg, #0ea5a0 0%, #0d9488 100%)",
-            borderRadius: 12,
-            padding: 24,
-            marginBottom: 20,
-            boxShadow: "0 4px 16px rgba(14,165,160,0.2)",
-            color: "#fff"
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ margin: 0, marginBottom: 12, fontSize: 18, fontWeight: 600 }}>
-                📊 Quick Insights
-              </h3>
-              
-              <div style={{ display: "flex", gap: 32, marginBottom: 16 }}>
+        <div className="insights-card">
+          <div className="insights-card__inner">
+            <div className="insights-card__body">
+              <h3 className="insights-card__title">📊 Quick Insights</h3>
+
+              <div className="insights-card__stats">
                 <div>
-                  <div style={{ fontSize: 32, fontWeight: 700 }}>{avgRating}★</div>
-                  <div style={{ fontSize: 13, opacity: 0.9 }}>Average Rating</div>
+                  <div className="insights-card__stat-value">{avgRating}★</div>
+                  <div className="insights-card__stat-label">Average Rating</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 32, fontWeight: 700 }}>{positiveCount}/{reviews.length}</div>
-                  <div style={{ fontSize: 13, opacity: 0.9 }}>Positive</div>
+                  <div className="insights-card__stat-value">{positiveCount}/{reviews.length}</div>
+                  <div className="insights-card__stat-label">Positive</div>
                 </div>
               </div>
-              
-              <div style={{ marginBottom: 8 }}>
-                <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>✅ Working Well</div>
-                <div style={{ fontSize: 14, fontWeight: 500 }}>{quickInsights.strengths}</div>
+
+              <div className="insights-card__row">
+                <div className="insights-card__row-label">✅ Working Well</div>
+                <div className="insights-card__row-value">{quickInsights.strengths}</div>
               </div>
-              
+
               {needsAttentionCount > 0 && (
-                <div>
-                  <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>🎯 Focus Areas</div>
-                  <div style={{ fontSize: 14, fontWeight: 500 }}>{quickInsights.focusAreas}</div>
+                <div className="insights-card__row">
+                  <div className="insights-card__row-label">🎯 Focus Areas</div>
+                  <div className="insights-card__row-value">{quickInsights.focusAreas}</div>
                 </div>
               )}
             </div>
-            
+
             <button
+              className="insights-card__btn"
               onClick={() => setShowInsightsModal(true)}
-              style={{
-                background: "rgba(255,255,255,0.2)",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255,255,255,0.3)",
-                color: "#fff",
-                padding: "10px 20px",
-                borderRadius: 8,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontSize: 14,
-                transition: "all 0.2s ease"
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,0.3)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,0.2)";
-              }}
             >
               View Detailed Report →
             </button>

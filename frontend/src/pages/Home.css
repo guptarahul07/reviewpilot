@@ -24,7 +24,7 @@
 
 .hero__title {
   font-family: var(--font-display);
-  font-size: clamp(44px, 7vw, 80px);
+  font-size: clamp(36px, 7vw, 80px);
   font-weight: 800;
   line-height: 1.05;
   letter-spacing: -0.03em;
@@ -157,7 +157,7 @@
 /* ── Shared section title ─────────────────────────────────────── */
 .section-title {
   font-family: var(--font-display);
-  font-size: clamp(24px, 3.5vw, 36px);
+  font-size: clamp(22px, 3.5vw, 36px);
   font-weight: 700;
   color: var(--ink);
   text-align: center;
@@ -265,7 +265,7 @@
 
 .cta-banner__title {
   font-family: var(--font-display);
-  font-size: clamp(24px, 3.5vw, 40px);
+  font-size: clamp(22px, 3.5vw, 40px);
   font-weight: 800;
   color: var(--ink);
   margin-bottom: 12px;
@@ -275,4 +275,64 @@
   font-size: 16px;
   color: var(--ink-2);
   margin-bottom: 32px;
+}
+
+/* ── Mobile ───────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .hero {
+    padding: 56px 0 48px;
+  }
+
+  .hero__sub {
+    font-size: 16px;
+  }
+
+  .hero__meta {
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+
+  /* Stack buttons vertically on very small screens */
+  .hero__actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .hero__actions a,
+  .hero__actions button {
+    width: 100%;
+  }
+
+  /* Preview card — hide the dots row, simplify */
+  .preview-card__header { display: none; }
+
+  .preview-row {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+
+  .preview-row__text { font-size: 12px; }
+
+  /* Sections tighter on mobile */
+  .features    { padding: 48px 0; }
+  .testimonials { padding: 48px 0; }
+  .cta-banner  { padding: 24px 0 48px; }
+
+  .section-title { margin-bottom: 28px; }
+
+  .features__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .testimonials__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cta-banner__inner {
+    padding: 36px 20px;
+    border-radius: var(--radius-lg);
+  }
+
+  .feature-card { padding: 20px 18px; }
+  .feature-card:hover { transform: none; }
 }

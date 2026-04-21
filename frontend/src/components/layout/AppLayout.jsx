@@ -15,8 +15,8 @@ import './AppLayout.css'
    Navigation Items
 ───────────────────────────────────────────── */
 const NAV_ITEMS = [
-  { to: '/reviews', icon: Inbox, label: 'Reviews Inbox' },
-  { to: '/connect', icon: Link2, label: 'Connect Google' },
+  { to: '/reviews', icon: Inbox,    label: 'Reviews Inbox' },
+  { to: '/connect', icon: Link2,    label: 'Connect Google' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ]
 
@@ -39,7 +39,7 @@ export default function AppLayout() {
   return (
     <div className="app-layout">
 
-      {/* ── Sidebar ─────────────────────────── */}
+      {/* ── Sidebar (desktop) ───────────────── */}
       <aside className="sidebar">
 
         {/* Brand */}
@@ -120,14 +120,24 @@ export default function AppLayout() {
 
         {/* Topbar */}
         <header className="topbar">
-          <div className="topbar__breadcrumb" id="topbar-title">
-            {/* Page title */}
+          <div className="topbar__left">
+            <Link to="/" className="topbar__brand">
+              <Zap size={16} fill="currentColor" />
+              ReviewPilot
+            </Link>
           </div>
 
           <div className="topbar__right">
             <span className="topbar__email">
               {user?.email}
             </span>
+            <button
+              className="topbar__logout"
+              onClick={logout}
+              title="Sign out"
+            >
+              <LogOut size={15} />
+            </button>
           </div>
         </header>
 
@@ -135,6 +145,31 @@ export default function AppLayout() {
         <main className="app-content">
           <Outlet />
         </main>
+
+        {/* ── Bottom Nav (mobile only) ─────── */}
+        <nav className="bottom-nav">
+          {!isGoogleConnected && (
+            <NavLink to="/connect" className="bottom-nav__alert-dot" title="Connect Google">
+              <AlertTriangle size={10} />
+            </NavLink>
+          )}
+          {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `bottom-nav__item ${isActive ? 'bottom-nav__item--active' : ''}`
+              }
+            >
+              <Icon size={20} />
+              <span>{label === 'Reviews Inbox' ? 'Reviews' : label === 'Connect Google' ? 'Connect' : label}</span>
+            </NavLink>
+          ))}
+          <button className="bottom-nav__item" onClick={logout}>
+            <LogOut size={20} />
+            <span>Sign out</span>
+          </button>
+        </nav>
 
       </div>
 

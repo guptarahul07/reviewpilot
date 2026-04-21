@@ -34,7 +34,6 @@
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 17px;
-  color: var(--ink);
   color: var(--accent);
   flex-shrink: 0;
 }
@@ -93,4 +92,28 @@
 .pub-footer__copy {
   font-size: 13px;
   color: var(--ink-3);
+}
+
+/* ── Mobile ───────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Hide nav links — brand + CTA buttons only */
+  .pub-nav__links { display: none; }
+
+  /* Tighten nav gap */
+  .pub-nav { gap: 0; }
+
+  /* CTA flush right */
+  .pub-nav__cta {
+    gap: 6px;
+    margin-left: auto;
+  }
+
+  .container { padding: 0 16px; }
+
+  .pub-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 20px 16px;
+  }
 }

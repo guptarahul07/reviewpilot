@@ -166,6 +166,21 @@
   z-index: 50;
 }
 
+/* Brand shown in topbar on mobile only */
+.topbar__brand {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--accent);
+}
+
+.topbar__left {
+  flex: 1;
+}
+
 .topbar__breadcrumb {
   flex: 1;
   font-family: var(--font-display);
@@ -185,6 +200,22 @@
   color: var(--ink-3);
 }
 
+/* Logout button in topbar — mobile only */
+.topbar__logout {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--ink-3);
+  padding: 6px;
+  border-radius: 6px;
+  align-items: center;
+  transition: color 0.15s, background 0.15s;
+}
+.topbar__logout:hover {
+  color: var(--red);
+  background: rgba(255,92,92,0.08);
+}
+
 /* ── Page content ─────────────────────────────────────────────── */
 .app-content {
   flex: 1;
@@ -193,8 +224,74 @@
   width: 100%;
 }
 
+/* ── Bottom Nav (mobile only) ─────────────────────────────────── */
+.bottom-nav {
+  display: none; /* hidden on desktop */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+  padding: 0 4px;
+  padding-bottom: env(safe-area-inset-bottom, 0px); /* iPhone notch */
+}
+
+.bottom-nav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 4px;
+  flex: 1;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-3);
+  background: none;
+  border: none;
+  font-family: inherit;
+  transition: color 0.15s;
+  cursor: pointer;
+}
+.bottom-nav__item:hover { color: var(--ink); }
+.bottom-nav__item--active { color: var(--accent); }
+
+/* Alert dot for connect google warning */
+.bottom-nav__alert-dot {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--amber);
+  pointer-events: none;
+}
+
 /* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 768px) {
+  /* Hide desktop sidebar */
   .sidebar { display: none; }
-  .app-content { padding: 20px 16px; }
+
+  /* Show brand + logout in topbar */
+  .topbar__brand  { display: flex; }
+  .topbar__logout { display: flex; }
+  .topbar__email  { display: none; }
+
+  /* Show bottom nav */
+  .bottom-nav {
+    display: flex;
+    align-items: stretch;
+  }
+
+  /* Add padding so content doesn't hide behind bottom nav */
+  .app-content {
+    padding: 16px 16px 80px;
+  }
+
+  /* Tighten topbar padding */
+  .topbar { padding: 0 16px; }
 }
