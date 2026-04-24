@@ -386,7 +386,7 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
               AI Suggested Reply
             </strong>
             
-            {review.aiReply && (
+            {review.status === "needs_attention" && (
               <div style={{ display: "flex", gap: 8 }}>
                 <button
                   onClick={handleRegenerate}
@@ -546,25 +546,73 @@ export default function ReviewsInboxPage() {
   const navigate = useNavigate();
   const { profile, user } = useAuth();
 
-  const [reviews, setReviews] = useState([]);
-  const [tab, setTab] = useState("all");
-  const [syncing, setSyncing] = useState(false);
-  const [insights, setInsights] = useState(null);
+  const [reviews, setReviews]               = useState([]);
+  const [tab, setTab]                       = useState("all");
+  const [syncing, setSyncing]               = useState(false);
+  const [loading, setLoading]               = useState(true);
+  const [insights, setInsights]             = useState(null);
   const [showInsightsModal, setShowInsightsModal] = useState(false);
+  const [lastSyncAt, setLastSyncAt]         = useState(null);
 
+  /* ── On mount: load cached reviews only, no sync ───────────── */
   useEffect(() => {
-    if (reviews.length === 0) {
-      handleSync();
-    }
+    handleLoad();
   }, []);
 
-  async function handleSync() {
-    setSyncing(true);
+  /* ── Compute "last synced X ago" label ─────────────────────── */
+  function getLastSyncLabel() {
+    if (!lastSyncAt) return null;
+    const diffMs  = Date.now() - new Date(lastSyncAt).getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffHrs = Math.floor(diffMin / 60);
+    if (diffMin < 1)  return "just now";
+    if (diffMin < 60) return `${diffMin}m ago`;
+    if (diffHrs < 24) return `${diffHrs}h ago`;
+    return `${Math.floor(diffHrs / 24)}d ago`;
+  }
 
+  /* ── Is data stale (>24 hrs since last sync)? ───────────────── */
+  function isStale() {
+    if (!lastSyncAt) return false;
+    return Date.now() - new Date(lastSyncAt).getTime() > 24 * 60 * 60 * 1000;
+  }
+
+  /* ── Load cached reviews from Firestore (no sync) ───────────── */
+  async function handleLoad() {
+    setLoading(true);
     try {
       const token = await user.getIdToken();
 
-      // 1️⃣ Sync reviews
+      const [reviewsRes, insightsRes] = await Promise.all([
+        fetch(`${API_URL}/api/reviews`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/api/reviews/insights`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+      ]);
+
+      const reviewsData  = await reviewsRes.json();
+      const insightsData = await insightsRes.json();
+
+      setReviews(reviewsData.reviews  || []);
+      setInsights(insightsData.insights || null);
+      // Backend should return lastSyncAt in the reviews response
+      if (reviewsData.lastSyncAt) setLastSyncAt(reviewsData.lastSyncAt);
+
+    } catch (err) {
+      console.error("Load error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /* ── Manual sync: hit the sync endpoint then reload ─────────── */
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      const token = await user.getIdToken();
+
       await fetch(`${API_URL}/api/reviews/sync`, {
         method: "POST",
         headers: {
@@ -573,24 +621,22 @@ export default function ReviewsInboxPage() {
         }
       });
 
-      // 2️⃣ Load reviews
-      const response = await fetch(`${API_URL}/api/reviews`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await response.json();
-      setReviews(data.reviews);
+      // Reload fresh data after sync
+      const [reviewsRes, insightsRes] = await Promise.all([
+        fetch(`${API_URL}/api/reviews`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/api/reviews/insights`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+      ]);
 
-      // 3️⃣ Load insights
-      const insightsRes = await fetch(`${API_URL}/api/reviews/insights`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const reviewsData  = await reviewsRes.json();
       const insightsData = await insightsRes.json();
 
-      setInsights(insightsData.insights);
+      setReviews(reviewsData.reviews  || []);
+      setInsights(insightsData.insights || null);
+      if (reviewsData.lastSyncAt) setLastSyncAt(reviewsData.lastSyncAt);
 
     } catch (err) {
       console.error("Sync error:", err);
@@ -746,24 +792,55 @@ export default function ReviewsInboxPage() {
         </div>
       )}
 
-      <div style={{ marginTop: 16, marginBottom: 20 }}>
+      {/* Stale data banner */}
+      {isStale() && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10,
+          background: "rgba(245,166,35,0.08)",
+          border: "1px solid rgba(245,166,35,0.25)",
+          borderRadius: 8, padding: "10px 14px", marginBottom: 16,
+          fontSize: 13, color: "#b45309",
+        }}>
+          <span>⚠️</span>
+          <span>Reviews haven't synced in over 24 hours.</span>
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            style={{
+              marginLeft: "auto", background: "#f59e0b", color: "#fff",
+              border: "none", padding: "4px 12px", borderRadius: 6,
+              fontWeight: 600, fontSize: 12, cursor: syncing ? "not-allowed" : "pointer",
+              opacity: syncing ? 0.6 : 1,
+            }}
+          >
+            Sync now
+          </button>
+        </div>
+      )}
+
+      {/* Sync row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16, marginBottom: 20 }}>
         <button
           onClick={handleSync}
           disabled={syncing}
           style={{
-            background: "#0ea5a0",
-            color: "white",
-            border: "none",
-            padding: "8px 16px",
-            borderRadius: 8,
-            fontWeight: 600,
+            background: "#0ea5a0", color: "white", border: "none",
+            padding: "8px 16px", borderRadius: 8, fontWeight: 600,
             cursor: syncing ? "not-allowed" : "pointer",
             boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
             opacity: syncing ? 0.6 : 1,
           }}
         >
-          {syncing ? "Syncing..." : "🔄 Sync Reviews"}
+          {syncing ? "⏳ Syncing..." : "🔄 Sync Now"}
         </button>
+        {getLastSyncLabel() && !syncing && (
+          <span style={{ fontSize: 12, color: "#9ca3af" }}>
+            Last synced: {getLastSyncLabel()}
+          </span>
+        )}
+        {loading && !syncing && (
+          <span style={{ fontSize: 12, color: "#9ca3af" }}>Loading…</span>
+        )}
       </div>
 
       <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
