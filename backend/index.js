@@ -440,26 +440,23 @@ app.listen(5000, () => {
 });
 
 app.get("/api/reviews", verifyFirebaseToken, async (req, res) => {
-  //console.log("🔥 HIT /api/reviews");
-  
   try {
-    const uid = req.uid;  // ✅ From token
-    
-    const snapshot = await db
-      .collection("users")
-      .doc(uid)
-      .collection("reviews")
-      .get();
+    const uid = req.uid;
+
+    // Fetch reviews and user doc in parallel
+    const [snapshot, userDoc] = await Promise.all([
+      db.collection("users").doc(uid).collection("reviews").get(),
+      db.collection("users").doc(uid).get()
+    ]);
 
     const reviews = snapshot.docs.map(doc => doc.data());
+    const lastSyncAt = userDoc.data()?.lastSyncAt || null;
 
-    res.json({ reviews });
+    res.json({ reviews, lastSyncAt });
 
   } catch (err) {
     console.error("Load reviews error:", err);
-    res.status(500).json({
-      error: "Failed to load reviews"
-    });
+    res.status(500).json({ error: "Failed to load reviews" });
   }
 });
 
