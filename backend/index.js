@@ -184,20 +184,23 @@ Reply (max 25 words):
    SYNC REVIEWS (SEMI-AUTOMATED LOGIC)
 ───────────────────────────────────────────── */
 app.post("/api/reviews/sync", verifyFirebaseToken, async (req, res) => {
-  //console.log("🔥 HIT /api/reviews/sync");
 
   try {
     const uid = req.uid;
+    console.log(`🔄 [POST /api/reviews/sync] Called for user: ${uid}`);
+    console.log(`🔄 [POST /api/reviews/sync] ⚠️ THIS triggers Google API + Firestore write`);
+    console.trace(`🔄 [POST /api/reviews/sync] Call stack:`); // shows what triggered this
 
     // Fetch reviews from Google My Business API
     let googleReviews = [];
     
     try {
+      console.log(`🔄 [POST /api/reviews/sync] Fetching from Google Business API...`);
       googleReviews = await fetchGoogleReviews(uid);
-    //  console.log(`✅ Fetched ${googleReviews.length} reviews from Google`);
+      console.log(`🔄 [POST /api/reviews/sync] ✅ Got ${googleReviews.length} reviews from Google`);
     } catch (err) {
-      console.warn('⚠️ Google Business API not ready yet');
-  console.warn('⚠️ Using mock reviews for testing');
+      console.warn(`🔄 [POST /api/reviews/sync] ⚠️ Google API failed: ${err.message}`);
+      console.warn(`🔄 [POST /api/reviews/sync] ⚠️ Falling back to mock reviews`);
   
   // Import and use mock data
   const { generateMockReviews } = await import('./services/googleReviews.js');
@@ -440,10 +443,11 @@ app.listen(5000, () => {
 });
 
 app.get("/api/reviews", verifyFirebaseToken, async (req, res) => {
-  try {
-    const uid = req.uid;
+  const uid = req.uid;
+  console.log(`📖 [GET /api/reviews] Called for user: ${uid}`);
+  console.log(`📖 [GET /api/reviews] This is a READ-ONLY call — no sync happening here`);
 
-    // Fetch reviews and user doc in parallel
+  try {
     const [snapshot, userDoc] = await Promise.all([
       db.collection("users").doc(uid).collection("reviews").get(),
       db.collection("users").doc(uid).get()
@@ -452,10 +456,12 @@ app.get("/api/reviews", verifyFirebaseToken, async (req, res) => {
     const reviews = snapshot.docs.map(doc => doc.data());
     const lastSyncAt = userDoc.data()?.lastSyncAt || null;
 
+    console.log(`📖 [GET /api/reviews] Returning ${reviews.length} cached reviews, lastSyncAt: ${lastSyncAt?.toDate?.() || 'never'}`);
+
     res.json({ reviews, lastSyncAt });
 
   } catch (err) {
-    console.error("Load reviews error:", err);
+    console.error(`❌ [GET /api/reviews] Error:`, err.message);
     res.status(500).json({ error: "Failed to load reviews" });
   }
 });

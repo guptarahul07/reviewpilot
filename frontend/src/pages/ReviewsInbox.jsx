@@ -556,6 +556,7 @@ export default function ReviewsInboxPage() {
 
   /* ── On mount: load cached reviews only, no sync ───────────── */
   useEffect(() => {
+    console.log('[ReviewsInbox] 🟢 Component mounted — calling handleLoad()');
     handleLoad();
   }, []);
 
@@ -579,6 +580,7 @@ export default function ReviewsInboxPage() {
 
   /* ── Load cached reviews from Firestore (no sync) ───────────── */
   async function handleLoad() {
+    console.log('[ReviewsInbox] 🔵 handleLoad() started — GET /api/reviews (no sync)');
     setLoading(true);
     try {
       const token = await user.getIdToken();
@@ -595,13 +597,18 @@ export default function ReviewsInboxPage() {
       const reviewsData  = await reviewsRes.json();
       const insightsData = await insightsRes.json();
 
+      console.log('[ReviewsInbox] 🔵 handleLoad() done —', {
+        reviewCount: reviewsData.reviews?.length ?? 0,
+        lastSyncAt: reviewsData.lastSyncAt ?? 'not returned by backend',
+        hasInsights: !!insightsData.insights,
+      });
+
       setReviews(reviewsData.reviews  || []);
       setInsights(insightsData.insights || null);
-      // Backend should return lastSyncAt in the reviews response
       if (reviewsData.lastSyncAt) setLastSyncAt(reviewsData.lastSyncAt);
 
     } catch (err) {
-      console.error("Load error:", err);
+      console.error('[ReviewsInbox] 🔴 handleLoad() error:', err);
     } finally {
       setLoading(false);
     }
@@ -609,6 +616,7 @@ export default function ReviewsInboxPage() {
 
   /* ── Manual sync: hit the sync endpoint then reload ─────────── */
   async function handleSync() {
+    console.log('[ReviewsInbox] 🟡 handleSync() started — POST /api/reviews/sync');
     setSyncing(true);
     try {
       const token = await user.getIdToken();
