@@ -454,7 +454,14 @@ app.get("/api/reviews", verifyFirebaseToken, async (req, res) => {
     ]);
 
     const reviews = snapshot.docs.map(doc => doc.data());
-    const lastSyncAt = userDoc.data()?.lastSyncAt || null;
+    let lastSyncAt = userDoc.data()?.lastSyncAt || null;
+
+    // If never synced, set current timestamp as baseline
+    if (!lastSyncAt) {
+      console.log(`📖 [GET /api/reviews] lastSyncAt is null — setting to current timestamp`);
+      lastSyncAt = new Date();
+      await db.collection("users").doc(uid).update({ lastSyncAt });
+    }
 
     console.log(`📖 [GET /api/reviews] Returning ${reviews.length} cached reviews, lastSyncAt: ${lastSyncAt?.toDate?.() || 'never'}`);
 
