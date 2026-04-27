@@ -734,72 +734,69 @@ export default function ReviewsInboxPage() {
         </p>
       </div>
       
-      {/* Quick Insights Card */}
+      {/* Quick Insights Card — compact strip */}
       {reviews.length > 0 && insights && (
-        <div
-          style={{
-            background: "linear-gradient(135deg, #0ea5a0 0%, #0d9488 100%)",
-            borderRadius: 12,
-            padding: 24,
-            marginBottom: 20,
-            boxShadow: "0 4px 16px rgba(14,165,160,0.2)",
-            color: "#fff"
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ margin: 0, marginBottom: 12, fontSize: 18, fontWeight: 600 }}>
-                📊 Quick Insights
-              </h3>
-              
-              <div style={{ display: "flex", gap: 32, marginBottom: 16 }}>
-                <div>
-                  <div style={{ fontSize: 32, fontWeight: 700 }}>{avgRating}★</div>
-                  <div style={{ fontSize: 13, opacity: 0.9 }}>Average Rating</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 32, fontWeight: 700 }}>{positiveCount}/{reviews.length}</div>
-                  <div style={{ fontSize: 13, opacity: 0.9 }}>Positive</div>
-                </div>
-              </div>
-              
-              <div style={{ marginBottom: 8 }}>
-                <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>✅ Working Well</div>
-                <div style={{ fontSize: 14, fontWeight: 500 }}>{quickInsights.strengths}</div>
-              </div>
-              
-              {needsAttentionCount > 0 && (
-                <div>
-                  <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>🎯 Focus Areas</div>
-                  <div style={{ fontSize: 14, fontWeight: 500 }}>{quickInsights.focusAreas}</div>
-                </div>
-              )}
+        <div style={{
+          background: "linear-gradient(135deg, #0ea5a0 0%, #0d9488 100%)",
+          borderRadius: 12,
+          padding: "14px 20px",
+          marginBottom: 20,
+          boxShadow: "0 4px 16px rgba(14,165,160,0.2)",
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          gap: 20,
+          flexWrap: "wrap",
+        }}>
+          {/* Stats — compact inline */}
+          <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1 }}>{avgRating}★</div>
+              <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>Avg Rating</div>
             </div>
-            
-            <button
-              onClick={() => setShowInsightsModal(true)}
-              style={{
-                background: "rgba(255,255,255,0.2)",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255,255,255,0.3)",
-                color: "#fff",
-                padding: "10px 20px",
-                borderRadius: 8,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontSize: 14,
-                transition: "all 0.2s ease"
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,0.3)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,0.2)";
-              }}
-            >
-              View Detailed Report →
-            </button>
+            <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.25)" }} />
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1 }}>{positiveCount}/{reviews.length}</div>
+              <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>Positive</div>
+            </div>
+            <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.25)" }} />
           </div>
+
+          {/* Strengths — truncated single line */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, opacity: 0.8, marginBottom: 2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              ✅ Working Well
+            </div>
+            <div style={{
+              fontSize: 13, fontWeight: 500,
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+            }}>
+              {quickInsights.strengths}
+            </div>
+          </div>
+
+          {/* View full report button */}
+          <button
+            onClick={() => setShowInsightsModal(true)}
+            style={{
+              background: "rgba(255,255,255,0.18)",
+              backdropFilter: "blur(10px)",
+              border: "1px solid rgba(255,255,255,0.28)",
+              color: "#fff",
+              padding: "7px 16px",
+              borderRadius: 8,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontSize: 13,
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+              transition: "background 0.2s ease",
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.28)"}
+            onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.18)"}
+          >
+            Full Report →
+          </button>
         </div>
       )}
 
@@ -830,27 +827,30 @@ export default function ReviewsInboxPage() {
       )}
 
       {/* Sync row */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16, marginBottom: 20 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4, marginBottom: 20 }}>
         <button
           onClick={handleSync}
           disabled={syncing}
           style={{
-            background: "#0ea5a0", color: "white", border: "none",
-            padding: "8px 16px", borderRadius: 8, fontWeight: 600,
+            background: "#1e2a3a", color: "white", border: "1px solid #2d3f55",
+            padding: "7px 16px", borderRadius: 8, fontWeight: 600,
             cursor: syncing ? "not-allowed" : "pointer",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
             opacity: syncing ? 0.6 : 1,
+            fontSize: 13,
           }}
         >
           {syncing ? "⏳ Syncing..." : "🔄 Sync Now"}
         </button>
-        {getLastSyncLabel() && !syncing && (
-          <span style={{ fontSize: 12, color: "#9ca3af" }}>
+        {/* Last synced — always show when available, regardless of loading state */}
+        {lastSyncAt && !syncing && (
+          <span style={{ fontSize: 12, color: "#9ca3af", display: "flex", alignItems: "center", gap: 4 }}>
+            <span style={{ opacity: 0.5 }}>🕐</span>
             Last synced: {getLastSyncLabel()}
           </span>
         )}
-        {loading && !syncing && (
-          <span style={{ fontSize: 12, color: "#9ca3af" }}>Loading…</span>
+        {syncing && (
+          <span style={{ fontSize: 12, color: "#9ca3af" }}>Syncing your reviews…</span>
         )}
       </div>
 
