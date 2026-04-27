@@ -34,6 +34,12 @@ export default function PublicLayout() {
             >
               Contact
             </NavLink>
+            <NavLink 
+              to="/help-center" 
+              className={({ isActive }) => isActive ? 'pub-nav__link active' : 'pub-nav__link'}
+            >
+              Help Center
+            </NavLink>
           </div>
           
           {/* CTA Buttons */}
@@ -75,6 +81,9 @@ export default function PublicLayout() {
       </a>
       <a href="/contact" style={{ color: "#6b7280", textDecoration: "none" }}>
         Contact
+      </a>
+      <a href="/help-center" style={{ color: "#6b7280", textDecoration: "none" }}>
+        Help Center
       </a>
     </div>
   </div>

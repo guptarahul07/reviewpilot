@@ -8,6 +8,7 @@ import {
   LogOut,
   ChevronRight,
   AlertTriangle,
+  HelpCircle,
 } from 'lucide-react'
 import './AppLayout.css'
 
@@ -15,9 +16,10 @@ import './AppLayout.css'
    Navigation Items
 ───────────────────────────────────────────── */
 const NAV_ITEMS = [
-  { to: '/reviews', icon: Inbox,    label: 'Reviews Inbox' },
-  { to: '/connect', icon: Link2,    label: 'Connect Google' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
+  { to: '/reviews',      icon: Inbox,       label: 'Reviews Inbox' },
+  { to: '/connect',      icon: Link2,       label: 'Connect Google' },
+  { to: '/settings',     icon: Settings,    label: 'Settings' },
+  { to: '/help-center',  icon: HelpCircle,  label: 'Help Center' },
 ]
 
 /* ─────────────────────────────────────────────
@@ -162,7 +164,7 @@ export default function AppLayout() {
               }
             >
               <Icon size={20} />
-              <span>{label === 'Reviews Inbox' ? 'Reviews' : label === 'Connect Google' ? 'Connect' : label}</span>
+              <span>{label === 'Reviews Inbox' ? 'Reviews' : label === 'Connect Google' ? 'Connect' : label === 'Help Center' ? 'Help' : label}</span>
             </NavLink>
           ))}
           <button className="bottom-nav__item" onClick={logout}>

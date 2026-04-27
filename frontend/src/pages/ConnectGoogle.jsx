@@ -421,7 +421,7 @@ export default function ConnectGoogle() {
     });
   }
 
-  /* ── Effect 1: runs on mount — check URL params AND existing connection ─ */
+  /* ── Effect 1: runs on mount — handle URL params ───────────────────── */
   useEffect(() => {
     const error     = searchParams.get('error');
     const connected = searchParams.get('connected');
@@ -446,21 +446,11 @@ export default function ConnectGoogle() {
       setFreshConnect(true);
       setPendingCallback(true);
       window.history.replaceState({}, '', '/connect');
-      return;
-    }
-
-    // Already connected — profile & user are available from AuthContext on revisit
-    if (isGoogleConnected && profile) {
-      populateBusiness(profile);
-      setState('connected');
-      setFreshConnect(false);
     }
   }, []); // eslint-disable-line — intentionally runs once on mount
 
-  /* ── Effect 2: fallback for when profile loads async after mount ────── */
+  /* ── Effect 2: react to auth/profile/connection changes ─────────────── */
   useEffect(() => {
-    console.log('[ConnectGoogle] Effect2:', { user: !!user, isGoogleConnected, pendingCallback, state, hasProfile: !!profile });
-
     // Case A: pending OAuth callback — user just became available
     if (pendingCallback && user) {
       setPendingCallback(false);
@@ -480,7 +470,7 @@ export default function ConnectGoogle() {
       return;
     }
 
-    // Case B: profile arrived async after mount (slow auth restore) — sync UI
+    // Case B: already connected (page revisit or async profile load)
     if (isGoogleConnected && profile && !pendingCallback && state !== 'connected') {
       populateBusiness(profile);
       setState('connected');

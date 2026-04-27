@@ -556,14 +556,24 @@ export default function ReviewsInboxPage() {
 
   /* ── On mount: load cached reviews only, no sync ───────────── */
   useEffect(() => {
-    console.log('[ReviewsInbox] 🟢 Component mounted — calling handleLoad()');
     handleLoad();
   }, []);
 
   /* ── Compute "last synced X ago" label ─────────────────────── */
+  /* ── Safely convert Firestore Timestamp OR ISO string to JS Date ── */
+  function toJsDate(val) {
+    if (!val) return null;
+    // Firestore Timestamp object has .toDate()
+    if (typeof val.toDate === 'function') return val.toDate();
+    // ISO string or number
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
   function getLastSyncLabel() {
-    if (!lastSyncAt) return null;
-    const diffMs  = Date.now() - new Date(lastSyncAt).getTime();
+    const date = toJsDate(lastSyncAt);
+    if (!date) return null;
+    const diffMs  = Date.now() - date.getTime();
     const diffMin = Math.floor(diffMs / 60000);
     const diffHrs = Math.floor(diffMin / 60);
     if (diffMin < 1)  return "just now";
@@ -574,13 +584,13 @@ export default function ReviewsInboxPage() {
 
   /* ── Is data stale (>24 hrs since last sync)? ───────────────── */
   function isStale() {
-    if (!lastSyncAt) return false;
-    return Date.now() - new Date(lastSyncAt).getTime() > 24 * 60 * 60 * 1000;
+    const date = toJsDate(lastSyncAt);
+    if (!date) return false;
+    return Date.now() - date.getTime() > 24 * 60 * 60 * 1000;
   }
 
   /* ── Load cached reviews from Firestore (no sync) ───────────── */
   async function handleLoad() {
-    console.log('[ReviewsInbox] 🔵 handleLoad() started — GET /api/reviews (no sync)');
     setLoading(true);
     try {
       const token = await user.getIdToken();
@@ -597,18 +607,12 @@ export default function ReviewsInboxPage() {
       const reviewsData  = await reviewsRes.json();
       const insightsData = await insightsRes.json();
 
-      console.log('[ReviewsInbox] 🔵 handleLoad() done —', {
-        reviewCount: reviewsData.reviews?.length ?? 0,
-        lastSyncAt: reviewsData.lastSyncAt ?? 'not returned by backend',
-        hasInsights: !!insightsData.insights,
-      });
-
       setReviews(reviewsData.reviews  || []);
       setInsights(insightsData.insights || null);
       if (reviewsData.lastSyncAt) setLastSyncAt(reviewsData.lastSyncAt);
 
     } catch (err) {
-      console.error('[ReviewsInbox] 🔴 handleLoad() error:', err);
+      console.error('Load error:', err);
     } finally {
       setLoading(false);
     }
@@ -616,7 +620,6 @@ export default function ReviewsInboxPage() {
 
   /* ── Manual sync: hit the sync endpoint then reload ─────────── */
   async function handleSync() {
-    console.log('[ReviewsInbox] 🟡 handleSync() started — POST /api/reviews/sync');
     setSyncing(true);
     try {
       const token = await user.getIdToken();
