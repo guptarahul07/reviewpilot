@@ -166,8 +166,8 @@ export default function FreeAudit() {
             <div className="audit-samples">
               <h2 className="audit-section-title">See what ReviewPilot's AI generates</h2>
               {[
-                { stars: 5, review: "Amazing food and great service! Definitely coming back!", reply: "Thank you so much for the wonderful review! 😊 We're thrilled you loved the food and service — our team works really hard to make every visit special. Looking forward to welcoming you back soon!", label: '5-star · builds loyalty' },
-                { stars: 2, review: "Service was slow during lunch rush. Food was good though.", reply: "Thank you for your honest feedback! We're glad you enjoyed the food. You're right about the lunch rush — we've added more staff to improve speed during peak hours. We'd love to make it right on your next visit!", label: '2-star · turns critic into fan' },
+                { stars: 5, review: "Best biryani in the area! Loved the ambiance and the service was excellent. Will definitely bring my family next time!", reply: "Thank you so much for the wonderful review! 😊 We're thrilled you loved the biryani — it's our chef's special recipe passed down for generations! We'd love to host your family. See you soon! 🙏", label: '5-star · builds loyalty' },
+                { stars: 2, review: "Dal makhani was good but had to wait 40 minutes during lunch. Not acceptable for a weekday.", reply: "We sincerely apologize for the long wait, ji. We completely understand your time is valuable. We've added kitchen staff specifically for the lunch rush. Your feedback helps us improve — we hope you'll give us another chance to serve you better! 🙏", label: '2-star · turns critic into fan' },
               ].map(({ stars, review, reply, label }) => (
                 <div className="audit-sample" key={label}>
                   <div className="audit-sample__badge">{label}</div>

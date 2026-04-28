@@ -10,7 +10,7 @@ export default function Restaurants() {
       trustLine="Trusted by 50+ restaurants across India 🇮🇳"
       problems={[
           { icon: "😓", title: "Too Busy to Respond", desc: "Between managing kitchen, serving customers, and handling deliveries — who has time to write thoughtful review responses? Reviews pile up unanswered." },
-          { icon: "⭐", title: "Negative Reviews Hurt", desc: "One 1-star review about "slow service" can cost you 30+ potential customers who read it and choose a competitor." },
+          { icon: "⭐", title: "Negative Reviews Hurt", desc: "One 1-star review about 'slow service' can cost you 30+ potential customers who read it and choose a competitor." },
           { icon: "💔", title: "Positive Reviews Get Ignored", desc: "Your happiest customers leave glowing 5-star reviews, but you never respond. They feel unappreciated — and don't become repeat customers." },
       ]}
       scenarios={[

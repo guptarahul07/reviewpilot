@@ -372,6 +372,15 @@ export default function Pricing() {
         </div>
 
         {/* ── Bottom CTA ── */}
+        {/* Trust signals */}
+        <div className="pricing-trust">
+          <div className="pricing-trust__item">✅ 100+ Indian businesses trust ReviewPilot</div>
+          <div className="pricing-trust__item">🇮🇳 Made in India, built for India</div>
+          <div className="pricing-trust__item">⭐ Google Verified OAuth App</div>
+          <div className="pricing-trust__item">🔒 AES-256 encrypted · Data stored in India</div>
+          <div className="pricing-trust__item">💳 Pay via UPI, Cards, Net Banking</div>
+        </div>
+
         <div className="pricing-cta-bottom">
           <h2 className="pricing-section-title">Still have questions?</h2>
           <p className="pricing-section-sub">

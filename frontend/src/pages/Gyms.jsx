@@ -9,7 +9,7 @@ export default function Gyms() {
       subtitle="Build a strong fitness community through better review engagement. AI-powered responses that motivate and retain members."
       trustLine="Trusted by gyms and fitness centres across India 🇮🇳"
       problems={[
-          { icon: "🏋️", title: "Member Complaints Hurt Sign-ups", desc: "One review about "broken equipment" or "unhygienic facilities" stops potential members before they even walk in." },
+          { icon: "🏋️", title: "Member Complaints Hurt Sign-ups", desc: "One review about 'broken equipment' or 'unhygienic facilities' stops potential members before they even walk in." },
           { icon: "💪", title: "Positive Reviews Get Lost", desc: "Your dedicated members share incredible transformation stories — but you never respond. They feel like just another number." },
           { icon: "⚔️", title: "Competition is Fierce", desc: "Other gyms nearby are responding faster and looking more engaged. Online reputation is the new competitive advantage." },
       ]}

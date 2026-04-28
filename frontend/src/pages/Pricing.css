@@ -201,6 +201,10 @@
 .pricing-faq__chevron.open { transform: rotate(270deg); color: var(--accent); }
 .pricing-faq__a { padding: 0 24px 18px; font-size: 13.5px; color: var(--ink-2); line-height: 1.7; border-left: 3px solid rgba(79,124,255,.2); margin-left: 24px; }
 
+/* ── Trust signals ──────────────────────────────────────────────── */
+.pricing-trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 48px; }
+.pricing-trust__item { font-size: 13px; font-weight: 600; color: var(--ink-2); background: var(--bg-card); border: 1px solid var(--border); border-radius: 100px; padding: 6px 16px; }
+
 /* ── Bottom CTA ─────────────────────────────────────────────── */
 .pricing-cta-bottom { text-align: center; }
 .pricing-cta-bottom__actions { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }

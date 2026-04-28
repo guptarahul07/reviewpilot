@@ -10,7 +10,7 @@ export default function Clinics() {
       trustLine="Trusted by clinics and hospitals across India 🇮🇳"
       problems={[
           { icon: "🏥", title: "Patient Reviews Impact Trust", desc: "92% of patients read reviews before choosing a doctor. Unanswered reviews signal you don't care about patient experience." },
-          { icon: "⏰", title: "Wait Time Complaints Spread", desc: "One review about "long wait times" or "rude staff" can cost you dozens of potential patients choosing a competitor clinic." },
+          { icon: "⏰", title: "Wait Time Complaints Spread", desc: "One review about 'long wait times' or 'rude staff' can cost you dozens of potential patients choosing a competitor clinic." },
           { icon: "🔒", title: "Privacy is Paramount", desc: "Responding to patient reviews requires extra care — you can't share medical details. Generic responses feel dismissive." },
       ]}
       scenarios={[

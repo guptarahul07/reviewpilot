@@ -10,7 +10,7 @@ export default function Salons() {
       trustLine="Trusted by salons and spas across India 🇮🇳"
       problems={[
           { icon: "📅", title: "Busy Schedule, Zero Time", desc: "Between appointments, walk-ins, and managing staff — when do you find time to respond to reviews? Most go unanswered for days." },
-          { icon: "😰", title: "Negative Reviews Spread Fast", desc: "One bad review about "rude staff" or "bad haircut" can cost you 50+ potential clients before you even see it." },
+          { icon: "😰", title: "Negative Reviews Spread Fast", desc: "One bad review about 'rude staff' or 'bad haircut' can cost you 50+ potential clients before you even see it." },
           { icon: "💸", title: "Miss Out on Repeat Business", desc: "Your best clients leave glowing reviews but you never respond. They feel undervalued — and go elsewhere next time." },
       ]}
       scenarios={[

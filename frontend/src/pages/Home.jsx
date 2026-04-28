@@ -133,9 +133,9 @@ export default function Home() {
         </div>
         <div className="problem__stats">
           {[
-            { num: '89%', text: 'of consumers read business responses to reviews' },
-            { num: '35%', text: 'more revenue for businesses that respond to reviews' },
-            { num: '#1',  text: 'factor Google uses to rank local businesses' },
+            { num: '89%', text: 'of customers read owner responses before choosing a business' },
+            { num: '35%', text: 'more revenue for businesses that respond to all reviews' },
+            { num: '#1',  text: 'factor Google uses to rank local businesses in search' },
           ].map(({ num, text }) => (
             <div className="problem__stat" key={num}>
               <div className="problem__stat-num">{num}</div>
