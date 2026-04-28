@@ -22,6 +22,11 @@ import AdminDashboard from './pages/AdminDashboard';
 import TermsOfServicePage from './pages/TermsOfService';
 import PrivacyPolicyPage from './pages/PrivacyPolicy';
 import HelpCenter from './pages/HelpCenter';
+import FreeAudit from './pages/FreeAudit';
+import Restaurants from './pages/Restaurants';
+import Salons from './pages/Salons';
+import Gyms from './pages/Gyms';
+import Clinics from './pages/Clinics';
 
 export default function App() {
   return (
@@ -71,6 +76,12 @@ export default function App() {
         <Route path="/terms" element={<TermsOfServicePage />} />
         <Route path="/privacy" element={<PrivacyPolicyPage />} />
         <Route path="/help-center" element={<HelpCenter />} />
+        <Route path="/free-audit" element={<FreeAudit />} />
+        <Route path="/restaurants" element={<Restaurants />} />
+        <Route path="/cafes" element={<Restaurants />} />
+        <Route path="/salons" element={<Salons />} />
+        <Route path="/gyms" element={<Gyms />} />
+        <Route path="/clinics" element={<Clinics />} />
      	  </Route>
 
         </Routes>
