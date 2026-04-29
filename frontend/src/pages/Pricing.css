@@ -153,15 +153,16 @@
 }
 .roi-input input:focus { border-color: var(--accent); }
 
-.roi-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 28px; }
+.roi-results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
 .roi-result {
   background: var(--bg); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 16px 14px; text-align: center;
+  border-radius: var(--radius); padding: 14px 10px; text-align: center;
+  min-width: 0; overflow: hidden;
 }
 .roi-result--highlight {
   background: var(--accent-glow); border-color: rgba(79,124,255,.3);
 }
-.roi-result__value { font-family: var(--font-display); font-size: 22px; font-weight: 800; color: var(--ink); margin-bottom: 4px; }
+.roi-result__value { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 4px; letter-spacing: -.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .roi-result--highlight .roi-result__value { color: var(--accent); }
 .roi-result__label { font-size: 11px; color: var(--ink-3); line-height: 1.4; }
 .roi-cta { text-align: center; }
