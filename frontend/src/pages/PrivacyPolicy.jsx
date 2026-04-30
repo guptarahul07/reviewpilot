@@ -1,7 +1,15 @@
 // src/pages/PrivacyPolicy.jsx
+import SEOMeta from '../components/ui/SEOMeta'
 
 export default function PrivacyPolicyPage() {
   return (
+    <>
+      <SEOMeta
+        title="Privacy Policy | ReviewPilot"
+        description="ReviewPilot privacy policy. Learn how we protect your data, what information we collect, and your privacy rights as an Indian business owner."
+        ogUrl="https://reviewpilot.live/privacy"
+        canonical="https://reviewpilot.live/privacy"
+      />
     <div style={{ 
       maxWidth: 800, 
       margin: "0 auto", 
@@ -459,5 +467,6 @@ export default function PrivacyPolicyPage() {
         </p>
       </div>
     </div>
+    </>
   );
 }

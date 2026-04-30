@@ -1,8 +1,19 @@
 // src/pages/Clinics.jsx
 import IndustryPage from './IndustryPage'
+import SEOMeta from '../components/ui/SEOMeta'
 
 export default function Clinics() {
   return (
+    <>
+      <SEOMeta
+        title="Review Management for Clinics & Healthcare | ReviewPilot"
+        description="AI-powered review management for Indian clinics, hospitals, and dental offices. Respond to patient reviews professionally. Build trust. Improve Google ratings."
+        keywords="clinic review management India, healthcare Google reviews, doctor review replies AI, hospital reputation management"
+        ogTitle="Review Management for Clinics - ReviewPilot"
+        ogDescription="Build patient trust through professional review responses. AI-powered review management for Indian healthcare providers."
+        ogUrl="https://reviewpilot.live/clinics"
+        canonical="https://reviewpilot.live/clinics"
+      />
     <IndustryPage
       emoji="🏥"
       title="Build Patient Trust Through Better Review Responses"
@@ -39,5 +50,6 @@ export default function Clinics() {
           { q: "Is it suitable for hospitals with multiple departments?", a: "Yes. The Enterprise plan supports unlimited locations and team members — perfect for multi-speciality hospitals." },
       ]}
     />
+    </>
   )
 }

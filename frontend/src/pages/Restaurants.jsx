@@ -1,8 +1,19 @@
 // src/pages/Restaurants.jsx
 import IndustryPage from './IndustryPage'
+import SEOMeta from '../components/ui/SEOMeta'
 
 export default function Restaurants() {
   return (
+    <>
+      <SEOMeta
+        title="Review Management for Restaurants & Cafés | ReviewPilot"
+        description="AI-powered review management for Indian restaurants and cafés. Respond to food reviews 10x faster. Handle complaints professionally. Improve Google ratings. Free trial."
+        keywords="restaurant review management India, cafe Google reviews, food review replies AI, restaurant reputation management"
+        ogTitle="Review Management for Restaurants - ReviewPilot"
+        ogDescription="Respond to food reviews 10x faster with AI. Handle complaints, celebrate fans, improve ratings. Built for Indian restaurants."
+        ogUrl="https://reviewpilot.live/restaurants"
+        canonical="https://reviewpilot.live/restaurants"
+      />
     <IndustryPage
       emoji="☕"
       title="Turn Food Reviews Into 5-Star Ratings"
@@ -45,5 +56,6 @@ export default function Restaurants() {
           { q: "What about Zomato/Swiggy reviews?", a: "Coming in Phase 2 (Q3 2026). For now, we focus on Google Business reviews." },
       ]}
     />
+    </>
   )
 }

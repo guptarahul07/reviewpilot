@@ -9,6 +9,7 @@
 
 import { useState } from 'react';
 import './Contact.css';
+import SEOMeta from '../components/ui/SEOMeta'
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -59,6 +60,15 @@ export default function ContactPage() {
 
   return (
     <div className="contact-page">
+      <SEOMeta
+        title="Contact ReviewPilot | Get Help & Schedule a Demo"
+        description="Contact ReviewPilot for support, demos, or onboarding help. Email, WhatsApp, or schedule a free call with our team. We respond within 1 business day."
+        keywords="ReviewPilot contact, review management support India, schedule demo, ReviewPilot WhatsApp"
+        ogTitle="Contact ReviewPilot"
+        ogDescription="Get help, schedule a demo, or talk to our team. We respond within 1 business day."
+        ogUrl="https://reviewpilot.live/contact"
+        canonical="https://reviewpilot.live/contact"
+      />
       
       {/* Header */}
       <div className="contact-header">

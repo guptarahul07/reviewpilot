@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { CheckCircle, ArrowRight, Zap } from 'lucide-react'
 import Button from '../components/ui/Button'
 import './FreeAudit.css'
+import SEOMeta from '../components/ui/SEOMeta'
 
 function calcScore({ responseRate, avgResponseDays, avgResponseWords, totalReviews }) {
   const rateScore    = Math.round((responseRate / 100) * 40)
@@ -49,6 +50,15 @@ export default function FreeAudit() {
 
   return (
     <div className="audit-page">
+      <SEOMeta
+        title="Free Google Review Health Check | ReviewPilot"
+        description="Get your free Google Business Review Health Score in 60 seconds. See your response rate, speed, and opportunity cost. No signup required."
+        keywords="free review audit, Google Business review health check, review response rate check, review management audit India"
+        ogTitle="Free Google Review Health Check"
+        ogDescription="Get your review health score in 60 seconds. See how your response rate compares to competitors. 100% free."
+        ogUrl="https://reviewpilot.live/free-audit"
+        canonical="https://reviewpilot.live/free-audit"
+      />
       <div className="audit-hero">
         <div className="audit-hero__eyebrow">🔍 Free Tool</div>
         <h1 className="audit-hero__title">Free Google Business<br />Review Health Check</h1>

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { CheckCircle, X, Zap, Star } from 'lucide-react'
 import Button from '../components/ui/Button'
 import './Pricing.css'
+import SEOMeta from '../components/ui/SEOMeta'
 
 /* ─────────────────────────────────────────────────────────────────
    DATA
@@ -146,6 +147,15 @@ export default function Pricing() {
 
   return (
     <div className="pricing-page">
+      <SEOMeta
+        title="Pricing - ReviewPilot | Plans from ₹2,999/year"
+        description="ReviewPilot pricing: ₹2,999/year Starter, ₹5,999/year Growth, ₹9,999/year Enterprise. 15-day free trial. No credit card. AI review management for Indian businesses."
+        keywords="ReviewPilot pricing, review management cost, AI review management India, Google Business review tool price"
+        ogTitle="ReviewPilot Pricing - Simple, Transparent Plans"
+        ogDescription="Plans from ₹2,999/year. 15-day free trial. AI-powered Google Business review management for Indian SMBs."
+        ogUrl="https://reviewpilot.live/pricing"
+        canonical="https://reviewpilot.live/pricing"
+      />
 
       {/* ── Hero ── */}
       <div className="pricing-hero">

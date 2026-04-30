@@ -1,8 +1,19 @@
 // src/pages/Gyms.jsx
 import IndustryPage from './IndustryPage'
+import SEOMeta from '../components/ui/SEOMeta'
 
 export default function Gyms() {
   return (
+    <>
+      <SEOMeta
+        title="Review Management for Gyms & Fitness Centers | ReviewPilot"
+        description="AI-powered review management for Indian gyms and fitness centers. Respond to member reviews professionally. Build community. Improve Google ratings. Free trial."
+        keywords="gym review management India, fitness center Google reviews, gym review replies AI, fitness reputation management"
+        ogTitle="Review Management for Gyms - ReviewPilot"
+        ogDescription="Turn members into fans through better review engagement. AI-powered review management for Indian gyms."
+        ogUrl="https://reviewpilot.live/gyms"
+        canonical="https://reviewpilot.live/gyms"
+      />
     <IndustryPage
       emoji="💪"
       title="Turn Members Into Fans — One Review at a Time"
@@ -39,5 +50,6 @@ export default function Gyms() {
           { q: "What about membership cancellation reviews?", a: "AI handles these sensitively, acknowledging feedback without being defensive and inviting the member to return." },
       ]}
     />
+    </>
   )
 }

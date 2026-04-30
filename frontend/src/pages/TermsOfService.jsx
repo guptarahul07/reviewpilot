@@ -1,7 +1,15 @@
 // src/pages/TermsOfService.jsx
+import SEOMeta from '../components/ui/SEOMeta'
 
 export default function TermsOfServicePage() {
   return (
+    <>
+      <SEOMeta
+        title="Terms of Service | ReviewPilot"
+        description="ReviewPilot terms of service. User agreement, acceptable use policy, and service terms for AI-powered Google review management."
+        ogUrl="https://reviewpilot.live/terms"
+        canonical="https://reviewpilot.live/terms"
+      />
     <div style={{ 
       maxWidth: 800, 
       margin: "0 auto", 
@@ -341,5 +349,6 @@ export default function TermsOfServicePage() {
         </p>
       </div>
     </div>
+    </>
   );
 }

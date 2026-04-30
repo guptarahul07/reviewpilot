@@ -1,8 +1,19 @@
 // src/pages/Salons.jsx
 import IndustryPage from './IndustryPage'
+import SEOMeta from '../components/ui/SEOMeta'
 
 export default function Salons() {
   return (
+    <>
+      <SEOMeta
+        title="Review Management for Salons & Spas | ReviewPilot"
+        description="AI-powered review management for Indian salons and spas. Respond to beauty reviews professionally. Build client loyalty. Improve Google ratings. Free trial."
+        keywords="salon review management India, beauty salon Google reviews, spa review replies AI, salon reputation management"
+        ogTitle="Review Management for Salons - ReviewPilot"
+        ogDescription="Build client loyalty through better review responses. AI-powered review management for Indian salons and spas."
+        ogUrl="https://reviewpilot.live/salons"
+        canonical="https://reviewpilot.live/salons"
+      />
     <IndustryPage
       emoji="💇"
       title="Build Client Loyalty Through Better Review Management"
@@ -39,5 +50,6 @@ export default function Salons() {
           { q: "Can I customise the tone?", a: "Absolutely. Choose Friendly, Professional, or Apologetic tone for each reply, or regenerate for a different version." },
       ]}
     />
+    </>
   )
 }

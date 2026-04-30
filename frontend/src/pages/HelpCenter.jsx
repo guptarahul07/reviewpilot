@@ -1,6 +1,7 @@
 // src/pages/HelpCenter.jsx
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import SEOMeta from '../components/ui/SEOMeta'
 
 /* ─────────────────────────────────────────────────────────────────
    STYLES
@@ -721,6 +722,15 @@ export default function HelpCenter() {
 
   return (
     <div className="hc-page">
+      <SEOMeta
+        title="Help Center - ReviewPilot | Guides, FAQs & Support"
+        description="Find answers to all your ReviewPilot questions. Quick start guide, FAQs, video tutorials, and direct support for Indian businesses managing Google reviews."
+        keywords="ReviewPilot help, review management guide, FAQ, how to manage Google reviews, review reply tutorial India"
+        ogTitle="ReviewPilot Help Center"
+        ogDescription="Quick start guides, FAQs, and support for managing Google Business reviews with AI."
+        ogUrl="https://reviewpilot.live/help-center"
+        canonical="https://reviewpilot.live/help-center"
+      />
       <style>{CSS}</style>
 
       {/* ── Hero ── */}

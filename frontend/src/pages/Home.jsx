@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Zap, Star, ArrowRight, CheckCircle, RefreshCw, MessageSquare, BarChart2, Shield, Smartphone, Globe } from 'lucide-react'
 import Button from '../components/ui/Button'
 import './Home.css'
+import SEOMeta from '../components/ui/SEOMeta'
 
 const STATS = [
   { value: '5,000+', label: 'Reviews Managed' },
@@ -49,6 +50,15 @@ const COMPARISON = [
 export default function Home() {
   return (
     <div className="home">
+      <SEOMeta
+        title="ReviewPilot - AI Review Management for Indian Businesses"
+        description="Manage Google Business reviews with AI. Auto-sync reviews, generate professional replies, and improve ratings. Built for Indian SMBs. Start free trial."
+        keywords="review management, google business reviews, AI review replies, Indian SMB, restaurant reviews, salon reviews, clinic reviews"
+        ogTitle="ReviewPilot - AI Review Management"
+        ogDescription="Manage Google Business reviews with AI. Auto-sync reviews, generate professional replies, improve ratings."
+        ogUrl="https://reviewpilot.live/"
+        canonical="https://reviewpilot.live/"
+      />
 
       {/* ── Hero ── */}
       <section className="hero container">
