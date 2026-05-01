@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://reviewpilot.live/sitemap.xml

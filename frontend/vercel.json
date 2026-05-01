@@ -1,8 +1,43 @@
 {
   "rewrites": [
     {
-      "source": "/((?!sitemap.xml|robots.txt|favicon.svg|favicon.ico).*)",
+      "source": "/((?!sitemap.xml|robots.txt|favicon.svg|favicon.ico|og-image.png|twitter-card.png).*)",
       "destination": "/index.html"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/home",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options",        "value": "DENY" },
+        { "key": "X-XSS-Protection",       "value": "1; mode=block" },
+        { "key": "Referrer-Policy",        "value": "strict-origin-when-cross-origin" }
+      ]
+    },
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        { "key": "Content-Type", "value": "application/xml" }
+      ]
+    },
+    {
+      "source": "/robots.txt",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain" }
+      ]
     }
   ]
 }
