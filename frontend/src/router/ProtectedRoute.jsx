@@ -9,6 +9,8 @@ export default function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
   const location = useLocation()
 
+  console.log('[ProtectedRoute] loading:', loading, '| user:', user?.email ?? 'null', '| path:', location.pathname)
+
   // Wait for Auth to restore session before deciding to redirect
   // Without this, redirect users get sent to /login before onAuthStateChanged fires
   if (loading) {

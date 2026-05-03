@@ -140,29 +140,35 @@ export function AuthProvider({ children }) {
 
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
 
+      console.log('[AuthContext] onAuthStateChanged fired — user:', firebaseUser?.email ?? 'null')
+
       try {
         setUser(firebaseUser)
 
         if (firebaseUser) {
-          // Ensure Firestore network is ready before any reads/writes
-          // This fixes "client is offline" errors after signInWithRedirect
+          console.log('[AuthContext] User found, enabling network...')
           try {
             await enableNetwork(db)
+            console.log('[AuthContext] Network enabled')
           } catch (_) {
-            // If enableNetwork fails, wait briefly and try Firestore anyway
+            console.log('[AuthContext] enableNetwork failed, waiting 800ms...')
             await new Promise(r => setTimeout(r, 800))
           }
 
+          console.log('[AuthContext] Calling createUserDocIfMissing...')
           await createUserDocIfMissing(firebaseUser)
+          console.log('[AuthContext] Calling fetchProfile...')
           await fetchProfile(firebaseUser.uid)
+          console.log('[AuthContext] Done — setting loading=false')
         } else {
+          console.log('[AuthContext] No user — setting loading=false')
           setProfile(null)
         }
 
       } catch (err) {
-        console.error("Auth init error:", err)
+        console.error('[AuthContext] Auth init error:', err)
       } finally {
-        setLoading(false) // ALWAYS release loading
+        setLoading(false)
       }
 
     })

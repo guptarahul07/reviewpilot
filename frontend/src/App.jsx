@@ -39,6 +39,7 @@ export default function App() {
   useEffect(() => {
     getRedirectResult(auth)
       .then(async (result) => {
+        console.log('[App] getRedirectResult:', result ? 'GOT USER — ' + result.user.email : 'null (normal load)')
         if (!result) return // No redirect result — normal page load
         const user = result.user
 
@@ -58,9 +59,10 @@ export default function App() {
         // Navigation handled by ProtectedRoute redirecting to /connect or /reviews
       })
       .catch((err) => {
-        console.error('Redirect sign-in error:', err)
+        console.error('[App] getRedirectResult error:', err)
       })
       .finally(() => {
+        console.log('[App] redirectChecking → false')
         setRedirectChecking(false)
       })
   }, [])
