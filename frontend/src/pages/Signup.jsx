@@ -1,5 +1,5 @@
 // src/pages/Signup.jsx
-import { signInWithPopup } from "firebase/auth"
+import { signInWithRedirect } from "firebase/auth"
 import { auth, googleProvider } from "../services/firebase"
 import { useState } from "react"
 import { createUserWithEmailAndPassword } from "firebase/auth"
@@ -97,7 +97,7 @@ export default function SignupPage() {
 
   async function handleGoogleSignup() {
     try {
-      const res = await signInWithPopup(auth, googleProvider)
+      const res = await signInWithRedirect(auth, googleProvider)
 
       // Create user doc if Google signup
       await setDoc(doc(db, "users", res.user.uid), {

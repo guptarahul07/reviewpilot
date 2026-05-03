@@ -1,4 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { getRedirectResult } from 'firebase/auth'
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
+import { auth, db } from './services/firebase'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './router/ProtectedRoute'
 
@@ -29,6 +33,33 @@ import Settings from './pages/Settings'
 import AdminDashboard from './pages/AdminDashboard'
 
 export default function App() {
+  /* ── Handle Google OAuth redirect result ── */
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (!result) return // No redirect result — normal page load
+        const user = result.user
+
+        // Create Firestore profile if first-time Google sign-in
+        const ref  = doc(db, 'users', user.uid)
+        const snap = await getDoc(ref)
+        if (!snap.exists()) {
+          await setDoc(ref, {
+            uid:       user.uid,
+            email:     user.email,
+            name:      user.displayName || 'User',
+            plan:      'free',
+            createdAt: serverTimestamp(),
+          })
+        }
+        // AuthContext will pick up the signed-in user automatically
+        // Navigation handled by ProtectedRoute redirecting to /connect or /reviews
+      })
+      .catch((err) => {
+        console.error('Redirect sign-in error:', err)
+      })
+  }, [])
+
   return (
     <BrowserRouter>
       <AuthProvider>
