@@ -29,11 +29,6 @@ import Settings from './pages/Settings'
 import AdminDashboard from './pages/AdminDashboard'
 
 export default function App() {
-  // NOTE: getRedirectResult is now handled inside AuthContext
-  // so BrowserRouter and AuthProvider always render immediately —
-  // this ensures Firebase can process the OAuth redirect without
-  // the page structure being conditionally removed.
-
   return (
     <BrowserRouter>
       <AuthProvider>

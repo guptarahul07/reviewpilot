@@ -1,6 +1,6 @@
 // src/pages/Login.jsx
 import { useState } from "react";
-import { signInWithEmailAndPassword, sendPasswordResetEmail, signInWithRedirect } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../services/firebase";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore"
@@ -75,9 +75,25 @@ export default function LoginPage() {
   async function handleGoogleLogin() {
     try {
       setLoading(true)
-      await signInWithRedirect(auth, googleProvider)
-      // Page will redirect to Google — getRedirectResult in App.jsx handles the result
+      const res = await signInWithPopup(auth, googleProvider)
+
+      // Create Firestore profile if first Google sign-in
+      const ref  = doc(db, "users", res.user.uid)
+      const snap = await getDoc(ref)
+      if (!snap.exists()) {
+        await setDoc(ref, {
+          uid:       res.user.uid,
+          email:     res.user.email,
+          name:      res.user.displayName || "User",
+          plan:      "free",
+          createdAt: serverTimestamp(),
+          google:    { connected: false },
+          settings:  { businessName: "Your Business", replyTone: "friendly" }
+        })
+      }
+      navigate(redirectTo, { replace: true })
     } catch (err) {
+      console.error("Google sign-in error:", err)
       setError("Google sign-in failed. Please try again.")
       setLoading(false)
     }

@@ -1,5 +1,5 @@
 // src/pages/Signup.jsx
-import { signInWithRedirect } from "firebase/auth"
+import { signInWithPopup } from "firebase/auth"
 import { auth, googleProvider } from "../services/firebase"
 import { useState } from "react"
 import { createUserWithEmailAndPassword } from "firebase/auth"
@@ -97,19 +97,25 @@ export default function SignupPage() {
 
   async function handleGoogleSignup() {
     try {
-      const res = await signInWithRedirect(auth, googleProvider)
+      const res = await signInWithPopup(auth, googleProvider)
 
-      // Create user doc if Google signup
-      await setDoc(doc(db, "users", res.user.uid), {
-        uid: res.user.uid,
-        email: res.user.email,
-        name: capitalizeName(res.user.displayName || "User"),
-        plan: "free",
-        createdAt: serverTimestamp()
-      })
-
+      // Create Firestore profile if first Google sign-up
+      const ref  = doc(db, "users", res.user.uid)
+      const snap = await getDoc(ref)
+      if (!snap.exists()) {
+        await setDoc(ref, {
+          uid:       res.user.uid,
+          email:     res.user.email,
+          name:      capitalizeName(res.user.displayName || "User"),
+          plan:      "free",
+          createdAt: serverTimestamp(),
+          google:    { connected: false },
+          settings:  { businessName: "Your Business", replyTone: "friendly" }
+        })
+      }
       navigate("/connect")
-    } catch {
+    } catch (err) {
+      console.error("Google sign-up error:", err)
       setError("Google sign-up failed.")
     }
   }
