@@ -3,8 +3,6 @@ import { useState } from "react";
 import { signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../services/firebase";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore"
-import { db } from "../services/firebase"
 
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -75,22 +73,9 @@ export default function LoginPage() {
   async function handleGoogleLogin() {
     try {
       setLoading(true)
-      const res = await signInWithPopup(auth, googleProvider)
-
-      // Create Firestore profile if first Google sign-in
-      const ref  = doc(db, "users", res.user.uid)
-      const snap = await getDoc(ref)
-      if (!snap.exists()) {
-        await setDoc(ref, {
-          uid:       res.user.uid,
-          email:     res.user.email,
-          name:      res.user.displayName || "User",
-          plan:      "free",
-          createdAt: serverTimestamp(),
-          google:    { connected: false },
-          settings:  { businessName: "Your Business", replyTone: "friendly" }
-        })
-      }
+      await signInWithPopup(auth, googleProvider)
+      // AuthContext handles profile creation in background
+      // onAuthStateChanged will fire and set user — ProtectedRoute handles navigation
       navigate(redirectTo, { replace: true })
     } catch (err) {
       console.error("Google sign-in error:", err)

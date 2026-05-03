@@ -97,22 +97,8 @@ export default function SignupPage() {
 
   async function handleGoogleSignup() {
     try {
-      const res = await signInWithPopup(auth, googleProvider)
-
-      // Create Firestore profile if first Google sign-up
-      const ref  = doc(db, "users", res.user.uid)
-      const snap = await getDoc(ref)
-      if (!snap.exists()) {
-        await setDoc(ref, {
-          uid:       res.user.uid,
-          email:     res.user.email,
-          name:      capitalizeName(res.user.displayName || "User"),
-          plan:      "free",
-          createdAt: serverTimestamp(),
-          google:    { connected: false },
-          settings:  { businessName: "Your Business", replyTone: "friendly" }
-        })
-      }
+      await signInWithPopup(auth, googleProvider)
+      // AuthContext handles profile creation in background
       navigate("/connect")
     } catch (err) {
       console.error("Google sign-up error:", err)
