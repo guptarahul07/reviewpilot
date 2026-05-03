@@ -1,8 +1,4 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
-import { getRedirectResult } from 'firebase/auth'
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
-import { auth, db } from './services/firebase'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './router/ProtectedRoute'
 
@@ -33,73 +29,17 @@ import Settings from './pages/Settings'
 import AdminDashboard from './pages/AdminDashboard'
 
 export default function App() {
-  const [redirectChecking, setRedirectChecking] = useState(true)
-
-  /* ── Handle Google OAuth redirect result ── */
-  useEffect(() => {
-    getRedirectResult(auth)
-      .then(async (result) => {
-        console.log('[App] getRedirectResult:', result ? 'GOT USER — ' + result.user.email : 'null (normal load)')
-        if (!result) return // No redirect result — normal page load
-        const user = result.user
-
-        // Create Firestore profile if first-time Google sign-in
-        const ref  = doc(db, 'users', user.uid)
-        const snap = await getDoc(ref)
-        if (!snap.exists()) {
-          await setDoc(ref, {
-            uid:       user.uid,
-            email:     user.email,
-            name:      user.displayName || 'User',
-            plan:      'free',
-            createdAt: serverTimestamp(),
-          })
-        }
-        // AuthContext will pick up the signed-in user automatically
-        // Navigation handled by ProtectedRoute redirecting to /connect or /reviews
-      })
-      .catch((err) => {
-        console.error('[App] getRedirectResult error:', err)
-      })
-      .finally(() => {
-        console.log('[App] redirectChecking → false')
-        setRedirectChecking(false)
-      })
-  }, [])
-
-  // Show minimal loading screen while checking redirect result
-  // Prevents flash of login screen when returning from Google OAuth
-  if (redirectChecking) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#0a0c0f',
-        flexDirection: 'column',
-        gap: 16,
-      }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: '50%',
-          border: '3px solid rgba(14,165,160,.2)',
-          borderTopColor: '#0ea5a0',
-          animation: 'spin .7s linear infinite',
-        }} />
-        <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
-        <p style={{ color: '#4a5568', fontSize: 14, fontFamily: 'sans-serif' }}>
-          Checking authentication…
-        </p>
-      </div>
-    )
-  }
+  // NOTE: getRedirectResult is now handled inside AuthContext
+  // so BrowserRouter and AuthProvider always render immediately —
+  // this ensures Firebase can process the OAuth redirect without
+  // the page structure being conditionally removed.
 
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
 
-          {/* ── Public routes (all under PublicLayout) ── */}
+          {/* ── Public routes ── */}
           <Route element={<PublicLayout />}>
             <Route path="/"             element={<Home />} />
             <Route path="/pricing"      element={<Pricing />} />
@@ -127,13 +67,13 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/connect"             element={<ConnectGoogle />} />
-            <Route path="/auth/google/callback" element={<ConnectGoogle />} />
-            <Route path="/reviews"             element={<ReviewsInbox />} />
-            <Route path="/reviews/:id"         element={<ReviewReply />} />
-            <Route path="/settings"            element={<Settings />} />
-            <Route path="/admin"               element={<AdminDashboard />} />
-            <Route path="/dashboard"           element={<Navigate to="/reviews" replace />} />
+            <Route path="/connect"              element={<ConnectGoogle />} />
+            <Route path="/auth/google/callback"  element={<ConnectGoogle />} />
+            <Route path="/reviews"              element={<ReviewsInbox />} />
+            <Route path="/reviews/:id"          element={<ReviewReply />} />
+            <Route path="/settings"             element={<Settings />} />
+            <Route path="/admin"                element={<AdminDashboard />} />
+            <Route path="/dashboard"            element={<Navigate to="/reviews" replace />} />
           </Route>
 
           {/* ── Catch-all ── */}

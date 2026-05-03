@@ -5,6 +5,7 @@ import {
   signOut,
   onAuthStateChanged,
   updateProfile,
+  getRedirectResult,
 } from "firebase/auth"
 import { doc, setDoc, getDoc, serverTimestamp, enableNetwork } from "firebase/firestore"
 import { auth, db } from "../services/firebase"
@@ -137,6 +138,19 @@ export function AuthProvider({ children }) {
   /* ───────────────── AUTH LISTENER ───────────────── */
 
   useEffect(() => {
+
+    // Process Google OAuth redirect result first
+    // Must run inside AuthProvider so Firebase SDK is fully initialised
+    getRedirectResult(auth)
+      .then(async (result) => {
+        console.log('[AuthContext] getRedirectResult:', result ? 'GOT USER — ' + result.user.email : 'null (normal load)')
+        if (!result) return
+        // onAuthStateChanged will fire automatically with the user
+        // Firestore profile creation handled there
+      })
+      .catch((err) => {
+        console.error('[AuthContext] getRedirectResult error:', err)
+      })
 
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
 
