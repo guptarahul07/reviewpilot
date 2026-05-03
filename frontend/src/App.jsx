@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { getRedirectResult } from 'firebase/auth'
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from './services/firebase'
@@ -33,6 +33,8 @@ import Settings from './pages/Settings'
 import AdminDashboard from './pages/AdminDashboard'
 
 export default function App() {
+  const [redirectChecking, setRedirectChecking] = useState(true)
+
   /* ── Handle Google OAuth redirect result ── */
   useEffect(() => {
     getRedirectResult(auth)
@@ -58,7 +60,37 @@ export default function App() {
       .catch((err) => {
         console.error('Redirect sign-in error:', err)
       })
+      .finally(() => {
+        setRedirectChecking(false)
+      })
   }, [])
+
+  // Show minimal loading screen while checking redirect result
+  // Prevents flash of login screen when returning from Google OAuth
+  if (redirectChecking) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#0a0c0f',
+        flexDirection: 'column',
+        gap: 16,
+      }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: '50%',
+          border: '3px solid rgba(14,165,160,.2)',
+          borderTopColor: '#0ea5a0',
+          animation: 'spin .7s linear infinite',
+        }} />
+        <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
+        <p style={{ color: '#4a5568', fontSize: 14, fontFamily: 'sans-serif' }}>
+          Checking authentication…
+        </p>
+      </div>
+    )
+  }
 
   return (
     <BrowserRouter>
