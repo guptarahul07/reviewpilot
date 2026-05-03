@@ -6,7 +6,7 @@ import {
   onAuthStateChanged,
   updateProfile,
 } from "firebase/auth"
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore"
+import { doc, setDoc, getDoc, serverTimestamp, enableNetwork } from "firebase/firestore"
 import { auth, db } from "../services/firebase"
 
 const AuthContext = createContext(null)
@@ -104,13 +104,33 @@ export function AuthProvider({ children }) {
     try {
       const snap = await getDoc(doc(db, "users", uid))
       if (snap.exists()) {
-        setProfile(snap.data())
+        const data = snap.data()
+        setProfile(data)
+        return data
       } else {
         setProfile(null)
+        return null
       }
     } catch (err) {
-      console.error("Profile fetch failed:", err)
-      setProfile(null) // IMPORTANT → app must still load
+      if (err.message?.includes('offline') || err.code === 'unavailable') {
+        // Retry once after a short delay
+        try {
+          await enableNetwork(db)
+          await new Promise(r => setTimeout(r, 600))
+          const snap = await getDoc(doc(db, "users", uid))
+          if (snap.exists()) {
+            const data = snap.data()
+            setProfile(data)
+            return data
+          }
+        } catch (retryErr) {
+          console.error("Profile fetch retry failed:", retryErr)
+        }
+      } else {
+        console.error("Profile fetch failed:", err)
+      }
+      setProfile(null)
+      return null
     }
   }
 
@@ -124,6 +144,15 @@ export function AuthProvider({ children }) {
         setUser(firebaseUser)
 
         if (firebaseUser) {
+          // Ensure Firestore network is ready before any reads/writes
+          // This fixes "client is offline" errors after signInWithRedirect
+          try {
+            await enableNetwork(db)
+          } catch (_) {
+            // If enableNetwork fails, wait briefly and try Firestore anyway
+            await new Promise(r => setTimeout(r, 800))
+          }
+
           await createUserDocIfMissing(firebaseUser)
           await fetchProfile(firebaseUser.uid)
         } else {
