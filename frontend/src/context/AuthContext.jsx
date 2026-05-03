@@ -140,36 +140,41 @@ export function AuthProvider({ children }) {
 
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
 
-      console.log('[AuthContext] onAuthStateChanged fired — user:', firebaseUser?.email ?? 'null')
+      // Set user and release loading immediately — never block navigation on Firestore
+      setUser(firebaseUser)
 
-      try {
-        setUser(firebaseUser)
-
-        if (firebaseUser) {
-          console.log('[AuthContext] User found, enabling network...')
-          try {
-            await enableNetwork(db)
-            console.log('[AuthContext] Network enabled')
-          } catch (_) {
-            console.log('[AuthContext] enableNetwork failed, waiting 800ms...')
-            await new Promise(r => setTimeout(r, 800))
-          }
-
-          console.log('[AuthContext] Calling createUserDocIfMissing...')
-          await createUserDocIfMissing(firebaseUser)
-          console.log('[AuthContext] Calling fetchProfile...')
-          await fetchProfile(firebaseUser.uid)
-          console.log('[AuthContext] Done — setting loading=false')
-        } else {
-          console.log('[AuthContext] No user — setting loading=false')
-          setProfile(null)
-        }
-
-      } catch (err) {
-        console.error('[AuthContext] Auth init error:', err)
-      } finally {
+      if (!firebaseUser) {
+        setProfile(null)
         setLoading(false)
+        return
       }
+
+      // User is authenticated — release loading NOW so ProtectedRoute lets them through
+      setLoading(false)
+
+      // Handle Firestore in background — won't block login
+      const setupFirestore = async () => {
+        try { await enableNetwork(db) } catch (_) {
+          await new Promise(r => setTimeout(r, 1000))
+        }
+        try {
+          await createUserDocIfMissing(firebaseUser)
+          await fetchProfile(firebaseUser.uid)
+        } catch (err) {
+          console.error('[AuthContext] Firestore setup failed, retrying in 2s:', err.message)
+          setTimeout(async () => {
+            try {
+              await enableNetwork(db)
+              await createUserDocIfMissing(firebaseUser)
+              await fetchProfile(firebaseUser.uid)
+            } catch (e) {
+              console.error('[AuthContext] Firestore retry failed:', e.message)
+            }
+          }, 2000)
+        }
+      }
+
+      setupFirestore()
 
     })
 
