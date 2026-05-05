@@ -20,6 +20,7 @@ admin.initializeApp({
 
 // Create Firestore instance
 const db = admin.firestore();
+db.settings({ databaseId: process.env.FIRESTORE_DATABASE_ID || '(default)' });
 
 // Export both
 export { db };

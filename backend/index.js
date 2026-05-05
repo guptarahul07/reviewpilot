@@ -443,9 +443,7 @@ app.listen(5000, () => {
 });
 
 app.get("/api/reviews", verifyFirebaseToken, async (req, res) => {
-  const uid = req.uid;
-  console.log(`📖 [GET /api/reviews] Called for user: ${uid}`);
-  console.log(`📖 [GET /api/reviews] This is a READ-ONLY call — no sync happening here`);
+  const uid = req.uid;  
 
   try {
     const [snapshot, userDoc] = await Promise.all([
@@ -457,8 +455,7 @@ app.get("/api/reviews", verifyFirebaseToken, async (req, res) => {
     let lastSyncAt = userDoc.data()?.lastSyncAt || null;
 
     // If never synced, set current timestamp as baseline
-    if (!lastSyncAt) {
-      console.log(`📖 [GET /api/reviews] lastSyncAt is null — setting to current timestamp`);
+    if (!lastSyncAt) {      
       lastSyncAt = new Date();
       await db.collection("users").doc(uid).update({ lastSyncAt });
     }
