@@ -645,7 +645,7 @@ app.post('/api/auth/google/disconnect', verifyFirebaseToken, async (req, res) =>
     const uid = req.uid;
 
     // Remove Google OAuth data using YOUR field names
-    await db.collection('users').doc(uid).update({
+    await db.collection('users').doc(uid).set({
       googleRefreshToken: null,
       googleAccountId: null,           // ← YOUR FIELD
       googleLocationId: null,          // ← YOUR FIELD
@@ -656,7 +656,7 @@ app.post('/api/auth/google/disconnect', verifyFirebaseToken, async (req, res) =>
       // ✅ ADD THESE
     'google.connected': false,
     'google.refreshToken': admin.firestore.FieldValue.delete()
-    });
+    }, { merge: true });
 
     res.json({ 
       success: true,

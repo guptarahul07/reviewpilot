@@ -158,7 +158,7 @@ export async function storeUserTokens(uid, tokens, businessInfo) {
   try {
     const encryptedRefreshToken = encrypt(tokens.refresh_token);
     
-    await db.collection('users').doc(uid).update({
+    await db.collection('users').doc(uid).set({
       googleRefreshToken: encryptedRefreshToken,
       googleAccountId: businessInfo.accountId,
       googleLocationId: businessInfo.locationId,
@@ -166,7 +166,7 @@ export async function storeUserTokens(uid, tokens, businessInfo) {
       businessAddress: businessInfo.businessAddress,
       googleConnectedAt: new Date(),
       lastSyncAt: null
-    });
+    }, { merge: true });
     
     console.log(`✅ Stored tokens for user: ${uid}`);
     
