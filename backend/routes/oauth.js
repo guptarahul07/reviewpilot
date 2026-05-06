@@ -11,25 +11,6 @@ import { verifyFirebaseToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Middleware: Verify Firebase token
-async function verifyFirebaseToken(req, res, next) {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader?.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const token = authHeader.split('Bearer ')[1];
-
-  try {
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    req.uid = decodedToken.uid;
-    next();
-  } catch (err) {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-}
-
 /**
  * GET /auth/google/connect
  * Returns OAuth URL for user to authorize
