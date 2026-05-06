@@ -6,7 +6,7 @@ dotenv.config();
 //process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 // Step 3: Now all other imports
-import { db } from "./firebaseAdmin.js";
+import admin, { db } from "./firebaseAdmin.js";
 import analyticsRoutes from './routes/analytics.js';
 import oauthRoutes from './routes/oauth.js';
 import { trackEvent } from './utils/analytics.js';
@@ -15,7 +15,10 @@ import { hasMixedSentiment, analyzeSentiment } from './services/sentimentAnalysi
 import express from "express";
 import cors from "cors";
 import axios from "axios";
-import admin from 'firebase-admin';
+import settingsRouter from './routes/settings.js';
+import reviewsRouter from './routes/reviews.js';
+import { handleAutoMode, handleSemiAutoMode, handleManualMode, getUserSettings, shouldSkipReview } from './services/replyModeHandler.js';
+import { verifyFirebaseToken } from './middleware/auth.js';
 
 const app = express();
 
@@ -31,26 +34,8 @@ app.use(cors({
 }));
 
 app.use(express.json());
-
-async function verifyFirebaseToken(req, res, next) {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader?.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized - No token provided' });
-  }
-
-  const token = authHeader.split('Bearer ')[1];
-
-  try {
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    req.uid = decodedToken.uid;
-    req.email = decodedToken.email;
-    next();
-  } catch (err) {
-    console.error('Token verification error:', err);
-    return res.status(401).json({ error: 'Invalid authentication token' });
-  }
-}
+app.use('/api/settings', settingsRouter);
+app.use('/api/reviews', reviewsRouter);
 
 // Analytics routes
 app.use('/api', analyticsRoutes);
@@ -186,27 +171,21 @@ Reply (max 25 words):
 app.post("/api/reviews/sync", verifyFirebaseToken, async (req, res) => {
 
   try {
-    const uid = req.uid;
-    console.log(`🔄 [POST /api/reviews/sync] Called for user: ${uid}`);
-    console.log(`🔄 [POST /api/reviews/sync] ⚠️ THIS triggers Google API + Firestore write`);
-    console.trace(`🔄 [POST /api/reviews/sync] Call stack:`); // shows what triggered this
-
+    const uid = req.uid;    
     // Fetch reviews from Google My Business API
     let googleReviews = [];
     
-    try {
-      console.log(`🔄 [POST /api/reviews/sync] Fetching from Google Business API...`);
+    try {      
       googleReviews = await fetchGoogleReviews(uid);
-      console.log(`🔄 [POST /api/reviews/sync] ✅ Got ${googleReviews.length} reviews from Google`);
+      
     } catch (err) {
-      console.warn(`🔄 [POST /api/reviews/sync] ⚠️ Google API failed: ${err.message}`);
-      console.warn(`🔄 [POST /api/reviews/sync] ⚠️ Falling back to mock reviews`);
-  
-  // Import and use mock data
-  const { generateMockReviews } = await import('./services/googleReviews.js');
-  googleReviews = generateMockReviews();  // ← Continue with mock data
-  
-  //console.log(`✅ Generated ${googleReviews.length} mock reviews`);
+      console.warn(`🔄 [POST /api/reviews/sync] ⚠️ Google API failed: ${err.message}`);      
+
+      // Import and use mock data
+      const { generateMockReviews } = await import('./services/googleReviews.js');
+      googleReviews = generateMockReviews();  // ← Continue with mock data
+      
+      //console.log(`✅ Generated ${googleReviews.length} mock reviews`);
     }
 
     const results = [];
@@ -219,42 +198,51 @@ app.post("/api/reviews/sync", verifyFirebaseToken, async (req, res) => {
         continue;
       }
 
-      // Generate AI reply
-      //console.log(`🤖 Generating AI reply for review ${review.id}`);
-      const aiReply = await generateAIReply(review, pastReplies);
+      // Get user settings once per sync (outside loop would be more efficient
+      // but kept here for clarity — getUserSettings is a simple Firestore read)
+      const settings = await getUserSettings(uid);
 
-      // Check sentiment
-      const sentimentAnalysis = analyzeSentiment(review.text, review.rating);
-      const isMixed = sentimentAnalysis.isMixed;
-
-      // Determine status
-      let status;
-      if (review.rating >= 4 && !isMixed) {
-        status = "auto_replied";  // Safe for auto-posting
-      } else {
-        status = "needs_attention";  // Needs manual review
+      // Skip rating-only reviews if user hasn't enabled that setting
+      if (shouldSkipReview(review, settings)) {
+        console.log(`⏭️ [Sync] Skipping rating-only review: ${review.id}`);
+        continue;
       }
 
-      const reviewData = {
-        ...review,
-        aiReply,
-        status,
-        sentiment: sentimentAnalysis.label,
-        sentimentAnalysis: sentimentAnalysis.indicators,
-        hasMixedSentiment: isMixed,
-        createdAt: new Date(),
-        syncedAt: new Date()
-      };
+      // Generate AI reply
+      const aiReply = await generateAIReply(review, pastReplies);
 
-      // Save to Firestore
+      // Sentiment analysis
+      const sentimentAnalysis = analyzeSentiment(review.text, review.rating);
+
+      // Save base review data to Firestore
       await db
         .collection("users")
         .doc(uid)
         .collection("reviews")
         .doc(review.id)
-        .set(reviewData, { merge: true });
+        .set({
+          ...review,
+          aiReply,
+          sentiment: sentimentAnalysis.label,
+          sentimentAnalysis: sentimentAnalysis.indicators,
+          hasMixedSentiment: sentimentAnalysis.isMixed,
+          createdAt: new Date(),
+          syncedAt: new Date()
+        }, { merge: true });
 
-      results.push(reviewData);
+      // Apply reply mode logic — this updates status in Firestore
+      const replyMode = settings.replyMode || 'manual';
+      console.log(`⚙️ [Sync] Reply mode: ${replyMode}, Review: ${review.id}, Rating: ${review.rating}★`);
+
+      if (replyMode === 'auto') {
+        await handleAutoMode(uid, review, aiReply);
+      } else if (replyMode === 'semi-auto') {
+        await handleSemiAutoMode(uid, review, aiReply);
+      } else {
+        await handleManualMode(uid, review, aiReply);
+      }
+
+      results.push({ ...review, aiReply });
     }
 
     // Track event
@@ -547,7 +535,7 @@ Keep it SHORT, POSITIVE, and ACTIONABLE. Focus on helping the owner feel encoura
     const response = await axios.post(
       "https://api.anthropic.com/v1/messages",
       {
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-4-6",
         max_tokens: 400,
         messages: [
           {

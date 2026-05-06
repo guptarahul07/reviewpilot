@@ -4,6 +4,8 @@ import { useAuth } from "../context/AuthContext";
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from '../config/api';
+import PendingApprovalsWidget from '../components/PendingApprovalsWidget';
+import ReplyTextarea from '../components/ReplyTextarea';
 
 /* ─────────────────────────────────────────────────────────────
    STAR RATING
@@ -426,21 +428,13 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
           </div>
           
           {editing ? (
-            <textarea
-              value={editedReply}
-              onChange={(e) => setEditedReply(e.target.value)}
-              style={{
-                width: "100%",
-                minHeight: 60,
-                padding: 8,
-                borderRadius: 6,
-                border: "1px solid #cbd5e1",
-                fontFamily: "inherit",
-                fontSize: 14,
-                resize: "vertical",
-                marginTop: 6
-              }}
-            />
+            <div style={{ marginTop: 6 }}>
+              <ReplyTextarea
+                value={editedReply}
+                onChange={setEditedReply}
+                rows={4}
+              />
+            </div>
           ) : (
             <p style={{ marginTop: 6, color: "#1f2937" }}>
               {editedReply}
@@ -553,6 +547,11 @@ export default function ReviewsInboxPage() {
   const [insights, setInsights]             = useState(null);
   const [showInsightsModal, setShowInsightsModal] = useState(false);
   const [lastSyncAt, setLastSyncAt]         = useState(null);
+  const [ratingFilter, setRatingFilter]     = useState('all');
+  const [selectedReviews, setSelectedReviews] = useState([]);
+  const [bulkPosting, setBulkPosting]       = useState(false);
+  const [bulkProgress, setBulkProgress]     = useState({ current: 0, total: 0 });
+  const [replyMode, setReplyMode]           = useState('semi-auto');
 
   /* ── On mount: load cached reviews only, no sync ───────────── */
   useEffect(() => {
@@ -679,12 +678,19 @@ export default function ReviewsInboxPage() {
   }), [reviews]);
 
   const filtered = useMemo(() => {
-    if (tab === "all") return reviews;
-    if (tab === "needs_attention")
-      return reviews.filter(r => r.status === "needs_attention");
-    if (tab === "replied")
-      return reviews.filter(r => r.status !== "needs_attention");
-  }, [reviews, tab]);
+    let list;
+    if (tab === "all") list = reviews;
+    else if (tab === "needs_attention") list = reviews.filter(r => r.status === "needs_attention");
+    else list = reviews.filter(r => r.status !== "needs_attention");
+
+    if (ratingFilter !== 'all') {
+      list = list.filter(r => r.rating === parseInt(ratingFilter))
+    }
+    return list
+  }, [reviews, tab, ratingFilter]);
+
+  // Alias for bulk operations
+  const filteredReviews = filtered || [];
 
   // Calculate quick stats
   const positiveCount = reviews.filter(r => r.status === "auto_replied").length;
@@ -724,6 +730,64 @@ export default function ReviewsInboxPage() {
   };
 
   const quickInsights = getQuickInsights();
+
+  /* ── Load reply mode from settings ─────────────────────────── */
+  useEffect(() => {
+    async function loadReplyMode() {
+      if (!user) return
+      try {
+        const token = await user.getIdToken()
+        const res = await fetch(`${API_URL}/api/settings`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setReplyMode(data.settings?.replyMode || 'semi-auto')
+        }
+      } catch { /* use default semi-auto */ }
+    }
+    loadReplyMode()
+  }, [user])
+
+  function toggleSelect(id) {
+    setSelectedReviews(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
+  }
+
+  function toggleSelectAll() {
+    setSelectedReviews(
+      selectedReviews.length === filteredReviews.length
+        ? []
+        : filteredReviews.map(r => r.id)
+    )
+  }
+
+  async function handleBulkReply() {
+    if (!selectedReviews.length) return
+    setBulkPosting(true)
+    setBulkProgress({ current: 0, total: selectedReviews.length })
+    try {
+      const token = await user.getIdToken()
+      const res = await fetch(`${API_URL}/api/reviews/bulk-reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ reviewIds: selectedReviews }),
+      })
+      const data = await res.json()
+      setBulkProgress({ current: data.successful || selectedReviews.length, total: selectedReviews.length })
+      setReviews(prev => prev.map(r =>
+        selectedReviews.includes(r.id) && !data.errors?.find(e => e.reviewId === r.id)
+          ? { ...r, status: 'posted' } : r
+      ))
+      setSelectedReviews([])
+    } catch (err) {
+      console.error('Bulk reply error:', err)
+    } finally {
+      setBulkPosting(false)
+      setBulkProgress({ current: 0, total: 0 })
+    }
+  }
 
   return (
     <div style={{ padding: 28 }}>
@@ -799,6 +863,106 @@ export default function ReviewsInboxPage() {
           </button>
         </div>
       )}
+
+      {/* Pending Approvals Widget */}
+      <PendingApprovalsWidget
+        reviews={reviews}
+        replyMode={replyMode}
+        onFilterPending={() => { setTab("needs_attention"); setRatingFilter("all"); }}
+      />
+
+      {/* Bulk posting progress */}
+      {bulkPosting && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 12,
+          background: "rgba(79,124,255,.1)", border: "1px solid rgba(79,124,255,.25)",
+          borderRadius: 10, padding: "12px 16px", marginBottom: 16,
+        }}>
+          <div style={{
+            width: 18, height: 18, borderRadius: "50%",
+            border: "2.5px solid rgba(79,124,255,.3)", borderTopColor: "var(--accent)",
+            animation: "spin .7s linear infinite", flexShrink: 0,
+          }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink)", marginBottom: 6 }}>
+              Posting replies… {bulkProgress.current}/{bulkProgress.total}
+            </div>
+            <div style={{
+              height: 5, background: "var(--border)", borderRadius: 10, overflow: "hidden",
+            }}>
+              <div style={{
+                height: "100%", borderRadius: 10, background: "var(--accent)",
+                width: bulkProgress.total ? `${(bulkProgress.current / bulkProgress.total) * 100}%` : "0%",
+                transition: "width .3s ease",
+              }} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rating filter + bulk controls row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+        {/* Rating filter */}
+        <select
+          value={ratingFilter}
+          onChange={e => { setRatingFilter(e.target.value); setSelectedReviews([]); }}
+          style={{
+            background: "var(--bg-card)", border: "1px solid var(--border)",
+            borderRadius: 8, padding: "7px 12px",
+            fontFamily: "var(--font-body)", fontSize: 13.5, color: "var(--ink)",
+            cursor: "pointer", outline: "none",
+          }}
+        >
+          <option value="all">All Ratings</option>
+          <option value="5">★★★★★ 5 stars</option>
+          <option value="4">★★★★☆ 4 stars</option>
+          <option value="3">★★★☆☆ 3 stars</option>
+          <option value="2">★★☆☆☆ 2 stars</option>
+          <option value="1">★☆☆☆☆ 1 star</option>
+        </select>
+
+        {/* Select all */}
+        {filteredReviews.length > 0 && (
+          <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontSize: 13.5, color: "var(--ink-2)" }}>
+            <input
+              type="checkbox"
+              checked={selectedReviews.length === filteredReviews.length && filteredReviews.length > 0}
+              onChange={toggleSelectAll}
+              style={{ accentColor: "var(--accent)", width: 15, height: 15 }}
+            />
+            Select all ({filteredReviews.length})
+          </label>
+        )}
+
+        {/* Bulk post button */}
+        {selectedReviews.length > 0 && !bulkPosting && (
+          <button
+            onClick={handleBulkReply}
+            style={{
+              background: "var(--accent)", color: "#fff", border: "none",
+              borderRadius: 8, padding: "7px 16px",
+              fontFamily: "var(--font-body)", fontSize: 13.5, fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            📤 Post Selected ({selectedReviews.length})
+          </button>
+        )}
+
+        {selectedReviews.length > 0 && (
+          <button
+            onClick={() => setSelectedReviews([])}
+            style={{
+              background: "none", border: "1px solid var(--border)",
+              borderRadius: 8, padding: "7px 12px",
+              fontFamily: "var(--font-body)", fontSize: 13, color: "var(--ink-3)",
+              cursor: "pointer",
+            }}
+          >
+            Clear
+          </button>
+        )}
+      </div>
 
       {/* Stale data banner */}
       {isStale() && (
@@ -903,12 +1067,26 @@ export default function ReviewsInboxPage() {
       </div>
 
       {filtered?.map((review) => (
-        <ReviewCard
-          key={review.id}
-          review={review}
-          onStatusChange={handleStatusChange}
-          onRegenerateReply={handleRegenerateReply}
-        />
+        <div key={review.id} style={{ position: "relative" }}>
+          {/* Bulk select checkbox */}
+          <label style={{
+            position: "absolute", top: 14, left: -28, zIndex: 1,
+            cursor: "pointer", display: "flex", alignItems: "center",
+          }}>
+            <input
+              type="checkbox"
+              checked={selectedReviews.includes(review.id)}
+              onChange={() => toggleSelect(review.id)}
+              style={{ accentColor: "var(--accent)", width: 15, height: 15 }}
+            />
+          </label>
+          <ReviewCard
+            review={review}
+            onStatusChange={handleStatusChange}
+            onRegenerateReply={handleRegenerateReply}
+            replyMode={replyMode}
+          />
+        </div>
       ))}
 
       {filtered?.length === 0 && (

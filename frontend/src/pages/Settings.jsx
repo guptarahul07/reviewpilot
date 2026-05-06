@@ -1,81 +1,272 @@
+// src/pages/Settings.jsx
 import { useState, useEffect } from 'react'
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { useAuth } from '../context/AuthContext'
-import { db } from '../services/firebase'
+import { API_URL } from '../config/api'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Toast from '../components/ui/Toast'
 import FeedbackWidget from '../components/FeedbackWidget'
-import { Building2, Palette, Link2, Shield } from 'lucide-react'
+import {
+  Building2, Palette, Zap, AlertTriangle,
+  Shield, ChevronRight, Check,
+} from 'lucide-react'
 import './Settings.css'
 
-const TONES = [
-  { value: 'friendly',     label: 'Friendly',    desc: 'Warm, personal, approachable' },
-  { value: 'professional', label: 'Professional', desc: 'Formal, measured, brand-forward' },
-  { value: 'apologetic',   label: 'Apologetic',   desc: 'Empathetic, accountable, solution-oriented' },
+/* ─────────────────────────────────────────────────────────────────
+   DATA
+───────────────────────────────────────────────────────────────── */
+const REPLY_MODES = [
+  {
+    value: 'manual',
+    label: 'Manual',
+    badge: 'Safest',
+    badgeColor: 'green',
+    icon: Shield,
+    desc: 'AI generates reply suggestions. You copy and paste them yourself into Google Business Profile.',
+    example: 'Best for: Business owners who want full control over every word.',
+  },
+  {
+    value: 'semi-auto',
+    label: 'Semi-Auto',
+    badge: 'Recommended',
+    badgeColor: 'blue',
+    icon: Check,
+    desc: 'AI auto-posts replies to 4–5★ reviews. You review and approve 1–3★ replies before posting.',
+    example: 'Best for: Busy owners who want automation with oversight on negative reviews.',
+    recommended: true,
+  },
+  {
+    value: 'auto',
+    label: 'Auto',
+    badge: 'Hands-off',
+    badgeColor: 'amber',
+    icon: Zap,
+    desc: 'AI automatically posts replies to ALL reviews — positive and negative — without approval.',
+    example: 'Best for: High-volume businesses that trust the AI completely.',
+    warning: true,
+  },
 ]
 
+const TONES = [
+  {
+    value: 'professional',
+    label: 'Professional',
+    desc: 'Formal, measured, brand-forward',
+    example: '"Thank you for your feedback. We appreciate you taking the time to share your experience."',
+  },
+  {
+    value: 'friendly',
+    label: 'Friendly',
+    desc: 'Warm, personal, approachable',
+    example: '"Thanks so much for the kind words! We loved having you and can\'t wait to see you again! 😊"',
+  },
+  {
+    value: 'apologetic',
+    label: 'Apologetic',
+    desc: 'Empathetic, accountable, solution-focused',
+    example: '"We\'re truly sorry to hear this. This is not the experience we aim for and we\'d love to make it right."',
+  },
+]
+
+/* ─────────────────────────────────────────────────────────────────
+   COMPONENT
+───────────────────────────────────────────────────────────────── */
 export default function Settings() {
   const { user, profile, fetchProfile } = useAuth()
 
-  const [businessName, setBusinessName] = useState('')
-  const [replyTone, setReplyTone]       = useState('friendly')
-  const [saving, setSaving]             = useState(false)
-  const [toast, setToast]               = useState(null)
+  const [businessName,        setBusinessName]        = useState('')
+  const [replyTone,           setReplyTone]           = useState('friendly')
+  const [replyMode,           setReplyMode]           = useState('semi-auto')
+  const [replyToRatingOnly,   setReplyToRatingOnly]   = useState(false)
+  const [customInstructions,  setCustomInstructions]  = useState('')
+  const [saving,              setSaving]              = useState(false)
+  const [loading,             setLoading]             = useState(true)
+  const [toast,               setToast]               = useState(null)
 
-  // Seed form from profile
+  /* ── Load settings from backend ─────────────────────────────── */
   useEffect(() => {
-    if (profile) {
-      setBusinessName(profile.settings?.businessName || '')
-      setReplyTone(profile.settings?.replyTone || 'friendly')
+    async function loadSettings() {
+      if (!user) return
+      try {
+        const token = await user.getIdToken()
+        const res   = await fetch(`${API_URL}/api/settings`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const s    = data.settings || {}
+          setBusinessName(s.businessName       || profile?.settings?.businessName || '')
+          setReplyTone(s.tone                  || profile?.settings?.replyTone    || 'friendly')
+          setReplyMode(s.replyMode             || 'semi-auto')
+          setReplyToRatingOnly(s.replyToRatingOnly ?? false)
+          setCustomInstructions(s.customInstructions || '')
+        } else {
+          // Fallback to Firestore profile
+          if (profile) {
+            setBusinessName(profile.settings?.businessName || '')
+            setReplyTone(profile.settings?.replyTone       || 'friendly')
+          }
+        }
+      } catch {
+        if (profile) {
+          setBusinessName(profile.settings?.businessName || '')
+          setReplyTone(profile.settings?.replyTone       || 'friendly')
+        }
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [profile])
+    loadSettings()
+  }, [user, profile])
 
+  /* ── Save settings ───────────────────────────────────────────── */
   async function handleSave(e) {
     e.preventDefault()
     setSaving(true)
     try {
-      await updateDoc(doc(db, 'users', user.uid), {
-        'settings.businessName': businessName.trim(),
-        'settings.replyTone':    replyTone,
-        updatedAt:               serverTimestamp(),
+      const token = await user.getIdToken()
+      const res   = await fetch(`${API_URL}/api/settings`, {
+        method:  'PUT',
+        headers: {
+          'Content-Type':  'application/json',
+          Authorization:   `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          businessName:      businessName.trim(),
+          tone:              replyTone,
+          replyMode,
+          replyToRatingOnly,
+          customInstructions: customInstructions.trim(),
+        }),
       })
+      if (!res.ok) throw new Error('Save failed')
       await fetchProfile(user.uid)
-      setToast({ message: 'Settings saved!', type: 'success' })
+      setToast({ message: 'Settings saved successfully!', type: 'success' })
     } catch (err) {
-      setToast({ message: err.message || 'Save failed.', type: 'error' })
+      setToast({ message: err.message || 'Save failed. Please try again.', type: 'error' })
     } finally {
       setSaving(false)
     }
   }
 
+  if (loading) {
+    return (
+      <div className="settings animate-fade-in">
+        <div className="settings__loading">
+          <div className="settings__spinner" />
+          <p>Loading settings…</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="settings animate-fade-in">
 
-      {/* Floating Feedback Button - Bottom Right */}
-      <div style={{ 
-        position: 'fixed', 
-        bottom: '24px', 
-        right: '24px', 
-        zIndex: 100 
-      }}>
+      {/* Feedback widget */}
+      <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 100 }}>
         <FeedbackWidget />
       </div>
 
       <div className="settings__header">
         <div>
           <h1 className="settings__title">Settings</h1>
-          <p className="settings__sub">Manage your account and reply preferences.</p>
+          <p className="settings__sub">Manage your reply preferences and business details.</p>
         </div>
       </div>
 
       <form onSubmit={handleSave} className="settings__form">
 
-        {/* Business info */}
+        {/* ── Reply Mode ─────────────────────────────────────────── */}
+        <section className="settings-section">
+          <div className="settings-section__label">
+            <Zap size={15} />
+            Reply Mode
+          </div>
+          <div className="settings-section__body">
+            <div className="mode-grid">
+              {REPLY_MODES.map(({ value, label, badge, badgeColor, icon: Icon, desc, example, recommended, warning }) => (
+                <label
+                  key={value}
+                  className={`mode-card ${replyMode === value ? 'mode-card--active' : ''} ${recommended ? 'mode-card--recommended' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="replyMode"
+                    value={value}
+                    checked={replyMode === value}
+                    onChange={() => setReplyMode(value)}
+                    style={{ display: 'none' }}
+                  />
+                  <div className="mode-card__top">
+                    <div className="mode-card__icon">
+                      <Icon size={16} />
+                    </div>
+                    <div className="mode-card__label">{label}</div>
+                    <span className={`mode-card__badge mode-card__badge--${badgeColor}`}>
+                      {badge}
+                    </span>
+                    {replyMode === value && (
+                      <div className="mode-card__check"><Check size={12} /></div>
+                    )}
+                  </div>
+                  <div className="mode-card__desc">{desc}</div>
+                  <div className="mode-card__example">{example}</div>
+                </label>
+              ))}
+            </div>
+
+            {/* Auto mode warning */}
+            {replyMode === 'auto' && (
+              <div className="settings-warning">
+                <AlertTriangle size={15} />
+                <div>
+                  <strong>Auto mode posts without your approval.</strong>
+                  <span> AI will reply to ALL reviews — including complaints — automatically.
+                  Make sure your tone and custom instructions are set correctly before enabling.</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── Reply Tone ─────────────────────────────────────────── */}
+        <section className="settings-section">
+          <div className="settings-section__label">
+            <Palette size={15} />
+            Reply Tone
+          </div>
+          <div className="settings-section__body">
+            <div className="tone-grid">
+              {TONES.map(({ value, label, desc, example }) => (
+                <label
+                  key={value}
+                  className={`tone-card ${replyTone === value ? 'selected' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="tone"
+                    value={value}
+                    checked={replyTone === value}
+                    onChange={() => setReplyTone(value)}
+                    style={{ display: 'none' }}
+                  />
+                  <div className="tone-card__label">{label}</div>
+                  <div className="tone-card__desc">{desc}</div>
+                  {replyTone === value && (
+                    <div className="tone-card__example">{example}</div>
+                  )}
+                </label>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Business Details ───────────────────────────────────── */}
         <section className="settings-section">
           <div className="settings-section__label">
             <Building2 size={15} />
-            Business
+            Business Details
           </div>
           <div className="settings-section__body">
             <Input
@@ -86,43 +277,67 @@ export default function Settings() {
               placeholder="e.g. The Corner Café"
             />
             <p className="settings__hint">
-              This is included in AI reply prompts to keep responses on-brand.
+              Used in AI reply prompts to keep responses on-brand and personalised.
             </p>
           </div>
         </section>
 
-        {/* Reply tone */}
+        {/* ── Advanced Settings ──────────────────────────────────── */}
         <section className="settings-section">
           <div className="settings-section__label">
-            <Palette size={15} />
-            Reply Tone
+            <ChevronRight size={15} />
+            Advanced Settings
           </div>
           <div className="settings-section__body">
-            <div className="tone-grid">
-              {TONES.map(({ value, label, desc }) => (
-                <label
-                  key={value}
-                  className={`tone-card ${replyTone === value ? 'selected' : ''}`}
-                >
-                  <input
-                    type="radio"
-                    name="tone"
-                    value={value}
-                    checked={replyTone === value}
-                    onChange={(e) => setReplyTone(e.target.value)}
-                  />
-                  <div className="tone-card__label">{label}</div>
-                  <div className="tone-card__desc">{desc}</div>
-                </label>
-              ))}
+
+            {/* Reply to ratings without text */}
+            <label className="settings-checkbox">
+              <input
+                type="checkbox"
+                checked={replyToRatingOnly}
+                onChange={(e) => setReplyToRatingOnly(e.target.checked)}
+              />
+              <div>
+                <div className="settings-checkbox__label">
+                  Reply to ratings without review text
+                </div>
+                <div className="settings-checkbox__hint">
+                  When enabled, AI will also generate replies for reviews that only have a star rating
+                  with no written comment. When disabled, only reviews with text get replies.
+                </div>
+              </div>
+            </label>
+
+            {/* Custom instructions */}
+            <div className="settings-instructions">
+              <label className="settings-instructions__label">
+                Custom AI Instructions
+                <span className="settings-instructions__optional">Optional</span>
+              </label>
+              <textarea
+                className="settings-instructions__textarea"
+                value={customInstructions}
+                onChange={(e) => setCustomInstructions(e.target.value)}
+                placeholder={'Examples:\n• Always mention our award-winning chef\n• If they complain about wait time, mention we\'ve added more staff\n• Always invite them back with "Hope to see you soon!"\n• Never offer discounts in replies'}
+                rows={5}
+                maxLength={500}
+              />
+              <div className="settings-instructions__count">
+                {customInstructions.length}/500
+              </div>
+              <p className="settings__hint">
+                These instructions are added to every AI reply prompt. Use this to maintain brand voice,
+                mention specific details, or handle common complaints consistently.
+              </p>
             </div>
+
           </div>
         </section>
 
-        {/* Save button */}
+        {/* ── Save ───────────────────────────────────────────────── */}
         <div className="settings__actions">
           <Button type="submit" disabled={saving}>
-            {saving ? 'Saving...' : 'Save changes'}
+            {saving ? 'Saving…' : 'Save changes'}
           </Button>
         </div>
 

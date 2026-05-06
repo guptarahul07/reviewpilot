@@ -7,7 +7,7 @@ import {
   storeUserTokens 
 } from '../services/googleOAuth.js';
 import { trackEvent } from '../utils/analytics.js';
-import admin from 'firebase-admin';
+import { verifyFirebaseToken } from '../middleware/auth.js';
 
 const router = express.Router();
 

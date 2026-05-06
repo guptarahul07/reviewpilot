@@ -7,7 +7,7 @@
 import express from 'express';
 import { getAnalytics, getUserAnalytics } from '../utils/analytics.js';
 import { db } from '../firebaseAdmin.js';
-import admin from 'firebase-admin';
+import { verifyFirebaseToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
