@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { API_URL } from '../config/api';
 import PendingApprovalsWidget from '../components/PendingApprovalsWidget';
 import ReplyTextarea from '../components/ReplyTextarea';
+import Toast from '../components/ui/Toast';
 
 /* ─────────────────────────────────────────────────────────────
    STAR RATING
@@ -552,6 +553,7 @@ export default function ReviewsInboxPage() {
   const [bulkPosting, setBulkPosting]       = useState(false);
   const [bulkProgress, setBulkProgress]     = useState({ current: 0, total: 0 });
   const [replyMode, setReplyMode]           = useState('semi-auto');
+  const [toast, setToast]                   = useState(null);
 
   /* ── On mount: load cached reviews only, no sync ───────────── */
   useEffect(() => {
@@ -765,8 +767,9 @@ export default function ReviewsInboxPage() {
 
   async function handleBulkReply() {
     if (!selectedReviews.length) return
+    const total = selectedReviews.length
     setBulkPosting(true)
-    setBulkProgress({ current: 0, total: selectedReviews.length })
+    setBulkProgress({ current: 0, total })
     try {
       const token = await user.getIdToken()
       const res = await fetch(`${API_URL}/api/reviews/bulk-reply`, {
@@ -775,14 +778,37 @@ export default function ReviewsInboxPage() {
         body: JSON.stringify({ reviewIds: selectedReviews }),
       })
       const data = await res.json()
-      setBulkProgress({ current: data.successful || selectedReviews.length, total: selectedReviews.length })
-      setReviews(prev => prev.map(r =>
-        selectedReviews.includes(r.id) && !data.errors?.find(e => e.reviewId === r.id)
-          ? { ...r, status: 'posted' } : r
-      ))
+      const successful = data.successful ?? total
+      const failed     = data.failed ?? 0
+      setBulkProgress({ current: successful, total })
+
+      // Re-fetch reviews from backend so posted status + reply text are accurate
+      // This ensures the UI is correct when switching filters
+      const reviewsRes = await fetch(`${API_URL}/api/reviews`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (reviewsRes.ok) {
+        const reviewsData = await reviewsRes.json()
+        setReviews(reviewsData.reviews || [])
+      } else {
+        // Fallback: update local state optimistically
+        setReviews(prev => prev.map(r =>
+          selectedReviews.includes(r.id) && !data.errors?.find(e => e.reviewId === r.id)
+            ? { ...r, status: 'posted' } : r
+        ))
+      }
+
       setSelectedReviews([])
+
+      // Success toast
+      if (failed === 0) {
+        setToast({ type: 'success', message: `✓ ${successful} ${successful === 1 ? 'reply' : 'replies'} posted successfully!` })
+      } else {
+        setToast({ type: 'error', message: `Posted ${successful}, failed ${failed}. Check individual reviews.` })
+      }
     } catch (err) {
       console.error('Bulk reply error:', err)
+      setToast({ type: 'error', message: 'Bulk post failed. Please try again.' })
     } finally {
       setBulkPosting(false)
       setBulkProgress({ current: 0, total: 0 })
@@ -1093,6 +1119,15 @@ export default function ReviewsInboxPage() {
         <p style={{ marginTop: 20, color: "#718096" }}>
           No reviews in this category.
         </p>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
 
       {/* Insights Modal */}
