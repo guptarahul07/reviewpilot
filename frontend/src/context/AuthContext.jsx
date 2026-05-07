@@ -154,23 +154,22 @@ export function AuthProvider({ children }) {
 
       // Handle Firestore in background — won't block login
       const setupFirestore = async () => {
-        try { await enableNetwork(db) } catch (_) {
-          await new Promise(r => setTimeout(r, 1000))
-        }
-        try {
-          await createUserDocIfMissing(firebaseUser)
-          await fetchProfile(firebaseUser.uid)
-        } catch (err) {
-          console.error('[AuthContext] Firestore setup failed, retrying in 2s:', err.message)
-          setTimeout(async () => {
-            try {
-              await enableNetwork(db)
-              await createUserDocIfMissing(firebaseUser)
-              await fetchProfile(firebaseUser.uid)
-            } catch (e) {
-              console.error('[AuthContext] Firestore retry failed:', e.message)
+        // Retry loop — attempt up to 5 times with increasing delays
+        const delays = [1000, 2000, 4000, 6000, 8000]
+        for (let i = 0; i < delays.length; i++) {
+          try {
+            await enableNetwork(db)
+            await new Promise(r => setTimeout(r, 500)) // small settle time
+            await createUserDocIfMissing(firebaseUser)
+            await fetchProfile(firebaseUser.uid)
+            return // success — stop retrying
+          } catch (err) {
+            if (i < delays.length - 1) {
+              await new Promise(r => setTimeout(r, delays[i]))
+            } else {
+              console.error('[AuthContext] Firestore setup failed after all retries:', err.message)
             }
-          }, 2000)
+          }
         }
       }
 
