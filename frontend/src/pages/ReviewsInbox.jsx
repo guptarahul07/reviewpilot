@@ -374,7 +374,7 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
         {review.text}
       </p>
 
-      {review.aiReply && (
+      {(review.aiReply || review.status === "needs_attention" || review.status === "auto_replied") && (
         <div
           style={{
             marginTop: 12,
@@ -389,7 +389,7 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
               AI Suggested Reply
             </strong>
             
-            {review.status === "needs_attention" && (
+            {(review.status === "needs_attention" || review.status === "auto_replied") && (
               <div style={{ display: "flex", gap: 8 }}>
                 <button
                   onClick={handleRegenerate}
