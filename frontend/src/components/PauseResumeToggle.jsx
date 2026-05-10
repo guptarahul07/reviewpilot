@@ -5,16 +5,14 @@ import { API_URL } from '../config/api'
 import { PauseCircle, PlayCircle } from 'lucide-react'
 
 export default function PauseResumeToggle({ replyMode }) {
-  const { user }              = useAuth()
-  const [paused, setPaused]   = useState(false)
-  const [saving, setSaving]   = useState(false)
+  const { user }            = useAuth()
+  const [paused, setPaused] = useState(false)
+  const [saving, setSaving] = useState(false)
 
-  // Only show for auto or semi-auto mode
-  if (replyMode === 'manual' || !replyMode) return null
-
+  // All hooks must come before any early returns
   useEffect(() => {
     async function load() {
-      if (!user) return
+      if (!user || replyMode === 'manual' || !replyMode) return
       try {
         const token = await user.getIdToken()
         const res   = await fetch(`${API_URL}/api/settings`, {
@@ -27,7 +25,10 @@ export default function PauseResumeToggle({ replyMode }) {
       } catch { /* ignore */ }
     }
     load()
-  }, [user])
+  }, [user, replyMode])
+
+  // Early return AFTER all hooks
+  if (replyMode === 'manual' || !replyMode) return null
 
   async function toggle() {
     setSaving(true)
@@ -66,17 +67,13 @@ export default function PauseResumeToggle({ replyMode }) {
             </span>
           </div>
         </div>
-        <button
-          onClick={toggle}
-          disabled={saving}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: '#10b981', color: '#fff', border: 'none',
-            borderRadius: 8, padding: '7px 14px',
-            fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            fontFamily: 'var(--font-body)', opacity: saving ? 0.7 : 1,
-          }}
-        >
+        <button onClick={toggle} disabled={saving} style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          background: '#10b981', color: '#fff', border: 'none',
+          borderRadius: 8, padding: '7px 14px',
+          fontSize: 13, fontWeight: 600, cursor: 'pointer',
+          fontFamily: 'var(--font-body)', opacity: saving ? 0.7 : 1,
+        }}>
           <PlayCircle size={14} />
           {saving ? 'Resuming…' : 'Resume'}
         </button>
@@ -85,9 +82,7 @@ export default function PauseResumeToggle({ replyMode }) {
   }
 
   return (
-    <button
-      onClick={toggle}
-      disabled={saving}
+    <button onClick={toggle} disabled={saving}
       title="Pause auto-posting without changing your settings"
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 6,
