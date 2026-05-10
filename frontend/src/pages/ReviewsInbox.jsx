@@ -275,6 +275,17 @@ function InsightsModal({ insights, reviews, onClose }) {
 function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
   const { user } = useAuth();
   const [posting, setPosting] = useState(false);
+
+  // DEBUG — remove after confirming data structure
+  console.log('ReviewCard data:', {
+    id: review.id,
+    status: review.status,
+    aiReply: review.aiReply?.substring?.(0, 50),
+    hasReplyObject: !!review.reply,
+    replyStatus: review.reply?.status,
+    replyText: review.reply?.generatedReply?.substring?.(0, 50),
+    allKeys: Object.keys(review),
+  });
   const [regenerating, setRegenerating] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editedReply, setEditedReply] = useState(review.aiReply);
