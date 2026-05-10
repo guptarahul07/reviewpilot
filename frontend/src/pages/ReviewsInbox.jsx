@@ -152,8 +152,8 @@ function DonutChart({ positive, negative, mixed }) {
    INSIGHTS MODAL
 ───────────────────────────────────────────────────────────── */
 function InsightsModal({ insights, reviews, onClose }) {
-  const positiveCount = reviews.filter(r => r.status === "auto_replied").length;
-  const needsAttention = reviews.filter(r => r.status === "needs_attention").length;
+  const positiveCount  = reviews.filter(r => r.status === "auto_replied" || r.status === "draft_ready").length;
+  const needsAttention = reviews.filter(r => r.status === "needs_attention" || r.status === "pending_approval").length;
   const mixedCount = reviews.filter(r => r.hasMixedSentiment).length;
   
   const avgRating = reviews.length > 0
@@ -276,16 +276,7 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
   const { user } = useAuth();
   const [posting, setPosting] = useState(false);
 
-  // DEBUG — remove after confirming data structure
-  console.log('ReviewCard data:', {
-    id: review.id,
-    status: review.status,
-    aiReply: review.aiReply?.substring?.(0, 50),
-    hasReplyObject: !!review.reply,
-    replyStatus: review.reply?.status,
-    replyText: review.reply?.generatedReply?.substring?.(0, 50),
-    allKeys: Object.keys(review),
-  });
+
   const [regenerating, setRegenerating] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editedReply, setEditedReply] = useState(review.aiReply);
@@ -385,7 +376,7 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
         {review.text}
       </p>
 
-      {(review.aiReply || review.status === "needs_attention" || review.status === "auto_replied") && (
+      {(review.aiReply || review.status === "needs_attention" || review.status === "auto_replied" || review.status === "draft_ready") && (
         <div
           style={{
             marginTop: 12,
@@ -400,7 +391,7 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
               AI Suggested Reply
             </strong>
             
-            {(review.status === "needs_attention" || review.status === "auto_replied") && (
+            {(review.status === "needs_attention" || review.status === "auto_replied" || review.status === "draft_ready") && (
               <div style={{ display: "flex", gap: 8 }}>
                 <button
                   onClick={handleRegenerate}
@@ -456,7 +447,7 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
       )}
 
       <div style={{ marginTop: 12 }}>
-        {review.status === "auto_replied" && (
+        {(review.status === "auto_replied" || review.status === "draft_ready") && (
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <span
               style={{
@@ -491,7 +482,7 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
           </div>
         )}
 
-        {review.status === "needs_attention" && (
+        {(review.status === "needs_attention" || review.status === "pending_approval") && (
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <span
               style={{
