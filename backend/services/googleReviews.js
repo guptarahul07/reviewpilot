@@ -149,7 +149,7 @@ export async function postReplyToGoogle(uid, reviewId, replyText) {
     const { googleAccountId, googleLocationId } = userData;
     
     // Initialize API
-    const mybusinessbusinessinformation = google.mybusinessbusinessinformation({
+    const mybusinessreviews = google.mybusinessreviews({
       version: 'v1',
       auth: authClient
     });
@@ -157,7 +157,7 @@ export async function postReplyToGoogle(uid, reviewId, replyText) {
     // Post reply
     console.log('🔍 Calling Google API to post reply...');
     
-    await mybusinessbusinessinformation.accounts.locations.reviews.updateReply({
+    await mybusinessreviews.accounts.locations.reviews.updateReply({
       name: `accounts/${googleAccountId}/locations/${googleLocationId}/reviews/${reviewId}/reply`,
       requestBody: {
         comment: replyText.trim()
@@ -207,13 +207,13 @@ export async function deleteReplyFromGoogle(uid, reviewId) {
     const { googleAccountId, googleLocationId } = userData;
     
     // Initialize API
-    const mybusinessbusinessinformation = google.mybusinessbusinessinformation({
+    const mybusinessreviews = google.mybusinessreviews({
       version: 'v1',
       auth: authClient
     });
     
     // Delete reply (by posting empty comment)
-    await mybusinessbusinessinformation.accounts.locations.reviews.deleteReply({
+    await mybusinessreviews.accounts.locations.reviews.deleteReply({
       name: `accounts/${googleAccountId}/locations/${googleLocationId}/reviews/${reviewId}/reply`
     });
     
