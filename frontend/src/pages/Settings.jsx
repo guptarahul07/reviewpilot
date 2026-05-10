@@ -82,6 +82,7 @@ export default function Settings() {
   const [saving,              setSaving]              = useState(false)
   const [loading,             setLoading]             = useState(true)
   const [toast,               setToast]               = useState(null)
+  const [previewMode,         setPreviewMode]         = useState(false)
 
   /* ── Load settings from backend ─────────────────────────────── */
   useEffect(() => {
@@ -100,6 +101,7 @@ export default function Settings() {
           setReplyMode(s.replyMode             || 'semi-auto')
           setReplyToRatingOnly(s.replyToRatingOnly ?? false)
           setCustomInstructions(s.customInstructions || '')
+          setPreviewMode(s.previewMode ?? false)
         } else {
           // Fallback to Firestore profile
           if (profile) {
@@ -137,6 +139,7 @@ export default function Settings() {
           replyMode,
           replyToRatingOnly,
           customInstructions: customInstructions.trim(),
+          previewMode,
         }),
       })
       if (!res.ok) throw new Error('Save failed')
@@ -331,6 +334,33 @@ export default function Settings() {
               </p>
             </div>
 
+          </div>
+        </section>
+
+        {/* ── Preview / Test Mode ───────────────────────────────── */}
+        <section className="settings-section">
+          <div className="settings-section__label">
+            <ChevronRight size={15} />
+            Preview / Test Mode
+          </div>
+          <div className="settings-section__body">
+            <label className="settings-checkbox">
+              <input
+                type="checkbox"
+                checked={previewMode}
+                onChange={(e) => setPreviewMode(e.target.checked)}
+              />
+              <div>
+                <div className="settings-checkbox__label">
+                  Enable Preview Mode
+                </div>
+                <div className="settings-checkbox__hint">
+                  When enabled, Auto mode will generate and show replies in your dashboard
+                  but will <strong>not</strong> post them to Google. Use this to safely test
+                  your settings before going live. Has no effect in Manual or Semi-Auto mode.
+                </div>
+              </div>
+            </label>
           </div>
         </section>
 

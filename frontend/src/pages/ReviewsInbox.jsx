@@ -5,6 +5,8 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from '../config/api';
 import PendingApprovalsWidget from '../components/PendingApprovalsWidget';
+import PauseResumeToggle from '../components/PauseResumeToggle';
+import ReplyHistory from '../components/ReplyHistory';
 import ReplyTextarea from '../components/ReplyTextarea';
 import Toast from '../components/ui/Toast';
 
@@ -555,6 +557,7 @@ export default function ReviewsInboxPage() {
   const [bulkPosting, setBulkPosting]       = useState(false);
   const [bulkProgress, setBulkProgress]     = useState({ current: 0, total: 0 });
   const [replyMode, setReplyMode]           = useState('semi-auto');
+  const [activeTab, setActiveTab]           = useState('reviews');
   const [toast, setToast]                   = useState(null);
 
   /* ── On mount: load cached reviews only, no sync ───────────── */
@@ -733,6 +736,23 @@ export default function ReviewsInboxPage() {
     };
   };
 
+  useEffect(() => {
+    async function loadMode() {
+      if (!user) return
+      try {
+        const token = await user.getIdToken()
+        const res = await fetch(`${API_URL}/api/settings`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setReplyMode(data.settings?.replyMode || 'semi-auto')
+        }
+      } catch { /* use default */ }
+    }
+    loadMode()
+  }, [user])
+
   const quickInsights = getQuickInsights();
 
   /* ── Load reply mode from settings ─────────────────────────── */
@@ -820,11 +840,31 @@ export default function ReviewsInboxPage() {
   return (
     <div style={{ padding: 28 }}>
       <div style={{ marginBottom: 16 }}>
-        <h2 style={{ marginBottom: 4 }}>Reviews Inbox</h2>
-        <p style={{ color: "#6b7280", fontSize: 14 }}>
-          Automatically monitor and respond to your customer reviews.
-        </p>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+          <div>
+            <h2 style={{ marginBottom: 4 }}>Reviews Inbox</h2>
+            <p style={{ color: "#6b7280", fontSize: 14 }}>
+              Automatically monitor and respond to your customer reviews.
+            </p>
+          </div>
+          <PauseResumeToggle replyMode={replyMode} />
+        </div>
+        <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)' }}>
+          {[{ id: 'reviews', label: '📥 Reviews' }, { id: 'history', label: '📋 Reply History' }].map(({ id, label }) => (
+            <button key={id} onClick={() => setActiveTab(id)} style={{
+              padding: '8px 16px', border: 'none', background: 'none',
+              fontFamily: 'var(--font-body)', fontSize: 13.5, fontWeight: 600,
+              color: activeTab === id ? 'var(--accent)' : 'var(--ink-3)',
+              borderBottom: activeTab === id ? '2px solid var(--accent)' : '2px solid transparent',
+              cursor: 'pointer', transition: 'all .15s', marginBottom: -1,
+            }}>{label}</button>
+          ))}
+        </div>
       </div>
+
+      {activeTab === 'history' && <ReplyHistory />}
+
+      {activeTab === 'reviews' && <>
       
       {/* Quick Insights Card — compact strip */}
       {reviews.length > 0 && insights && (
@@ -1131,6 +1171,8 @@ export default function ReviewsInboxPage() {
           onClose={() => setToast(null)}
         />
       )}
+
+      </> /* end reviews tab */}
 
       {/* Insights Modal */}
       {showInsightsModal && (
