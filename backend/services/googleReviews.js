@@ -148,24 +148,31 @@ export async function postReplyToGoogle(uid, reviewId, replyText) {
     const userData = userDoc.data();
     const { googleAccountId, googleLocationId } = userData;
     
-    // Initialize API
-    const mybusinessreviews = google.mybusinessreviews({
-      version: 'v1',
-      auth: authClient
-    });
-    
-    // Post reply
+    // Get access token from auth client
+    const tokenResponse = await authClient.getAccessToken();
+    const accessToken = tokenResponse.token;
+
+    const url = `https://mybusiness.googleapis.com/v4/accounts/${googleAccountId}/locations/${googleLocationId}/reviews/${reviewId}/reply`;
+
+    // Post reply via direct HTTP — googleapis client doesn't support v4 reviews API
     console.log('🔍 Calling Google API to post reply...');
-    
-    await mybusinessreviews.accounts.locations.reviews.updateReply({
-      name: `accounts/${googleAccountId}/locations/${googleLocationId}/reviews/${reviewId}/reply`,
-      requestBody: {
-        comment: replyText.trim()
-      }
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ comment: replyText.trim() })
     });
-    
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || `HTTP ${response.status}`);
+    }
+
     console.log('✅ Reply posted successfully');
-    
+
     return { success: true };
     
   } catch (err) {
@@ -206,19 +213,27 @@ export async function deleteReplyFromGoogle(uid, reviewId) {
     const userData = userDoc.data();
     const { googleAccountId, googleLocationId } = userData;
     
-    // Initialize API
-    const mybusinessreviews = google.mybusinessreviews({
-      version: 'v1',
-      auth: authClient
+    // Get access token from auth client
+    const tokenResponse = await authClient.getAccessToken();
+    const accessToken = tokenResponse.token;
+
+    const url = `https://mybusiness.googleapis.com/v4/accounts/${googleAccountId}/locations/${googleLocationId}/reviews/${reviewId}/reply`;
+
+    // Delete reply via direct HTTP — googleapis client doesn't support v4 reviews API
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
     });
-    
-    // Delete reply (by posting empty comment)
-    await mybusinessreviews.accounts.locations.reviews.deleteReply({
-      name: `accounts/${googleAccountId}/locations/${googleLocationId}/reviews/${reviewId}/reply`
-    });
-    
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || `HTTP ${response.status}`);
+    }
+
     console.log('✅ Reply deleted successfully');
-    
+
     return { success: true };
     
   } catch (err) {
