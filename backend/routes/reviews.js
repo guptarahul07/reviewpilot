@@ -42,7 +42,12 @@ router.post('/:reviewId/approve', verifyFirebaseToken, async (req, res) => {
     }
 
     // Post to Google
-    await postReplyToGoogle(uid, reviewId, finalReply);
+    try {
+        await postReplyToGoogle(uid, reviewId, finalReply);
+      } catch (err) {
+        // TODO: REMOVE THIS CATCH BLOCK once Google API quota is approved
+        console.warn('⚠️ [TEMP] Google API post failed, saving locally only:', err.message);
+      }
 
     // Update Firestore
     await db
@@ -124,7 +129,12 @@ router.post('/bulk-reply', verifyFirebaseToken, async (req, res) => {
       }
 
       // Post to Google
-      await postReplyToGoogle(uid, reviewId, replyToPost);
+      try {
+        await postReplyToGoogle(uid, reviewId, finalReply);
+      } catch (err) {
+        // TODO: REMOVE THIS CATCH BLOCK once Google API quota is approved
+        console.warn('⚠️ [TEMP] Google API post failed, saving locally only:', err.message);
+      }
 
       // Update Firestore
       await db

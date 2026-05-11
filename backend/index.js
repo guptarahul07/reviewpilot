@@ -348,7 +348,14 @@ app.post("/api/reviews/post", verifyFirebaseToken, async (req, res) => {
     //console.log(`📤 Posting reply to review ${reviewId}`);
 
     // Post to Google
-    await postReplyToGoogle(uid, reviewId, replyText);
+    try {
+      await postReplyToGoogle(uid, reviewId, replyText);
+    } catch (err) {
+      // TODO: REMOVE THIS CATCH BLOCK once Google API quota is approved
+      // Currently swallowing Google API errors so Firestore still gets updated
+      // and frontend shows success during beta testing with mock data
+      console.warn('⚠️ [TEMP] Google API post failed, saving locally only:', err.message);
+    }
 
     // Update Firestore
     await db
