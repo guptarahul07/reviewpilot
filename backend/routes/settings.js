@@ -1,6 +1,7 @@
 import express from 'express';
 import { db } from '../firebaseAdmin.js';
 import { verifyFirebaseToken } from '../middleware/auth.js';
+import { sanitizeSettingsInput } from '../utils/sanitize.js';
 
 const router = express.Router();
 
@@ -14,10 +15,6 @@ function getDefaultSettings() {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
-}
-
-function sanitizeInput(input) {
-  return input.replace(/<[^>]*>/g, '').trim();
 }
 
 // GET /api/settings
@@ -52,6 +49,9 @@ router.put('/', verifyFirebaseToken, async (req, res) => {
   const uid = req.uid;
   console.log(`⚙️ [PUT /api/settings] User: ${uid}`, req.body);
 
+  // Sanitize inputs before processing
+  const sanitizedBody = sanitizeSettingsInput(req.body);
+
   const allowedFields = [
     'replyMode', 'tone', 'businessName',
     'replyToRatingOnly', 'customInstructions'
@@ -60,8 +60,8 @@ router.put('/', verifyFirebaseToken, async (req, res) => {
   // Whitelist fields
   const updates = {};
   for (const field of allowedFields) {
-    if (req.body[field] !== undefined) {
-      updates[field] = req.body[field];
+    if (sanitizedBody[field] !== undefined) {
+      updates[field] = sanitizedBody[field];
     }
   }
 
@@ -80,9 +80,6 @@ router.put('/', verifyFirebaseToken, async (req, res) => {
     return res.status(400).json({ success: false, error: 'replyToRatingOnly must be a boolean' });
   }
 
-  // Sanitize string inputs
-  if (updates.businessName) updates.businessName = sanitizeInput(updates.businessName);
-  if (updates.customInstructions) updates.customInstructions = sanitizeInput(updates.customInstructions);
 
   try {
     updates.updatedAt = new Date().toISOString();

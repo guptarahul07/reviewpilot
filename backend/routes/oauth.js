@@ -8,6 +8,7 @@ import {
 } from '../services/googleOAuth.js';
 import { trackEvent } from '../utils/analytics.js';
 import { verifyFirebaseToken } from '../middleware/auth.js';
+import { authLimiter } from '../middleware/rateLimiter.js';
 import admin from '../firebaseAdmin.js';
 
 const router = express.Router();
@@ -16,7 +17,7 @@ const router = express.Router();
  * GET /auth/google/connect
  * Returns OAuth URL for user to authorize
  */
-router.get('/auth/google/connect', verifyFirebaseToken, (req, res) => {
+router.get('/auth/google/connect', authLimiter, verifyFirebaseToken, (req, res) => {
   try {
     console.log('🧪 CONNECT ROUTE HIT - origin header:', req.headers.origin);
     // Capture origin from request header (e.g. https://reviewpilot-one.vercel.app)

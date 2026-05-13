@@ -19,6 +19,9 @@ import settingsRouter from './routes/settings.js';
 import reviewsRouter from './routes/reviews.js';
 import { handleAutoMode, handleSemiAutoMode, handleManualMode, getUserSettings, shouldSkipReview } from './services/replyModeHandler.js';
 import { verifyFirebaseToken } from './middleware/auth.js';
+import { apiLimiter, aiLimiter, authLimiter } from './middleware/rateLimiter.js';
+import { sanitizeReplyInput } from './utils/sanitize.js';
+import './cron/reviewSync.js';
 
 const app = express();
 
@@ -34,6 +37,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use('/api/', apiLimiter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/reviews', reviewsRouter);
 
@@ -168,7 +172,7 @@ Reply (max 25 words):
 /* ─────────────────────────────────────────────
    SYNC REVIEWS (SEMI-AUTOMATED LOGIC)
 ───────────────────────────────────────────── */
-app.post("/api/reviews/sync", verifyFirebaseToken, async (req, res) => {
+app.post("/api/reviews/sync", verifyFirebaseToken, aiLimiter, async (req, res) => {
 
   try {
     const uid = req.uid;    
@@ -209,7 +213,7 @@ app.post("/api/reviews/sync", verifyFirebaseToken, async (req, res) => {
       }
 
       // Generate AI reply
-      const aiReply = await generateAIReply(review, pastReplies);
+      const aiReply = await generateAIReplyWithRetry(review, pastReplies);
 
       // Sentiment analysis
       const sentimentAnalysis = analyzeSentiment(review.text, review.rating);
@@ -273,7 +277,7 @@ app.post("/api/reviews/sync", verifyFirebaseToken, async (req, res) => {
 /* ─────────────────────────────────────────────
    REGENERATE AI REPLY
 ───────────────────────────────────────────── */
-app.post("/api/reviews/regenerate", verifyFirebaseToken, async (req, res) => {
+app.post("/api/reviews/regenerate", verifyFirebaseToken, aiLimiter, async (req, res) => {
   //console.log("🔥 HIT /api/reviews/regenerate");
 
   try {
@@ -305,7 +309,7 @@ app.post("/api/reviews/regenerate", verifyFirebaseToken, async (req, res) => {
     const pastReplies = await getRecentReplies(uid);
     
     // Generate new AI reply
-    const newReply = await generateAIReply(review, pastReplies);
+    const newReply = await generateAIReplyWithRetry(review, pastReplies);
 
     //console.log(`✅ New reply generated: ${newReply}`);
 
@@ -333,7 +337,8 @@ app.post("/api/reviews/post", verifyFirebaseToken, async (req, res) => {
   //console.log("🔥 HIT /api/reviews/post");
 
   try {
-    const { reviewId, replyText } = req.body;
+    const { reviewId } = req.body;
+    const replyText = sanitizeReplyInput(req.body.replyText);
     const uid = req.uid;
 
     // Validation

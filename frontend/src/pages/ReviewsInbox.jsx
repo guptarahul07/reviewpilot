@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { API_URL } from '../config/api';
 import PendingApprovalsWidget from '../components/PendingApprovalsWidget';
 import PauseResumeToggle from '../components/PauseResumeToggle';
+import { ReviewCardSkeleton, InsightsCardSkeleton } from '../components/ReviewSkeleton';
 import ReplyHistory from '../components/ReplyHistory';
 import ReplyTextarea from '../components/ReplyTextarea';
 import Toast from '../components/ui/Toast';
@@ -835,6 +836,19 @@ export default function ReviewsInboxPage() {
       setBulkPosting(false)
       setBulkProgress({ current: 0, total: 0 })
     }
+  }
+
+  if (loading) {
+    return (
+      <div style={{ padding: 28 }}>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ height: 24, width: 160, background: 'var(--border)', borderRadius: 8, marginBottom: 8, animation: 'skeletonPulse 1.5s ease-in-out infinite' }} />
+          <div style={{ height: 14, width: 260, background: 'var(--border)', borderRadius: 6, animation: 'skeletonPulse 1.5s ease-in-out infinite' }} />
+        </div>
+        <InsightsCardSkeleton />
+        {[1, 2, 3].map(i => <ReviewCardSkeleton key={i} />)}
+      </div>
+    )
   }
 
   return (

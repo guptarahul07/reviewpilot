@@ -11,6 +11,7 @@ import {
   Shield, ChevronRight, Check,
 } from 'lucide-react'
 import './Settings.css'
+import { sanitizeSettings } from '../utils/sanitize'
 
 /* ─────────────────────────────────────────────────────────────────
    DATA
@@ -133,14 +134,14 @@ export default function Settings() {
           'Content-Type':  'application/json',
           Authorization:   `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          businessName:      businessName.trim(),
+        body: JSON.stringify(sanitizeSettings({
+          businessName,
           tone:              replyTone,
           replyMode,
           replyToRatingOnly,
-          customInstructions: customInstructions.trim(),
+          customInstructions,
           previewMode,
-        }),
+        })),
       })
       if (!res.ok) throw new Error('Save failed')
       await fetchProfile(user.uid)

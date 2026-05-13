@@ -300,3 +300,46 @@
     transform: none; /* disable hover shift on touch */
   }
 }
+
+/* ── Mobile additions for Phase 1 + Phase 8 elements ───────────── */
+@media (max-width: 640px) {
+  /* Bulk controls row — stack on mobile */
+  .bulk-controls-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Tabs — full width */
+  .inbox-tabs button {
+    flex: 1;
+    text-align: center;
+    padding: 10px 8px;
+    font-size: 12.5px;
+  }
+
+  /* Rating filter select — full width */
+  .rating-filter-select {
+    width: 100%;
+  }
+
+  /* Pending approvals widget */
+  .pending-widget {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Pause banner — stack */
+  .pause-banner {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .pause-banner button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Reply history filters — wrap */
+  .history-filters {
+    flex-wrap: wrap;
+  }
+}
