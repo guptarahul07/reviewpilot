@@ -9,7 +9,7 @@
     "dev": "node index.js"
   },
   "engines": {
-    "node": ">=18.0.0"  
+    "node": ">=18.0.0"
   },
   "keywords": [],
   "author": "",
@@ -19,7 +19,9 @@
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.5.1",
     "firebase-admin": "^13.7.0",
-    "googleapis": "^171.4.0"
+    "googleapis": "^171.4.0",
+    "node-cron": "^4.2.1"
   }
 }
