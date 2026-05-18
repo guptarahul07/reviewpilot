@@ -169,6 +169,25 @@ Reply (max 25 words):
   return response.data.content[0].text.trim();
 }
 
+// Task #67 - Retry wrapper for AI generation
+async function generateAIReplyWithRetry(review, pastReplies = [], maxRetries = 3) {
+  let lastError;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await generateAIReply(review, pastReplies);
+    } catch (err) {
+      lastError = err;
+      console.warn('[AI Retry] Attempt ' + attempt + '/' + maxRetries + ' failed: ' + err.message);
+      if (err.response?.status === 400 || err.response?.status === 401) throw err;
+      if (attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  throw lastError;
+}
+
 /* ─────────────────────────────────────────────
    SYNC REVIEWS (SEMI-AUTOMATED LOGIC)
 ───────────────────────────────────────────── */
