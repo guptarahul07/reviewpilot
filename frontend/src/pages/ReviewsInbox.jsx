@@ -275,40 +275,56 @@ function InsightsModal({ insights, reviews, onClose }) {
 /* ─────────────────────────────────────────────────────────────
    REVIEW CARD (WITH REGENERATE & EDIT)
 ───────────────────────────────────────────────────────────── */
+const REGEN_LIMIT = 5;
+
 function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
   const { user } = useAuth();
-  const [posting, setPosting] = useState(false);
-
-
+  const [posting, setPosting]         = useState(false);
   const [regenerating, setRegenerating] = useState(false);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing]         = useState(false);
   const [editedReply, setEditedReply] = useState(review.aiReply);
+  const [regenCount, setRegenCount]   = useState(0);
+  const [regenError, setRegenError]   = useState('');
 
   async function handleRegenerate() {
+    // Enforce limit on frontend
+    if (regenCount >= REGEN_LIMIT) {
+      setRegenError(`You've reached the limit of ${REGEN_LIMIT} regenerations for this review. Post the current reply or move to the next review.`);
+      return;
+    }
+
     setRegenerating(true);
+    setRegenError('');
     try {
       const token = await user.getIdToken();
-      
       const response = await fetch(`${API_URL}/api/reviews/regenerate`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ reviewId: review.id }),
       });
 
       if (!response.ok) {
-        throw new Error("Regenerate failed");
+        const errData = await response.json().catch(() => ({}));
+        // Backend may return its own limit error
+        if (response.status === 429 || errData?.message?.toLowerCase().includes('limit')) {
+          setRegenError(`Regeneration limit reached. Please post the current reply.`);
+          setRegenCount(REGEN_LIMIT); // cap locally too
+          return;
+        }
+        throw new Error(errData?.message || 'Regenerate failed');
       }
 
       const data = await response.json();
       onRegenerateReply(review.id, data.newReply);
       setEditedReply(data.newReply);
-      
+      setRegenCount(prev => prev + 1);
+
     } catch (err) {
-      console.error("Regenerate error:", err);
-      alert("Failed to regenerate reply");
+      console.error('Regenerate error:', err);
+      setRegenError('Failed to regenerate reply. Please try again.');
     } finally {
       setRegenerating(false);
     }
@@ -398,6 +414,7 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
               <div style={{ display: "flex", gap: 8 }}>
                 <button
                   onClick={handleRegenerate}
+                  disabled={regenerating || regenCount >= REGEN_LIMIT}
                   disabled={regenerating}
                   style={{
                     padding: "4px 10px",
@@ -411,7 +428,7 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
                     opacity: regenerating ? 0.6 : 1,
                   }}
                 >
-                  {regenerating ? "🔄 Regenerating..." : "🔄 Regenerate"}
+                  {regenerating ? '🔄 Regenerating...' : `🔄 Regenerate${regenCount > 0 ? ` (${regenCount}/${REGEN_LIMIT})` : ''}`}
                 </button>
                 
                 <button
@@ -433,6 +450,19 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
             )}
           </div>
           
+          {/* Regenerate limit error */}
+          {regenError && (
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', gap: 8,
+              background: 'rgba(245,166,35,.08)', border: '1px solid rgba(245,166,35,.3)',
+              borderRadius: 8, padding: '10px 14px', marginTop: 10,
+              fontSize: 13, color: 'var(--amber)', lineHeight: 1.5,
+            }}>
+              <span style={{ flexShrink: 0 }}>⚠️</span>
+              <span>{regenError}</span>
+            </div>
+          )}
+
           {editing ? (
             <div style={{ marginTop: 6 }}>
               <ReplyTextarea
