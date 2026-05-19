@@ -203,7 +203,12 @@
   .tone-grid { grid-template-columns: 1fr; }
   .settings-account { grid-template-columns: 1fr; }
   .settings__form { max-width: 100%; }
-  .settings__actions { justify-content: stretch; }
-  .settings__actions button { width: 100%; }
+  .settings__actions {
+    justify-content: center;
+  }
+  .settings__actions button {
+    width: 100%;
+    justify-content: center;
+  }
   .settings-section__body { padding: 16px; }
 }

@@ -168,7 +168,12 @@ export default function Settings() {
     <div className="settings animate-fade-in">
 
       {/* Feedback widget */}
-      <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 100 }}>
+      <div style={{
+        position: 'fixed',
+        bottom: 'calc(70px + env(safe-area-inset-bottom, 0px))', /* above mobile bottom nav */
+        right: 16,
+        zIndex: 900, /* above bottom nav but below modals */
+      }}>
         <FeedbackWidget />
       </div>
 
