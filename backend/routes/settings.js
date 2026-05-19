@@ -47,7 +47,8 @@ router.get('/', verifyFirebaseToken, async (req, res) => {
 // PUT /api/settings
 router.put('/', verifyFirebaseToken, async (req, res) => {
   const uid = req.uid;
-  console.log(`⚙️ [PUT /api/settings] User: ${uid}`, req.body);
+  const start = Date.now(); // ← ADD THIS  
+  console.log(`⚙️ [PUT /api/settings] Started for user: ${uid}`);
 
   // Sanitize inputs before processing
   const sanitizedBody = sanitizeSettingsInput(req.body);
@@ -91,7 +92,7 @@ router.put('/', verifyFirebaseToken, async (req, res) => {
       .doc('preferences')
       .set(updates, { merge: true });
 
-    console.log(`✅ [PUT /api/settings] Settings updated for user: ${uid}`);
+      console.log(`⚙️ [PUT /api/settings] Done in ${Date.now() - start}ms`); // ← ADD THIS
     res.json({ success: true, settings: updates });
 
   } catch (err) {

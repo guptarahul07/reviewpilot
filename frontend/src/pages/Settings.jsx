@@ -122,34 +122,45 @@ export default function Settings() {
     loadSettings()
   }, [user, profile])
 
-  /* ── Save settings ───────────────────────────────────────────── */
+  /* ── Save settings — optimistic update ──────────────────────── */
   async function handleSave(e) {
     e.preventDefault()
+
+    // Snapshot current values for rollback
+    const snapshot = { businessName, replyTone, replyMode, replyToRatingOnly, customInstructions, previewMode }
+
+    // 1. Show success immediately — feels instant
     setSaving(true)
+    setToast({ message: 'Settings saved!', type: 'success' })
+
+    // 2. Re-enable button after 500ms regardless of API result
+    const enableTimer = setTimeout(() => setSaving(false), 500)
+
+    // 3. API call in background
     try {
       const token = await user.getIdToken()
       const res   = await fetch(`${API_URL}/api/settings`, {
         method:  'PUT',
-        headers: {
-          'Content-Type':  'application/json',
-          Authorization:   `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(sanitizeSettings({
-          businessName,
-          tone:              replyTone,
-          replyMode,
-          replyToRatingOnly,
-          customInstructions,
-          previewMode,
+          businessName, tone: replyTone, replyMode,
+          replyToRatingOnly, customInstructions, previewMode,
         })),
       })
       if (!res.ok) throw new Error('Save failed')
-      await fetchProfile(user.uid)
-      setToast({ message: 'Settings saved successfully!', type: 'success' })
+      // Silent success — toast already shown, just refresh profile in background
+      fetchProfile(user.uid).catch(() => {})
     } catch (err) {
-      setToast({ message: err.message || 'Save failed. Please try again.', type: 'error' })
-    } finally {
+      // 4. API failed — rollback state and show error
+      clearTimeout(enableTimer)
       setSaving(false)
+      setBusinessName(snapshot.businessName)
+      setReplyTone(snapshot.replyTone)
+      setReplyMode(snapshot.replyMode)
+      setReplyToRatingOnly(snapshot.replyToRatingOnly)
+      setCustomInstructions(snapshot.customInstructions)
+      setPreviewMode(snapshot.previewMode)
+      setToast({ message: 'Save failed — changes reverted. Please try again.', type: 'error' })
     }
   }
 
@@ -372,8 +383,21 @@ export default function Settings() {
 
         {/* ── Save ───────────────────────────────────────────────── */}
         <div className="settings__actions">
-          <Button type="submit" disabled={saving}>
-            {saving ? 'Saving…' : 'Save changes'}
+          <Button type="submit" disabled={saving} style={{ minWidth: 140, position: 'relative' }}>
+            {saving
+              ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <span style={{
+                    width: 14, height: 14, borderRadius: '50%',
+                    border: '2px solid rgba(255,255,255,.3)',
+                    borderTopColor: '#fff',
+                    animation: 'spin .6s linear infinite',
+                    flexShrink: 0,
+                    display: 'inline-block',
+                  }} />
+                  Saving
+                </span>
+              : 'Save changes'
+            }
           </Button>
         </div>
 
