@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { API_URL } from '../config/api';
 import PendingApprovalsWidget from '../components/PendingApprovalsWidget';
 import PauseResumeToggle from '../components/PauseResumeToggle';
+import DynamicBanner from '../components/DynamicBanner';
 import { ReviewCardSkeleton, InsightsCardSkeleton } from '../components/ReviewSkeleton';
 import ReplyHistory from '../components/ReplyHistory';
 import ReplyTextarea from '../components/ReplyTextarea';
@@ -415,7 +416,7 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
                 <button
                   onClick={handleRegenerate}
                   disabled={regenerating || regenCount >= REGEN_LIMIT}
-                  disabled={regenerating}
+                  //disabled={regenerating}
                   style={{
                     padding: "4px 10px",
                     borderRadius: 6,
@@ -883,6 +884,7 @@ export default function ReviewsInboxPage() {
 
   return (
     <div style={{ padding: 28 }}>
+      <DynamicBanner location="dashboard-announcement" />
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
           <div>

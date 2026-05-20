@@ -67,27 +67,19 @@ export default function PublicLayout() {
         <Outlet />
       </main>
       
-      <footer style={{ padding: 40, background: "#f9fafb", marginTop: 60 }}>
-  <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", justifyContent: "space-between" }}>
-    <div>
-      <p>© 2026 ReviewPilot. All rights reserved.</p>
-    </div>
-    <div style={{ display: "flex", gap: 24 }}>
-      <a href="/terms" style={{ color: "#6b7280", textDecoration: "none" }}>
-        Terms of Service
-      </a>
-      <a href="/privacy" style={{ color: "#6b7280", textDecoration: "none" }}>
-        Privacy Policy
-      </a>
-      <a href="/contact" style={{ color: "#6b7280", textDecoration: "none" }}>
-        Contact
-      </a>
-      <a href="/help-center" style={{ color: "#6b7280", textDecoration: "none" }}>
-        Help Center
-      </a>
-    </div>
-  </div>
-</footer>
+      <footer className="pub-footer">
+        <div className="pub-footer__inner">
+          <div className="pub-footer__brand">
+            <span>© 2026 ReviewPilot. All rights reserved.</span>
+          </div>
+          <div className="pub-footer__links">
+            <a href="/terms">Terms of Service</a>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/contact">Contact</a>
+            <a href="/help-center">Help Center</a>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

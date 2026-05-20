@@ -28,6 +28,10 @@ import ReviewsInbox from './pages/ReviewsInbox'
 import ReviewReply from './pages/ReviewReply'
 import Settings from './pages/Settings'
 import AdminDashboard from './pages/AdminDashboard'
+import Billing from './pages/Billing'
+import Checkout from './pages/Checkout'
+import AdminCoupons from './pages/AdminCoupons'
+import AdminMessages from './pages/AdminMessages'
 
 export default function App() {
   return (
@@ -53,8 +57,9 @@ export default function App() {
           </Route>
 
           {/* ── Auth routes ── */}
-          <Route path="/login"  element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+          <Route path="/login"    element={<Login />} />
+          <Route path="/signup"   element={<Signup />} />
+          <Route path="/checkout" element={<Checkout />} />
 
           {/* ── Protected app routes ── */}
           <Route
@@ -70,6 +75,9 @@ export default function App() {
             <Route path="/reviews/:id"          element={<ReviewReply />} />
             <Route path="/settings"             element={<Settings />} />
             <Route path="/admin"                element={<AdminDashboard />} />
+            <Route path="/admin/coupons"         element={<AdminCoupons />} />
+            <Route path="/admin/messages"        element={<AdminMessages />} />
+            <Route path="/settings/billing"      element={<Billing />} />
             <Route path="/dashboard"            element={<Navigate to="/reviews" replace />} />
           </Route>
 

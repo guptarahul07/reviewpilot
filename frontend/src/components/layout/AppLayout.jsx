@@ -9,6 +9,7 @@ import {
   ChevronRight,
   AlertTriangle,
   HelpCircle,
+  CreditCard,
 } from 'lucide-react'
 import './AppLayout.css'
 
@@ -18,7 +19,8 @@ import './AppLayout.css'
 const NAV_ITEMS = [
   { to: '/reviews',      icon: Inbox,       label: 'Reviews Inbox' },
   { to: '/connect',      icon: Link2,       label: 'Connect Google' },
-  { to: '/settings',     icon: Settings,    label: 'Settings' },
+  { to: '/settings',          icon: Settings,    label: 'Settings' },
+  { to: '/settings/billing',  icon: CreditCard,  label: 'Billing' },
   { to: '/help-center',  icon: HelpCircle,  label: 'Help Center' },
 ]
 

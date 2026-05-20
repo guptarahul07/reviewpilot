@@ -2,6 +2,7 @@
 import { Link } from 'react-router-dom'
 import { Zap, Star, ArrowRight, CheckCircle, RefreshCw, MessageSquare, BarChart2, Shield, Smartphone, Globe } from 'lucide-react'
 import Button from '../components/ui/Button'
+import DynamicBanner from '../components/DynamicBanner'
 import './Home.css'
 import SEOMeta from '../components/ui/SEOMeta'
 
@@ -61,6 +62,7 @@ export default function Home() {
       />
 
       {/* ── Hero ── */}
+      <DynamicBanner location="homepage-banner" />
       <section className="hero container">
         <div className="hero__badge animate-fade-up delay-1">
           <Star size={11} fill="currentColor" />

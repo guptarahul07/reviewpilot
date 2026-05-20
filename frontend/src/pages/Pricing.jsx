@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { CheckCircle, X, Zap, Star } from 'lucide-react'
 import Button from '../components/ui/Button'
 import './Pricing.css'
+import DynamicBanner from '../components/DynamicBanner'
 import SEOMeta from '../components/ui/SEOMeta'
 
 /* ─────────────────────────────────────────────────────────────────
@@ -13,9 +14,9 @@ const PLANS = [
   {
     id: 'starter',
     name: 'Starter',
-    monthlyPrice: 299,
-    annualPrice: 2999,
-    annualMonthly: 250,
+    monthlyPrice: 499,
+    annualPrice: 4790,
+    annualMonthly: 399,
     desc: 'Perfect for single-location businesses just getting started.',
     cta: 'Start Free Trial',
     ctaLink: '/signup',
@@ -41,9 +42,9 @@ const PLANS = [
   {
     id: 'growth',
     name: 'Growth',
-    monthlyPrice: 599,
-    annualPrice: 5999,
-    annualMonthly: 500,
+    monthlyPrice: 999,
+    annualPrice: 8991,
+    annualMonthly: 749,
     desc: 'For growing businesses with 2–3 locations and a team.',
     cta: 'Start Free Trial',
     ctaLink: '/signup',
@@ -69,9 +70,9 @@ const PLANS = [
   {
     id: 'enterprise',
     name: 'Enterprise',
-    monthlyPrice: 999,
-    annualPrice: 9999,
-    annualMonthly: 833,
+    monthlyPrice: 1999,
+    annualPrice: 16792,
+    annualMonthly: 1399,
     desc: 'For large chains, franchises, and hospital networks.',
     cta: 'Contact Sales',
     ctaLink: '/contact',
@@ -178,11 +179,12 @@ export default function Pricing() {
             onClick={() => setBilling('annual')}
           >
             Annual
-            <span className="pricing-toggle__save">Save 17%</span>
+            <span className="pricing-toggle__save">Save up to 30%</span>
           </button>
         </div>
       </div>
 
+      <DynamicBanner location="pricing-banner" />
       <div className="pricing-body">
 
         {/* ── Beta banner ── */}

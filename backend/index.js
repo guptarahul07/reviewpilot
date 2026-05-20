@@ -22,6 +22,11 @@ import { verifyFirebaseToken } from './middleware/auth.js';
 import { apiLimiter, aiLimiter, authLimiter } from './middleware/rateLimiter.js';
 import { sanitizeReplyInput } from './utils/sanitize.js';
 import './cron/reviewSync.js';
+import './cron/usageReset.js';
+import { checkSubscription } from './middleware/checkSubscription.js';
+import { checkLimit, incrementUsage } from './utils/planLimits.js';
+import couponsRouter from './routes/coupons.js';
+import siteMessagesRouter from './routes/siteMessages.js';
 
 const app = express();
 
@@ -40,6 +45,9 @@ app.use(express.json());
 app.use('/api/', apiLimiter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/reviews', reviewsRouter);
+app.use('/api/admin/coupons', couponsRouter);
+app.use('/api/admin/site-messages', siteMessagesRouter);
+app.use('/api/site-messages', siteMessagesRouter);
 
 // Analytics routes
 app.use('/api', analyticsRoutes);
@@ -191,7 +199,7 @@ async function generateAIReplyWithRetry(review, pastReplies = [], maxRetries = 3
 /* ─────────────────────────────────────────────
    SYNC REVIEWS (SEMI-AUTOMATED LOGIC)
 ───────────────────────────────────────────── */
-app.post("/api/reviews/sync", verifyFirebaseToken, aiLimiter, async (req, res) => {
+app.post("/api/reviews/sync", verifyFirebaseToken, checkSubscription, aiLimiter, async (req, res) => {
 
   try {
     const uid = req.uid;    
@@ -231,6 +239,13 @@ app.post("/api/reviews/sync", verifyFirebaseToken, aiLimiter, async (req, res) =
         continue;
       }
 
+      // Check plan limit before generating
+      const limitCheck = await checkLimit(uid, 'generate_reply');
+      if (!limitCheck.allowed) {
+        console.warn(`[Sync] User ${uid} hit plan limit: ${limitCheck.message}`);
+        break; // Stop processing more reviews for this sync
+      }
+
       // Generate AI reply
       const aiReply = await generateAIReplyWithRetry(review, pastReplies);
 
@@ -266,6 +281,7 @@ app.post("/api/reviews/sync", verifyFirebaseToken, aiLimiter, async (req, res) =
       }
 
       results.push({ ...review, aiReply });
+      await incrementUsage(uid, 'reviewsGenerated');
     }
 
     // Track event
@@ -296,7 +312,7 @@ app.post("/api/reviews/sync", verifyFirebaseToken, aiLimiter, async (req, res) =
 /* ─────────────────────────────────────────────
    REGENERATE AI REPLY
 ───────────────────────────────────────────── */
-app.post("/api/reviews/regenerate", verifyFirebaseToken, aiLimiter, async (req, res) => {
+app.post("/api/reviews/regenerate", verifyFirebaseToken, checkSubscription, aiLimiter, async (req, res) => {
   //console.log("🔥 HIT /api/reviews/regenerate");
 
   try {
@@ -352,7 +368,7 @@ app.post("/api/reviews/regenerate", verifyFirebaseToken, aiLimiter, async (req, 
 });
 
 
-app.post("/api/reviews/post", verifyFirebaseToken, async (req, res) => {
+app.post("/api/reviews/post", verifyFirebaseToken, checkSubscription, async (req, res) => {
   //console.log("🔥 HIT /api/reviews/post");
 
   try {
@@ -397,6 +413,7 @@ app.post("/api/reviews/post", verifyFirebaseToken, async (req, res) => {
     await trackEvent(uid, 'reply_posted', { 
       reviewId
     });
+    await incrementUsage(uid, 'repliesPosted');
 
     //console.log(`✅ Reply posted successfully`);
 
@@ -498,7 +515,7 @@ app.get("/api/reviews", verifyFirebaseToken, async (req, res) => {
    Add this to backend/index.js (REPLACE existing /api/reviews/insights route)
 ───────────────────────────────────────────── */
 
-app.get("/api/reviews/insights", verifyFirebaseToken, async (req, res) => {
+app.get("/api/reviews/insights", verifyFirebaseToken, checkSubscription, async (req, res) => {
   //console.log("🔥 HIT /api/reviews/insights");
 
   try {
