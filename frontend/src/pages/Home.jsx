@@ -66,7 +66,7 @@ export default function Home() {
       <section className="hero container">
         <div className="hero__badge animate-fade-up delay-1">
           <Star size={11} fill="currentColor" />
-          Beta Offer · First 50 users get 6 months FREE
+          Beta Offer · First 2 months FREE with annual plan
         </div>
         <h1 className="hero__title animate-fade-up delay-2">
           Never miss a review again —<br />

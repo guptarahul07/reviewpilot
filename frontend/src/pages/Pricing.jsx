@@ -107,7 +107,7 @@ const BETA_FEATURES = [
 ]
 
 const FAQS = [
-  { q: 'Do I need a credit card for the beta offer?',    a: 'No. The 6-month beta is completely free — no credit card required, no automatic billing. You only pay if you choose to continue after the beta period.' },
+  { q: 'Do I need a credit card for the beta offer?',    a: 'No credit card required to start your 15-day free trial. You only pay after the trial ends if you choose to continue.' },
   { q: 'What happens after the 15-day trial?',           a: "After the trial, your account pauses until you add a payment method. No surprise charges — you'll always be asked to confirm before billing starts." },
   { q: 'Can I switch plans later?',                      a: 'Yes! Upgrade anytime. Downgrade at renewal.' },
   { q: 'What payment methods do you accept?',            a: 'Credit/Debit cards, UPI, and Net Banking via Razorpay.' },
@@ -162,7 +162,7 @@ export default function Pricing() {
       <div className="pricing-hero">
         <div className="pricing-hero__badge">
           <Star size={11} fill="currentColor" />
-          Beta Offer · First 50 Users Only
+          Special Offer · Annual plans
         </div>
         <h1 className="pricing-title">Simple, transparent pricing</h1>
         <p className="pricing-sub">
@@ -190,8 +190,8 @@ export default function Pricing() {
         {/* ── Beta banner ── */}
         <div className="beta-banner">
           <div className="beta-banner__left">
-            <div className="beta-banner__eyebrow">🎁 Limited Beta Offer — First 50 Users</div>
-            <div className="beta-banner__title">Get 6 months completely FREE</div>
+            <div className="beta-banner__eyebrow">🎁 Special Offer</div>
+            <div className="beta-banner__title">Get 2 months FREE with annual billing</div>
             <p className="beta-banner__sub">Help us shape the product and lock in free access. No credit card. No auto-billing.</p>
             <div className="beta-banner__spots">
               <div className="beta-banner__bar"><div className="beta-banner__fill" style={{ width: '62%' }} /></div>

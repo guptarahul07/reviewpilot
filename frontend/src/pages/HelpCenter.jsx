@@ -379,7 +379,7 @@ const STEPS = [
           <li>Verify your email — you're in!</li>
         </ol>
         <div className="hc-step-note">
-          🎁 First 50 users get <strong>6 months FREE</strong> — no credit card required!
+          🎁 Start free — no credit card required!
         </div>
       </>
     ),
@@ -471,9 +471,9 @@ const FAQS = [
     a: (
       <>
         <p>We're currently in beta with a special offer!</p>
-        <p><strong>🎁 Limited Beta Offer (First 50 Users Only):</strong></p>
+        <p><strong>🎁 Special Offer:</strong></p>
         <ul>
-          <li>6 months completely FREE</li>
+          <li>2 months FREE with annual billing</li>
           <li>No credit card required</li>
           <li>Full access to all features</li>
         </ul>
@@ -561,7 +561,7 @@ const FAQS = [
   {
     category: 'Features',
     q: 'Can I manage multiple business locations?',
-    a: 'Currently ReviewPilot supports one location per account. Multi-location dashboard is coming in Phase 2. For now, create separate accounts for each location — all will get the 6-month free beta access!',
+    a: 'Currently ReviewPilot supports one location per account. Multi-location dashboard is coming in Phase 2. For now, create separate accounts for each location — all will get the same plan benefits!',
   },
   {
     category: 'Features',
@@ -573,7 +573,7 @@ const FAQS = [
     q: 'Is there a free trial?',
     a: (
       <>
-        <p><strong>For First 50 Beta Users:</strong> 6 months completely FREE — no credit card required, full access.</p>
+        <p><strong>15-day free trial</strong> — no credit card required, full access. Annual plans include 2 months free.</p>
         <p><strong>After Beta Launch:</strong> 15-day free trial for new users, then ₹299/month. Cancel anytime during trial — no charges.</p>
       </>
     ),
@@ -736,7 +736,7 @@ export default function HelpCenter() {
       {/* ── Hero ── */}
       <div className="hc-hero">
         <div className="hc-hero-inner">
-          <div className="hc-badge hc-afu">🎁 First 50 users get 6 months FREE!</div>
+          <div className="hc-badge hc-afu">🎁 Annual plans — 2 months FREE!</div>
           <h1 className="hc-hero-title hc-afu hc-d1">Help Center</h1>
           <p className="hc-hero-sub hc-afu hc-d2">
             Everything you need to succeed with ReviewPilot — guides, FAQs, and video walkthroughs.
