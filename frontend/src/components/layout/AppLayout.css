@@ -295,3 +295,33 @@
   /* Tighten topbar padding */
   .topbar { padding: 0 16px; }
 }
+
+/* ── Admin section label ──────────────────────────────────────── */
+.sidebar__section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 16px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  opacity: 0.6;
+}
+
+.sidebar__link--admin {
+  opacity: 0.8;
+}
+
+.sidebar__link--admin:hover {
+  opacity: 1;
+  background: rgba(124, 92, 252, 0.08);
+  border-color: rgba(124, 92, 252, 0.2);
+}
+
+.sidebar__link--admin.sidebar__link--active {
+  background: rgba(124, 92, 252, 0.12);
+  border-color: rgba(124, 92, 252, 0.3);
+  color: #a78bfa;
+}

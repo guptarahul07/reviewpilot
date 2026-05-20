@@ -10,6 +10,10 @@ import {
   AlertTriangle,
   HelpCircle,
   CreditCard,
+  ShieldCheck,
+  Tag,
+  MessageSquare,
+  BarChart2,
 } from 'lucide-react'
 import './AppLayout.css'
 
@@ -22,6 +26,14 @@ const NAV_ITEMS = [
   { to: '/settings',          icon: Settings,    label: 'Settings' },
   { to: '/settings/billing',  icon: CreditCard,  label: 'Billing' },
   { to: '/help-center',  icon: HelpCircle,  label: 'Help Center' },
+]
+
+const ADMIN_EMAIL = 'guptarahul07@gmail.com'
+
+const ADMIN_ITEMS = [
+  { to: '/admin',          icon: BarChart2,    label: 'Analytics' },
+  { to: '/admin/coupons',  icon: Tag,          label: 'Coupons' },
+  { to: '/admin/messages', icon: MessageSquare,label: 'Site Messages' },
 ]
 
 /* ─────────────────────────────────────────────
@@ -75,6 +87,29 @@ export default function AppLayout() {
               <ChevronRight size={13} className="sidebar__chevron" />
             </NavLink>
           ))}
+
+          {/* Admin section — only visible to admin */}
+          {user?.email === ADMIN_EMAIL && (
+            <>
+              <div className="sidebar__section-label">
+                <ShieldCheck size={11} />
+                Admin
+              </div>
+              {ADMIN_ITEMS.map(({ to, icon: Icon, label }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) =>
+                    `sidebar__link sidebar__link--admin ${isActive ? 'sidebar__link--active' : ''}`
+                  }
+                >
+                  <Icon size={16} />
+                  <span>{label}</span>
+                  <ChevronRight size={13} className="sidebar__chevron" />
+                </NavLink>
+              ))}
+            </>
+          )}
         </nav>
 
         {/* User Footer */}
