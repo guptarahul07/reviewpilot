@@ -26,6 +26,7 @@ import './cron/usageReset.js';
 import { checkSubscription } from './middleware/checkSubscription.js';
 import { checkLimit, incrementUsage } from './utils/planLimits.js';
 import couponsRouter from './routes/coupons.js';
+import billingRouter from './routes/billing.js';
 import siteMessagesRouter from './routes/siteMessages.js';
 
 const app = express();
@@ -45,6 +46,7 @@ app.use(express.json());
 app.use('/api/', apiLimiter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/reviews', reviewsRouter);
+app.use('/api/billing', billingRouter);
 app.use('/api/admin/coupons', couponsRouter);
 app.use('/api/admin/site-messages', siteMessagesRouter);
 app.use('/api/site-messages', siteMessagesRouter);
