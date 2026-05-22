@@ -22,6 +22,7 @@
     "express-rate-limit": "^8.5.1",
     "firebase-admin": "^13.7.0",
     "googleapis": "^171.4.0",
-    "node-cron": "^4.2.1"
+    "node-cron": "^4.2.1",
+    "razorpay": "^2.9.6"
   }
 }
