@@ -12,7 +12,9 @@ function CreateModal({ onClose, onSuccess }) {
   const { user } = useAuth()
   const [form, setForm] = useState({
     code: '', type: 'percentage', value: 50,
-    maxUses: 10, validUntil: '',
+    maxUses: 10,
+    validFrom: new Date().toISOString().split('T')[0],
+    validUntil: '',
     applicablePlans: [...PLANS],
   })
   const [saving, setSaving] = useState(false)
@@ -29,7 +31,8 @@ function CreateModal({ onClose, onSuccess }) {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!form.code.trim() || !form.validUntil) { setError('Code and expiry date are required'); return }
+    if (!form.code.trim() || !form.validFrom || !form.validUntil) { setError('Code, start date and expiry date are required'); return }
+    if (form.validFrom > form.validUntil) { setError('Start date must be before expiry date'); return }
     setSaving(true)
     try {
       const token = await user.getIdToken()
@@ -83,10 +86,15 @@ function CreateModal({ onClose, onSuccess }) {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.04em', display: 'block', marginBottom: 6 }}>Max Uses</label>
               <input type="number" min="1" value={form.maxUses} onChange={e => set('maxUses', parseInt(e.target.value))} required
+                style={{ width: '100%', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 12px', fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--ink)', outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.04em', display: 'block', marginBottom: 6 }}>Valid From</label>
+              <input type="date" value={form.validFrom} onChange={e => set('validFrom', e.target.value)} required
                 style={{ width: '100%', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 12px', fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--ink)', outline: 'none', boxSizing: 'border-box' }} />
             </div>
             <div>

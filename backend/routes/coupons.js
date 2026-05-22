@@ -18,7 +18,7 @@ router.post('/', verifyFirebaseToken, checkAdmin, async (req, res) => {
   console.log(`🎟️ [POST /api/admin/coupons] Creating coupon: ${code}`);
 
   // Validate required fields
-  if (!code || !type || value === undefined || !validFrom || !validUntil) {
+  if (!code || !type || value === undefined || !validUntil) {
     return res.status(400).json({ success: false, error: 'Missing required fields: code, type, value, validFrom, validUntil' });
   }
 
@@ -51,7 +51,7 @@ router.post('/', verifyFirebaseToken, checkAdmin, async (req, res) => {
       value: Number(value),
       maxUses: maxUses ? Number(maxUses) : null, // null = unlimited
       usedCount: 0,
-      validFrom: new Date(validFrom),
+      validFrom: validFrom ? new Date(validFrom) : new Date(),
       validUntil: new Date(validUntil),
       applicablePlans: applicablePlans || VALID_PLANS,
       createdBy: req.email,
