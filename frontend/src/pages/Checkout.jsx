@@ -48,14 +48,10 @@ export default function Checkout() {
 
   const planData = PLAN_DETAILS[plan] || PLAN_DETAILS.growth
   const basePrice = billing === 'annual' ? planData.annual : planData.monthly
-  const discount  = appliedCoupon
-    ? (appliedCoupon.discount ?? appliedCoupon.discountAmount ??
-       (appliedCoupon.type === 'percentage' || appliedCoupon.discountType === 'percentage'
-         ? Math.round(basePrice * (appliedCoupon.value ?? appliedCoupon.discountValue ?? 0) / 100)
-         : (appliedCoupon.value ?? appliedCoupon.discountValue ?? 0)))
-    : 0
-  const safeDiscount = typeof discount === 'number' && !isNaN(discount) ? discount : 0
-  const finalPrice = basePrice - safeDiscount
+  const finalPrice = appliedCoupon?.finalPrice != null
+    ? appliedCoupon.finalPrice          // backend sent the correct final price
+    : basePrice                         // no coupon applied
+  const safeDiscount = Math.max(0, basePrice - finalPrice)
 
   async function handleApplyCoupon() {
     if (!couponCode.trim()) return
@@ -70,8 +66,12 @@ export default function Checkout() {
       })
       const data = await res.json()
       if (data.success) {
+        console.log('[Checkout] Coupon API response:', data) // debug — remove after confirming
         setAppliedCoupon(data)
-        setToast({ type: 'success', message: `Coupon applied! Saving ₹${data.discount}` })
+        const savedAmount = data.finalPrice != null
+          ? basePrice - data.finalPrice
+          : (data.discount ?? 0)
+        setToast({ type: 'success', message: `Coupon applied! Saving ₹${Math.max(0, savedAmount).toLocaleString('en-IN')}` })
       } else {
         setCouponError(data.error || 'Invalid coupon code')
       }
