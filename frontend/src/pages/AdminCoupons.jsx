@@ -198,7 +198,16 @@ export default function AdminCoupons() {
                     <td style={{ padding: '12px 16px', color: 'var(--ink)', fontWeight: 600 }}>{c.type === 'percentage' ? `${c.value}%` : `₹${c.value}`}</td>
                     <td style={{ padding: '12px 16px', color: 'var(--ink-2)' }}>{c.usedCount ?? 0} / {c.maxUses}</td>
                     <td style={{ padding: '12px 16px', color: 'var(--ink-2)', fontSize: 12 }}>{(c.applicablePlans || PLANS).join(', ')}</td>
-                    <td style={{ padding: '12px 16px', color: 'var(--ink-2)' }}>{c.validUntil ? new Date(c.validUntil).toLocaleDateString('en-IN') : '—'}</td>
+                    <td style={{ padding: '12px 16px', color: 'var(--ink-2)' }}>{(() => {
+                        try {
+                          if (!c.validUntil) return '—'
+                          // Handle Firestore Timestamp, ISO string, or date string
+                          const d = c.validUntil?.toDate ? c.validUntil.toDate()
+                            : c.validUntil?._seconds ? new Date(c.validUntil._seconds * 1000)
+                            : new Date(c.validUntil)
+                          return isNaN(d) ? '—' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                        } catch { return '—' }
+                      })()}</td>
                     <td style={{ padding: '12px 16px' }}>
                       <button
                         onClick={() => handleDelete(c.code)}

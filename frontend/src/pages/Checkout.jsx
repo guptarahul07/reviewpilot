@@ -49,11 +49,13 @@ export default function Checkout() {
   const planData = PLAN_DETAILS[plan] || PLAN_DETAILS.growth
   const basePrice = billing === 'annual' ? planData.annual : planData.monthly
   const discount  = appliedCoupon
-    ? appliedCoupon.type === 'percentage'
-      ? Math.round(basePrice * appliedCoupon.value / 100)
-      : appliedCoupon.value
+    ? (appliedCoupon.discount ?? appliedCoupon.discountAmount ??
+       (appliedCoupon.type === 'percentage' || appliedCoupon.discountType === 'percentage'
+         ? Math.round(basePrice * (appliedCoupon.value ?? appliedCoupon.discountValue ?? 0) / 100)
+         : (appliedCoupon.value ?? appliedCoupon.discountValue ?? 0)))
     : 0
-  const finalPrice = basePrice - discount
+  const safeDiscount = typeof discount === 'number' && !isNaN(discount) ? discount : 0
+  const finalPrice = basePrice - safeDiscount
 
   async function handleApplyCoupon() {
     if (!couponCode.trim()) return
@@ -240,7 +242,7 @@ export default function Checkout() {
                     <button onClick={() => { setAppliedCoupon(null); setCouponCode('') }} style={{ background: 'none', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 12 }}>Remove</button>
                   </div>
                   <div style={{ marginTop: 8, fontSize: 12.5, color: 'var(--ink-2)' }}>
-                    Discount: <strong>-₹{discount.toLocaleString('en-IN')}</strong>
+                    Discount: <strong>-₹{safeDiscount.toLocaleString('en-IN')}</strong>
                   </div>
                 </div>
               ) : (
@@ -311,10 +313,10 @@ export default function Checkout() {
                   <span>Subtotal</span>
                   <span>₹{basePrice.toLocaleString('en-IN')}</span>
                 </div>
-                {discount > 0 && (
+                {safeDiscount > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, color: 'var(--green)' }}>
                     <span>Coupon discount</span>
-                    <span>-₹{discount.toLocaleString('en-IN')}</span>
+                    <span>-₹{safeDiscount.toLocaleString('en-IN')}</span>
                   </div>
                 )}
                 {billing === 'annual' && (
