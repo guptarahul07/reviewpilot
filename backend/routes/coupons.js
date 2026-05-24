@@ -1,5 +1,5 @@
 import express from 'express';
-import { db } from '../firebaseAdmin.js';
+import admin, { db } from '../firebaseAdmin.js';
 import { verifyFirebaseToken } from '../middleware/auth.js';
 import { checkAdmin } from '../middleware/checkAdmin.js';
 
@@ -174,7 +174,6 @@ export async function validateCoupon(couponCode, plan, billingCycle, basePrice) 
 // Increment coupon usage count — called after successful subscription
 export async function markCouponUsed(couponCode) {
   const code = couponCode.toUpperCase();
-  const { admin } = await import('../firebaseAdmin.js');
   await db.collection('coupons').doc(code).update({
     usedCount: admin.firestore.FieldValue.increment(1)
   });

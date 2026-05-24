@@ -48,9 +48,10 @@ export default function Checkout() {
 
   const planData = PLAN_DETAILS[plan] || PLAN_DETAILS.growth
   const basePrice = billing === 'annual' ? planData.annual : planData.monthly
+  // Backend returns prices in paise (×100), convert to rupees
   const finalPrice = appliedCoupon?.finalPrice != null
-    ? appliedCoupon.finalPrice          // backend sent the correct final price
-    : basePrice                         // no coupon applied
+    ? Math.round(appliedCoupon.finalPrice / 100)
+    : basePrice
   const safeDiscount = Math.max(0, basePrice - finalPrice)
 
   async function handleApplyCoupon() {
@@ -66,11 +67,10 @@ export default function Checkout() {
       })
       const data = await res.json()
       if (data.success) {
-        console.log('[Checkout] Coupon API response:', data) // debug — remove after confirming
         setAppliedCoupon(data)
         const savedAmount = data.finalPrice != null
-          ? basePrice - data.finalPrice
-          : (data.discount ?? 0)
+          ? basePrice - Math.round(data.finalPrice / 100)
+          : 0
         setToast({ type: 'success', message: `Coupon applied! Saving ₹${Math.max(0, savedAmount).toLocaleString('en-IN')}` })
       } else {
         setCouponError(data.error || 'Invalid coupon code')
