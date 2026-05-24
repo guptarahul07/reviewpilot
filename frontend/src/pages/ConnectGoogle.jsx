@@ -481,6 +481,19 @@ export default function ConnectGoogle() {
   /* ── Start OAuth flow ───────────────────────────────────────────────── */
   async function handleConnect() {
     if (!user) { navigate('/login'); return; }
+    // Activate trial before connecting (Task 1)
+    try {
+      const token = await user.getIdToken()
+      const res   = await fetch(`${API_URL}/api/billing/activate-trial`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      if (data.alreadyActivated && data.trialEndsAt) {
+        const expired = new Date(data.trialEndsAt) < new Date()
+        if (expired) { navigate('/pricing'); return }
+      }
+    } catch { /* non-blocking — proceed with connect */ }
     setState('loading');
     setErrorMsg('');
     try {

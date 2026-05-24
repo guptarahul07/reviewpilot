@@ -82,6 +82,22 @@ export default function Checkout() {
     }
   }
 
+  async function activateTrial() {
+    try {
+      const token = await user.getIdToken()
+      const res   = await fetch(`${API_URL}/api/billing/activate-trial`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      if (data.alreadyActivated && data.trialEndsAt) {
+        const expired = new Date(data.trialEndsAt) < new Date()
+        if (expired) { navigate('/pricing'); return false }
+      }
+      return true
+    } catch { return true } // non-blocking — proceed even if fails
+  }
+
   async function handleCheckout() {
     setCheckoutLoading(true)
     try {
@@ -110,7 +126,7 @@ export default function Checkout() {
       }
 
       const options = {
-        key:             import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key:             data.keyId, // comes from create-subscription response
         subscription_id: data.subscriptionId,
         name:            'ReviewPilot',
         description:     `${planData.name} Plan — ${billing === 'annual' ? 'Annual' : 'Monthly'}`,

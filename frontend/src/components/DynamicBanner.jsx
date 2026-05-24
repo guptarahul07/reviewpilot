@@ -1,10 +1,10 @@
 // src/components/DynamicBanner.jsx
-// Real-time banner from Firestore config/site-messages
-// Usage: <DynamicBanner location="pricing-banner" />
+// Fetches banners from backend API
+// Usage: <DynamicBanner location="homepage-banner" requiresAuth={false} />
 
 import { useEffect, useState } from 'react'
-import { doc, onSnapshot } from 'firebase/firestore'
-import { db } from '../services/firebase'
+import { useAuth } from '../context/AuthContext'
+import { API_URL } from '../config/api'
 import { X } from 'lucide-react'
 
 const COLORS = {
@@ -14,29 +14,33 @@ const COLORS = {
   error:   { bg: 'rgba(239,68,68,.08)',  border: 'rgba(239,68,68,.25)',  text: '#fca5a5', accent: '#ef4444' },
 }
 
-export default function DynamicBanner({ location }) {
+const ICONS = { info: 'ℹ️', success: '✅', warning: '⚠️', error: '🚨' }
+
+export default function DynamicBanner({ location, requiresAuth = false }) {
+  const { user }                  = useAuth()
   const [banner, setBanner]       = useState(null)
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
-    const ref = doc(db, 'config', 'site-messages')
-    const unsub = onSnapshot(ref, (snap) => {
-      if (!snap.exists()) return
-      const data = snap.data()
-      const b    = data?.[location]
+    async function load() {
+      try {
+        const headers = {}
+        if (requiresAuth && user) {
+          const token = await user.getIdToken()
+          headers.Authorization = `Bearer ${token}`
+        }
+        const endpoint = requiresAuth
+          ? `${API_URL}/api/site-messages/${location}`
+          : `${API_URL}/api/site-messages/public/${location}`
 
-      if (b?.enabled) {
-        const now   = Date.now()
-        const start = b.startDate?.toMillis?.() ?? 0
-        const end   = b.endDate?.toMillis?.()   ?? Infinity
-        setBanner(now >= start && now <= end ? b : null)
-      } else {
-        setBanner(null)
-      }
-    }, () => setBanner(null)) // silently ignore errors
-
-    return () => unsub()
-  }, [location])
+        const res  = await fetch(endpoint, { headers })
+        if (!res.ok) return
+        const data = await res.json()
+        if (data.success && data.message?.enabled) setBanner(data.message)
+      } catch { /* silently ignore */ }
+    }
+    load()
+  }, [location, user, requiresAuth])
 
   if (!banner || dismissed) return null
 
@@ -50,30 +54,17 @@ export default function DynamicBanner({ location }) {
       borderRadius: 10, marginBottom: 20,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
-        <span style={{ fontSize: 15 }}>
-          {banner.type === 'success' ? '✅' : banner.type === 'warning' ? '⚠️' : banner.type === 'error' ? '🚨' : 'ℹ️'}
-        </span>
+        <span style={{ fontSize: 15, flexShrink: 0 }}>{ICONS[banner.type] || 'ℹ️'}</span>
         <p style={{ fontSize: 13.5, color: colors.text, lineHeight: 1.5, margin: 0 }}>
           {banner.message}
           {banner.link && (
-            <a
-              href={banner.link}
-              style={{ color: colors.accent, marginLeft: 8, fontWeight: 600, textDecoration: 'underline' }}
-            >
+            <a href={banner.link} style={{ color: colors.accent, marginLeft: 8, fontWeight: 600, textDecoration: 'underline' }}>
               {banner.linkText || 'Learn more'}
             </a>
           )}
         </p>
       </div>
-      <button
-        onClick={() => setDismissed(true)}
-        style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          color: colors.text, opacity: 0.6, padding: 2, flexShrink: 0,
-          display: 'flex', alignItems: 'center',
-        }}
-        aria-label="Dismiss"
-      >
+      <button onClick={() => setDismissed(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: colors.text, opacity: 0.6, padding: 2, flexShrink: 0, display: 'flex', alignItems: 'center' }} aria-label="Dismiss">
         <X size={14} />
       </button>
     </div>

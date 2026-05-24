@@ -59,6 +59,109 @@ function getTrialEndDate(days) {
 }
 
 // ─────────────────────────────────────────────
+// POST /api/billing/activate-trial
+// Called when user clicks "Start Free Trial" or "Connect Google Business"
+// ─────────────────────────────────────────────
+router.post('/activate-trial', verifyFirebaseToken, async (req, res) => {
+  const uid = req.uid;
+  console.log(`⏳ [POST /api/billing/activate-trial] User: ${uid}`);
+
+  try {
+    const userDoc = await db.collection('users').doc(uid).get();
+    const subscription = userDoc.data()?.subscription;
+
+    // Already has a subscription of any kind
+    if (subscription) {
+      const status = subscription.status;
+
+      // Trial already active
+      if (status === 'trial') {
+        const trialEnd = subscription.trialEndsAt?.toDate
+          ? subscription.trialEndsAt.toDate()
+          : new Date(subscription.trialEndsAt);
+
+        if (new Date() < trialEnd) {
+          console.log(`[activate-trial] Trial already active for user: ${uid}`);
+          return res.json({
+            success: true,
+            alreadyActivated: true,
+            trialActive: true,
+            trialEndsAt: subscription.trialEndsAt,
+            trialDays: subscription.trialDays,
+            isBetaUser: subscription.isBetaUser || false
+          });
+        } else {
+          // Trial expired
+          console.log(`[activate-trial] Trial expired for user: ${uid}`);
+          return res.json({
+            success: false,
+            alreadyActivated: true,
+            trialActive: false,
+            trialExpired: true,
+            message: 'Your free trial has ended. Please select a plan to continue.'
+          });
+        }
+      }
+
+      // Already on paid plan
+      if (status === 'active') {
+        return res.json({
+          success: true,
+          alreadyActivated: true,
+          trialActive: false,
+          paidPlan: true,
+          plan: subscription.plan
+        });
+      }
+
+      // Cancelled or expired paid plan
+      return res.json({
+        success: false,
+        alreadyActivated: true,
+        trialActive: false,
+        trialExpired: true,
+        message: 'Your free trial has ended. Please select a plan to continue.'
+      });
+    }
+
+    // First time — activate trial
+    const trialDays = await getTrialDays();
+    const trialEndsAt = getTrialEndDate(trialDays);
+    const isBetaUser = trialDays === BETA_TRIAL_DAYS;
+
+    await db.collection('users').doc(uid).set({
+      subscription: {
+        plan: 'trial',
+        status: 'trial',
+        trialDays,
+        trialEndsAt,
+        isBetaUser,
+        cancelAtPeriodEnd: false,
+        createdAt: new Date()
+      }
+    }, { merge: true });
+
+    console.log(`✅ [activate-trial] Trial activated for user: ${uid} — ${trialDays} days (beta: ${isBetaUser})`);
+
+    res.json({
+      success: true,
+      alreadyActivated: false,
+      trialActive: true,
+      trialDays,
+      trialEndsAt,
+      isBetaUser,
+      message: isBetaUser
+        ? `🎉 Welcome! You get ${trialDays} days free as one of our first users!`
+        : `Your ${trialDays} day free trial has started!`
+    });
+
+  } catch (err) {
+    console.error('❌ [activate-trial] Error:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to activate trial' });
+  }
+});
+
+// ─────────────────────────────────────────────
 // POST /api/billing/create-subscription
 // ─────────────────────────────────────────────
 router.post('/create-subscription', verifyFirebaseToken, async (req, res) => {

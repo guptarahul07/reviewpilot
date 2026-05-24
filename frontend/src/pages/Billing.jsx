@@ -52,7 +52,7 @@ export default function Billing() {
     try {
       const token = await user.getIdToken()
       const [subRes, usageRes, invRes] = await Promise.all([
-        fetch(`${API_URL}/api/billing/subscription`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_URL}/api/billing/subscription-status`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_URL}/api/billing/usage`,         { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_URL}/api/billing/invoices`,      { headers: { Authorization: `Bearer ${token}` } }),
       ])
@@ -69,7 +69,7 @@ export default function Billing() {
   async function handleCancel() {
     try {
       const token = await user.getIdToken()
-      const res   = await fetch(`${API_URL}/api/billing/cancel`, {
+      const res   = await fetch(`${API_URL}/api/billing/cancel-subscription`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       })

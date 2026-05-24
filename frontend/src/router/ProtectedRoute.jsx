@@ -35,5 +35,11 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
+  // Task 4: Redirect expired users to pricing
+  const freePaths = ['/pricing', '/checkout', '/settings/billing']
+  if (isExpired && !freePaths.some(p => location.pathname.startsWith(p))) {
+    return <Navigate to="/pricing" replace />
+  }
+
   return children
 }

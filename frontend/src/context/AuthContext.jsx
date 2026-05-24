@@ -13,9 +13,10 @@ const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
 
-  const [user, setUser] = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser]           = useState(null)
+  const [profile, setProfile]     = useState(null)
+  const [loading, setLoading]     = useState(true)
+  const [subscription, setSubscription] = useState(null) // trial/plan status
 
   /* ───────────────── SIGNUP ───────────────── */
 
@@ -98,6 +99,23 @@ export function AuthProvider({ children }) {
   return ref
 }
 
+  /* ───────────────── FETCH SUBSCRIPTION STATUS ───────────────── */
+
+  async function fetchSubscription(firebaseUser) {
+    try {
+      const token = await firebaseUser.getIdToken()
+      const res   = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/billing/subscription-status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setSubscription(data)
+        return data
+      }
+    } catch { /* non-blocking */ }
+    return null
+  }
+
   /* ───────────────── FETCH PROFILE ───────────────── */
 
   async function fetchProfile(uid) {
@@ -162,6 +180,7 @@ export function AuthProvider({ children }) {
             await new Promise(r => setTimeout(r, 500)) // small settle time
             await createUserDocIfMissing(firebaseUser)
             await fetchProfile(firebaseUser.uid)
+            fetchSubscription(firebaseUser) // non-blocking
             return // success — stop retrying
           } catch (err) {
             if (i < delays.length - 1) {
@@ -186,11 +205,19 @@ export function AuthProvider({ children }) {
     user,
     profile,
     loading,
+    subscription,
     signup,
     login,
     logout,
     fetchProfile,
+    fetchSubscription,
     isGoogleConnected: profile?.google?.connected ?? false,
+    // Helpers derived from subscription
+    isTrialActive: subscription?.status === 'trial',
+    isExpired:     subscription?.status === 'expired' || subscription?.requiresUpgrade === true,
+    trialDaysLeft: subscription?.trialEndsAt
+      ? Math.max(0, Math.ceil((new Date(subscription.trialEndsAt) - Date.now()) / 86400000))
+      : null,
   }
 
   return (
