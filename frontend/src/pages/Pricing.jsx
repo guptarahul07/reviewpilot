@@ -1,6 +1,7 @@
 // src/pages/Pricing.jsx
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { CheckCircle, X, Zap, Star } from 'lucide-react'
 import Button from '../components/ui/Button'
 import './Pricing.css'
@@ -124,6 +125,25 @@ const FAQS = [
 export default function Pricing() {
   const [billing, setBilling]   = useState('annual')
   const [openFaq, setOpenFaq]   = useState(null)
+  const { user, isTrialActive, isExpired } = useAuth()
+  const navigate = useNavigate()
+
+  function handlePlanCTA(plan) {
+    if (plan.id === 'professional') { navigate('/contact'); return }
+    if (!user) {
+      navigate(`/signup?plan=${plan.id}&billing=${billing}`)
+      return
+    }
+    navigate(`/checkout?plan=${plan.id}&billing=${billing}`)
+  }
+
+  function getPlanCTA(plan) {
+    if (plan.id === 'professional') return 'Contact Sales'
+    if (!user) return 'Start Free Trial'
+    if (isExpired) return 'Choose This Plan →'
+    if (isTrialActive) return 'Upgrade Now →'
+    return 'Switch to This Plan →'
+  }
 
   // ROI calculator state
   const [rating, setRating]     = useState('4.2')
@@ -240,16 +260,23 @@ export default function Pricing() {
                   <p className="plan-card__desc">{plan.desc}</p>
                 </div>
 
-                <Link to={plan.ctaLink}>
-                  <Button
-                    size="md"
-                    variant={plan.popular ? 'primary' : 'ghost'}
-                    style={{ width: '100%' }}
-                  >
-                    {plan.cta}
-                  </Button>
-                </Link>
-                <div className="plan-card__trial">15-day free trial · No credit card to start</div>
+                <Button
+                  size="md"
+                  variant={plan.popular ? 'primary' : 'ghost'}
+                  style={{ width: '100%' }}
+                  onClick={() => handlePlanCTA(plan)}
+                >
+                  {getPlanCTA(plan)}
+                </Button>
+                <div className="plan-card__trial">
+                  {!user
+                    ? '15-day free trial · No credit card to start'
+                    : isTrialActive
+                      ? `Trial active · Upgrade anytime`
+                      : isExpired
+                        ? 'Trial ended · Choose a plan to continue'
+                        : ''}
+                </div>
 
                 <ul className="plan-card__features">
                   {plan.features.map(({ text, yes }) => (
