@@ -280,7 +280,7 @@ function InsightsModal({ insights, reviews, onClose }) {
 const REGEN_LIMIT = 5;
 
 function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
-  const { user, isExpired } = useAuth();
+  const { user } = useAuth();
   const [posting, setPosting]         = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [editing, setEditing]         = useState(false);
