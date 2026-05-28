@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext'
  * Redirects to /login, preserving the attempted URL in state.
  */
 export default function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth()
+  const { user, loading, isExpired } = useAuth()
   const location = useLocation()
 
   console.log('[ProtectedRoute] loading:', loading, '| user:', user?.email ?? 'null', '| path:', location.pathname)
