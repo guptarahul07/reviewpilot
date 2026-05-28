@@ -157,7 +157,7 @@ function DonutChart({ positive, negative, mixed }) {
    INSIGHTS MODAL
 ───────────────────────────────────────────────────────────── */
 function InsightsModal({ insights, reviews, onClose }) {
-  const positiveCount  = reviews.filter(r => r.status === "auto_replied" || r.status === "draft_ready").length;
+  const positiveCount  = reviews.filter(r => r.rating >= 4).length;
   const needsAttention = reviews.filter(r => r.status === "needs_attention" || r.status === "pending_approval").length;
   const mixedCount = reviews.filter(r => r.hasMixedSentiment).length;
   
@@ -733,8 +733,9 @@ export default function ReviewsInboxPage() {
   const filteredReviews = filtered || [];
 
   // Calculate quick stats
-  const positiveCount = reviews.filter(r => r.status === "auto_replied").length;
-  const needsAttentionCount = reviews.filter(r => r.status === "needs_attention").length;
+  // Positive = 4★ or 5★ reviews (by rating, not status)
+  const positiveCount = reviews.filter(r => r.rating >= 4).length;
+  const needsAttentionCount = reviews.filter(r => r.status === "needs_attention" || r.status === "pending_approval").length;
   const avgRating = reviews.length > 0
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
     : 0;
