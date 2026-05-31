@@ -920,7 +920,7 @@ export default function ReviewsInboxPage() {
       {activeTab === 'reviews' && <>
       
       {/* Quick Insights Card — compact strip */}
-      {reviews.length > 0 && insights && insights?.tier !== 'basic' && (
+      {reviews.length > 0 && insights && (
         <div style={{
           background: "linear-gradient(135deg, #0ea5a0 0%, #0d9488 100%)",
           borderRadius: 12,
@@ -947,18 +947,29 @@ export default function ReviewsInboxPage() {
             <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.25)" }} />
           </div>
 
-          {/* Strengths — truncated single line */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, opacity: 0.8, marginBottom: 2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              ✅ Working Well
+          {/* Strengths — truncated single line — only for advanced tier */}
+          {insights?.tier !== 'basic' && quickInsights.strengths ? (
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 11, opacity: 0.8, marginBottom: 2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                ✅ Working Well
+              </div>
+              <div style={{
+                fontSize: 13, fontWeight: 500,
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+              }}>
+                {quickInsights.strengths}
+              </div>
             </div>
-            <div style={{
-              fontSize: 13, fontWeight: 500,
-              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-            }}>
-              {quickInsights.strengths}
+          ) : insights?.tier === 'basic' ? (
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 11, opacity: 0.8, marginBottom: 2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                🔒 Advanced Insights
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 500, opacity: 0.7 }}>
+                Upgrade to Growth plan for AI-powered analysis
+              </div>
             </div>
-          </div>
+          ) : null}
 
           {/* View full report button */}
           <button
