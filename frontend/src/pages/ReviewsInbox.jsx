@@ -104,22 +104,22 @@ function DonutChart({ positive, negative, mixed }) {
           />
         )}
         
-        {/* Center text */}
+        {/* Center text — white so visible on dark bg */}
         <text
           x="60"
-          y="60"
+          y="57"
           textAnchor="middle"
           dominantBaseline="middle"
-          style={{ fontSize: 20, fontWeight: 700, fill: "#111827" }}
+          style={{ fontSize: 18, fontWeight: 800, fill: "#ffffff" }}
         >
           {positivePercent.toFixed(0)}%
         </text>
         <text
           x="60"
-          y="75"
+          y="73"
           textAnchor="middle"
           dominantBaseline="middle"
-          style={{ fontSize: 10, fill: "#6b7280" }}
+          style={{ fontSize: 9, fill: "rgba(255,255,255,0.7)" }}
         >
           Positive
         </text>
@@ -203,7 +203,7 @@ function InsightsModal({ insights, reviews, onClose, plan }) {
             <DonutChart positive={positiveCount} negative={needsAttention - mixedCount} mixed={mixedCount} />
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 36, fontWeight: 800, color: "var(--ink)", fontFamily: "var(--font-display)" }}>{avgRating}★</div>
-              <div style={{ fontSize: 13, color: "var(--ink-3)" }}>from {reviews.length} reviews</div>
+              <div style={{ fontSize: 13, color: "var(--ink-2)", fontWeight: 500 }}>from {reviews.length} reviews</div>
             </div>
           </div>
           <div style={{ display: "flex", gap: 20, marginTop: 16, flexWrap: "wrap" }}>
@@ -250,8 +250,8 @@ function InsightsModal({ insights, reviews, onClose, plan }) {
               <div style={{
                 position: "absolute", inset: 0,
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                background: "rgba(10,12,15,.7)", backdropFilter: "blur(2px)",
-                borderRadius: 12, padding: 24, textAlign: "center",
+                background: "rgba(10,12,15,.8)", backdropFilter: "blur(3px)",
+                borderRadius: 12, padding: "24px 24px 32px", textAlign: "center",
               }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>
@@ -265,6 +265,8 @@ function InsightsModal({ insights, reviews, onClose, plan }) {
                   background: "var(--accent)", color: "#fff",
                   textDecoration: "none", borderRadius: 8, padding: "10px 22px",
                   fontSize: 14, fontWeight: 600,
+                  boxShadow: "0 4px 16px rgba(79,124,255,.4)",
+                  marginBottom: 8,
                 }}>
                   ⚡ Upgrade to Growth — ₹999/mo
                 </a>
