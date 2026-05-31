@@ -156,118 +156,121 @@ function DonutChart({ positive, negative, mixed }) {
 /* ─────────────────────────────────────────────────────────────
    INSIGHTS MODAL
 ───────────────────────────────────────────────────────────── */
-function InsightsModal({ insights, reviews, onClose }) {
+function InsightsModal({ insights, reviews, onClose, plan }) {
   const positiveCount  = reviews.filter(r => r.rating >= 4).length;
   const needsAttention = reviews.filter(r => r.status === "needs_attention" || r.status === "pending_approval").length;
-  const mixedCount = reviews.filter(r => r.hasMixedSentiment).length;
-  
-  const avgRating = reviews.length > 0
+  const mixedCount     = reviews.filter(r => r.hasMixedSentiment).length;
+  const avgRating      = reviews.length > 0
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
     : 0;
 
+  // Plan gating — basic plans only get limited insights from backend
+  // Backend returns tier: 'basic' or tier: 'advanced'
+  // If tier is missing, fall back to checking plan from auth context
+  const isAdvanced = insights?.tier === 'advanced' ||
+                     (['growth', 'professional', 'admin'].includes(plan) && insights?.tier !== 'basic')
+  const isLocked   = insights?.tier === 'basic' || (!insights?.tier && !['growth', 'professional', 'admin'].includes(plan))
+
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: "rgba(0,0,0,0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-        padding: 20
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: 16,
-          maxWidth: 700,
-          width: "100%",
-          maxHeight: "90vh",
-          overflow: "auto",
-          padding: 32,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.3)"
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div style={{
+      position: "fixed", inset: 0,
+      background: "rgba(0,0,0,0.6)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      zIndex: 1000, padding: 20,
+    }} onClick={onClose}>
+      <div style={{
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)",
+        borderRadius: 16, maxWidth: 700, width: "100%",
+        maxHeight: "90vh", overflow: "auto", padding: 32,
+        boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
+      }} onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <h2 style={{ margin: 0, fontSize: 24, color: "#111827" }}>
+          <h2 style={{ margin: 0, fontSize: 22, fontFamily: "var(--font-display)", fontWeight: 800, color: "var(--ink)" }}>
             📊 Detailed Insights
           </h2>
-          <button
-            onClick={onClose}
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: 28,
-              cursor: "pointer",
-              color: "#6b7280",
-              padding: 0,
-              lineHeight: 1
-            }}
-          >
-            ×
-          </button>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "var(--ink-3)", padding: 0, lineHeight: 1 }}>×</button>
         </div>
 
-        {/* Review Distribution */}
-        <div
-          style={{
-            background: "#f9fafb",
-            border: "1px solid #e5e7eb",
-            borderRadius: 12,
-            padding: 20,
-            marginBottom: 20
-          }}
-        >
-          <h3 style={{ marginTop: 0, marginBottom: 16, fontSize: 16, color: "#374151" }}>
+        {/* Basic stats — available on all plans */}
+        <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 12, padding: 20, marginBottom: 16 }}>
+          <h3 style={{ marginTop: 0, marginBottom: 16, fontSize: 14, fontWeight: 700, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: ".05em" }}>
             Review Distribution
           </h3>
-          
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <DonutChart
-              positive={positiveCount}
-              negative={needsAttention - mixedCount}
-              mixed={mixedCount}
-            />
-            
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+            <DonutChart positive={positiveCount} negative={needsAttention - mixedCount} mixed={mixedCount} />
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 32, fontWeight: 700, color: "#111827" }}>
-                {avgRating}★
-              </div>
-              <div style={{ fontSize: 14, color: "#6b7280" }}>
-                from {reviews.length} reviews
-              </div>
+              <div style={{ fontSize: 36, fontWeight: 800, color: "var(--ink)", fontFamily: "var(--font-display)" }}>{avgRating}★</div>
+              <div style={{ fontSize: 13, color: "var(--ink-3)" }}>from {reviews.length} reviews</div>
             </div>
+          </div>
+          <div style={{ display: "flex", gap: 20, marginTop: 16, flexWrap: "wrap" }}>
+            {[
+              { label: "Positive", value: positiveCount, color: "var(--green)" },
+              { label: "Needs Attention", value: needsAttention, color: "var(--amber)" },
+              { label: "Total", value: reviews.length, color: "var(--ink-2)" },
+            ].map(({ label, value, color }) => (
+              <div key={label}>
+                <div style={{ fontSize: 20, fontWeight: 800, color }}>{value}</div>
+                <div style={{ fontSize: 12, color: "var(--ink-3)" }}>{label}</div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* AI Analysis */}
-        <div
-          style={{
-            background: "#fff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 12,
-            padding: 20
-          }}
-        >
-          <h3 style={{ marginTop: 0, marginBottom: 16, fontSize: 16, color: "#374151" }}>
-            AI Analysis
-          </h3>
-          
-          <div style={{ 
-            whiteSpace: "pre-wrap", 
-            lineHeight: "1.8",
-            fontSize: 14,
-            color: "#1f2937"
-          }}>
-            {insights}
+        {/* AI Analysis — Growth+ only */}
+        <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 12, padding: 20, position: "relative", overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: ".05em" }}>
+              AI Analysis
+            </h3>
+            {!isAdvanced && (
+              <span style={{ fontSize: 11, fontWeight: 700, background: "rgba(79,124,255,.1)", color: "var(--accent)", border: "1px solid rgba(79,124,255,.2)", padding: "2px 8px", borderRadius: 100 }}>
+                Growth+ only
+              </span>
+            )}
           </div>
+
+          {isAdvanced ? (
+            <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.8, fontSize: 14, color: "var(--ink-2)" }}>
+              {typeof insights === "string" ? insights : insights?.insights || insights?.text || insights?.analysis || ""}
+            </div>
+          ) : (
+            /* Locked state for Starter/Free plan */
+            <div>
+              {/* Blurred preview */}
+              <div style={{ filter: "blur(4px)", pointerEvents: "none", userSelect: "none", opacity: 0.5, fontSize: 14, lineHeight: 1.8, color: "var(--ink-2)" }}>
+                ✅ Strong points: Your response time is excellent and customers appreciate the friendly staff...
+                ⚠️ Areas to improve: Several customers mentioned parking and wait times during peak hours...
+                💡 Recommended actions: Consider adding more staff on weekends and improving signage for parking...
+              </div>
+              {/* Upgrade prompt */}
+              <div style={{
+                position: "absolute", inset: 0,
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                background: "rgba(10,12,15,.7)", backdropFilter: "blur(2px)",
+                borderRadius: 12, padding: 24, textAlign: "center",
+              }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>
+                  Advanced AI Analysis
+                </div>
+                <div style={{ fontSize: 13.5, color: "var(--ink-3)", marginBottom: 20, maxWidth: 280, lineHeight: 1.6 }}>
+                  Unlock detailed sentiment analysis, theme detection, and actionable recommendations with Growth plan.
+                </div>
+                <a href="/checkout?plan=growth" style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  background: "var(--accent)", color: "#fff",
+                  textDecoration: "none", borderRadius: 8, padding: "10px 22px",
+                  fontSize: 14, fontWeight: 600,
+                }}>
+                  ⚡ Upgrade to Growth — ₹999/mo
+                </a>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -576,7 +579,7 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
 ───────────────────────────────────────────────────────────── */
 export default function ReviewsInboxPage() {
   const navigate = useNavigate();
-  const { profile, user } = useAuth();
+  const { profile, user, subscription } = useAuth();
 
   const [reviews, setReviews]               = useState([]);
   const [tab, setTab]                       = useState("all");
@@ -647,7 +650,7 @@ export default function ReviewsInboxPage() {
       const insightsData = await insightsRes.json();
 
       setReviews(reviewsData.reviews  || []);
-      setInsights(insightsData.insights || null);
+      setInsights(insightsData || null); // store full object {tier, insights}
       if (reviewsData.lastSyncAt) setLastSyncAt(reviewsData.lastSyncAt);
 
     } catch (err) {
@@ -685,7 +688,7 @@ export default function ReviewsInboxPage() {
       const insightsData = await insightsRes.json();
 
       setReviews(reviewsData.reviews  || []);
-      setInsights(insightsData.insights || null);
+      setInsights(insightsData || null); // store full object {tier, insights}
       if (reviewsData.lastSyncAt) setLastSyncAt(reviewsData.lastSyncAt);
 
     } catch (err) {
@@ -742,9 +745,10 @@ export default function ReviewsInboxPage() {
 
   // Extract top strengths and focus areas from insights
   const getQuickInsights = () => {
-    if (!insights) return { strengths: "", focusAreas: "" };
-    
-    const lines = insights.split('\n');
+    if (!insights || insights?.tier === 'basic') return { strengths: "", focusAreas: "" };
+    const insightText = typeof insights === 'string' ? insights : insights?.insights || ''
+    if (!insightText) return { strengths: "", focusAreas: "" };
+    const lines = insightText.split('\n');
     let strengths = [];
     let focusAreas = [];
     let section = '';
@@ -916,7 +920,7 @@ export default function ReviewsInboxPage() {
       {activeTab === 'reviews' && <>
       
       {/* Quick Insights Card — compact strip */}
-      {reviews.length > 0 && insights && (
+      {reviews.length > 0 && insights && insights?.tier !== 'basic' && (
         <div style={{
           background: "linear-gradient(135deg, #0ea5a0 0%, #0d9488 100%)",
           borderRadius: 12,
@@ -976,7 +980,8 @@ export default function ReviewsInboxPage() {
             onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.28)"}
             onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.18)"}
           >
-            Full Report →
+            {['growth','professional','admin'].includes(subscription?.plan || profile?.plan)
+              ? 'Full Report' : '🔒 Full Report'} →
           </button>
         </div>
       )}
@@ -1229,6 +1234,7 @@ export default function ReviewsInboxPage() {
           insights={insights}
           reviews={reviews}
           onClose={() => setShowInsightsModal(false)}
+          plan={subscription?.plan || profile?.plan || 'free'}
         />
       )}
     </div>

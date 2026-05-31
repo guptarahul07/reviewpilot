@@ -523,6 +523,20 @@ app.get("/api/reviews/insights", verifyFirebaseToken, checkSubscription, async (
   try {
     const uid = req.uid;
 
+    // Gate insights based on plan
+    // Starter / trial / free → return null (frontend shows locked UI)
+    // Growth / professional / admin → return full AI insights
+    const userDoc = await db.collection('users').doc(uid).get();
+    const plan = userDoc.data()?.subscription?.plan || 'free';
+    const basicPlans = ['free', 'trial', 'starter'];
+    const tier = basicPlans.includes(plan) ? 'basic' : 'advanced';
+
+    console.log(`📊 [Insights] User: ${uid}, Plan: ${plan}, Tier: ${tier}`);
+
+    if (tier === 'basic') {
+      return res.json({ success: true, tier: 'basic', insights: null });
+    }
+
     const snapshot = await db
       .collection("users")
       .doc(uid)
@@ -530,7 +544,7 @@ app.get("/api/reviews/insights", verifyFirebaseToken, checkSubscription, async (
       .get();
 
     if (snapshot.empty) {
-      return res.json({ insights: "No reviews yet. Sync reviews to see insights." });
+      return res.json({ success: true, tier, insights: "No reviews yet. Sync reviews to see insights." });
     }
 
     const reviews = snapshot.docs.map(doc => ({
@@ -605,7 +619,7 @@ Keep it SHORT, POSITIVE, and ACTIONABLE. Focus on helping the owner feel encoura
 
     const insights = response.data.content[0].text;
 
-    res.json({ insights });
+    res.json({ success: true, tier: 'advanced', insights });
 
   } catch (err) {
     console.error("❌ Insights error:", err);
