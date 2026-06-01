@@ -158,8 +158,13 @@ function DonutChart({ positive, negative, mixed }) {
 ───────────────────────────────────────────────────────────── */
 function InsightsModal({ insights, reviews, onClose, plan }) {
   const positiveCount  = reviews.filter(r => r.rating >= 4).length;
-  const needsAttention = reviews.filter(r => r.status === "needs_attention" || r.status === "pending_approval").length;
   const mixedCount     = reviews.filter(r => r.hasMixedSentiment).length;
+  // Needs attention = pending approval/attention status OR mixed sentiment reviews
+  const needsAttention = reviews.filter(r =>
+    r.status === "needs_attention" ||
+    r.status === "pending_approval" ||
+    r.hasMixedSentiment
+  ).length;
   const avgRating      = reviews.length > 0
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
     : 0;
@@ -200,7 +205,11 @@ function InsightsModal({ insights, reviews, onClose, plan }) {
             Review Distribution
           </h3>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
-            <DonutChart positive={positiveCount} negative={needsAttention - mixedCount} mixed={mixedCount} />
+            <DonutChart
+              positive={positiveCount}
+              negative={reviews.filter(r => r.rating <= 2 && !r.hasMixedSentiment).length}
+              mixed={mixedCount}
+            />
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 36, fontWeight: 800, color: "var(--ink)", fontFamily: "var(--font-display)" }}>{avgRating}★</div>
               <div style={{ fontSize: 13, color: "var(--ink-2)", fontWeight: 500 }}>from {reviews.length} reviews</div>
@@ -221,7 +230,7 @@ function InsightsModal({ insights, reviews, onClose, plan }) {
         </div>
 
         {/* AI Analysis — Growth+ only */}
-        <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 12, padding: 20, position: "relative", overflow: "hidden" }}>
+        <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 12, padding: 20, position: "relative", minHeight: 220 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: ".05em" }}>
               AI Analysis
@@ -248,10 +257,11 @@ function InsightsModal({ insights, reviews, onClose, plan }) {
               </div>
               {/* Upgrade prompt */}
               <div style={{
-                position: "absolute", inset: 0,
+                position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                background: "rgba(10,12,15,.8)", backdropFilter: "blur(3px)",
-                borderRadius: 12, padding: "24px 24px 32px", textAlign: "center",
+                background: "rgba(10,12,15,.85)", backdropFilter: "blur(3px)",
+                borderRadius: 12, padding: "20px 20px 24px", textAlign: "center",
+                zIndex: 2,
               }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>
