@@ -27,6 +27,7 @@ import { checkSubscription } from './middleware/checkSubscription.js';
 import { checkLimit, incrementUsage } from './utils/planLimits.js';
 import couponsRouter from './routes/coupons.js';
 import billingRouter from './routes/billing.js';
+import analyticsDashboardRouter from './routes/analytics_dashboard.js';
 import siteMessagesRouter from './routes/siteMessages.js';
 
 const app = express();
@@ -47,6 +48,7 @@ app.use('/api/', apiLimiter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/reviews', reviewsRouter);
 app.use('/api/billing', billingRouter);
+app.use('/api/analytics', analyticsDashboardRouter);
 app.use('/api/admin/coupons', couponsRouter);
 app.use('/api/admin/site-messages', siteMessagesRouter);
 app.use('/api/site-messages', siteMessagesRouter);

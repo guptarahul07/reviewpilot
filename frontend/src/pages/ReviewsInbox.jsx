@@ -10,6 +10,7 @@ import DynamicBanner from '../components/DynamicBanner';
 import TrialBanner from '../components/TrialBanner';
 import { ReviewCardSkeleton, InsightsCardSkeleton } from '../components/ReviewSkeleton';
 import ReplyHistory from '../components/ReplyHistory';
+import AnalyticsDashboard from '../components/AnalyticsDashboard';
 import ReplyTextarea from '../components/ReplyTextarea';
 import Toast from '../components/ui/Toast';
 
@@ -915,7 +916,7 @@ export default function ReviewsInboxPage() {
           <PauseResumeToggle replyMode={replyMode} />
         </div>
         <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)' }}>
-          {[{ id: 'reviews', label: '📥 Reviews' }, { id: 'history', label: '📋 Reply History' }].map(({ id, label }) => (
+          {[{ id: 'reviews', label: '📥 Reviews' }, { id: 'history', label: '📋 Reply History' }, { id: 'analytics', label: '📊 Analytics' }].map(({ id, label }) => (
             <button key={id} onClick={() => setActiveTab(id)} style={{
               padding: '8px 16px', border: 'none', background: 'none',
               fontFamily: 'var(--font-body)', fontSize: 13.5, fontWeight: 600,
@@ -927,7 +928,8 @@ export default function ReviewsInboxPage() {
         </div>
       </div>
 
-      {activeTab === 'history' && <ReplyHistory />}
+      {activeTab === 'history'   && <ReplyHistory />}
+      {activeTab === 'analytics' && <AnalyticsDashboard />}
 
       {activeTab === 'reviews' && <>
       
