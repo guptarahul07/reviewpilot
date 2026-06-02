@@ -290,7 +290,7 @@ export default function PrivacyPolicyPage() {
         </ul>
 
         <p style={{ marginTop: 16 }}>
-          To exercise any of these rights, contact us at <strong>privacy@reviewpilot.live</strong>. 
+          To exercise any of these rights, contact us at <strong>support@reviewpilot.live</strong>. 
           We will respond within 30 days.
         </p>
       </section>
@@ -425,10 +425,10 @@ export default function PrivacyPolicyPage() {
           borderRadius: 8,
           border: "1px solid #e5e7eb"
         }}>
-          <p><strong>Name:</strong> [Grievance Officer Name]</p>
-          <p style={{ marginTop: 8 }}><strong>Email:</strong> grievance@reviewpilot.live</p>
-          <p style={{ marginTop: 8 }}><strong>Phone:</strong> [Contact Number]</p>
-          <p style={{ marginTop: 8 }}><strong>Address:</strong> [Registered Office Address]</p>
+          <p><strong>Name:</strong> Nishu Gupta</p>
+          <p style={{ marginTop: 8 }}><strong>Email:</strong> support@reviewpilot.live</p>
+          <p style={{ marginTop: 8 }}><strong>Phone:</strong> 9810026181</p>
+          <p style={{ marginTop: 8 }}><strong>Address:</strong>E-3, Second Floor, Mansarovar Park, Shahdara, Delhi 110032</p>
           <p style={{ marginTop: 8 }}><strong>Response Time:</strong> Within 30 days of receiving complaint</p>
         </div>
       </section>
@@ -447,9 +447,9 @@ export default function PrivacyPolicyPage() {
           borderRadius: 8,
           border: "1px solid #e5e7eb"
         }}>
-          <p><strong>Email:</strong> privacy@reviewpilot.live</p>
+          <p><strong>Email:</strong> support@reviewpilot.live</p>
           <p style={{ marginTop: 8 }}><strong>Support:</strong> support@reviewpilot.live</p>
-          <p style={{ marginTop: 8 }}><strong>Address:</strong> [Your Registered Business Address]</p>
+          <p style={{ marginTop: 8 }}><strong>Address:</strong> E-3, Second Floor, Mansarovar Park, Shahdara, Delhi 110032</p>
         </div>
       </section>
 

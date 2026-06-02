@@ -33,7 +33,7 @@ export default function TermsOfServicePage() {
           If you disagree with any part of these terms, you may not access the Service.
         </p>
         <p style={{ marginTop: 12 }}>
-          ReviewPilot is operated by Nishu Gupta, a company registered in India 
+          ReviewPilot is operated by Rahul Gupta, a company registered in India 
           ("we", "us", or "our").
         </p>
       </section>
