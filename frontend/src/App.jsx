@@ -32,6 +32,7 @@ import Billing from './pages/Billing'
 import Checkout from './pages/Checkout'
 import AdminCoupons from './pages/AdminCoupons'
 import AdminMessages from './pages/AdminMessages'
+import PlayOnboarding from './pages/PlayOnboarding'
 
 export default function App() {
   return (
@@ -79,6 +80,7 @@ export default function App() {
             <Route path="/admin/messages"        element={<AdminMessages />} />
             <Route path="/settings/billing"      element={<Billing />} />
             <Route path="/dashboard"            element={<Navigate to="/reviews" replace />} />
+            <Route path="/play/onboarding"       element={<PlayOnboarding />} />
           </Route>
 
           {/* ── Catch-all ── */}

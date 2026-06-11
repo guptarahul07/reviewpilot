@@ -167,12 +167,13 @@ function ComparisonBar({ label, value, maxValue, color, suffix = '' }) {
 ───────────────────────────────────────────────────────────────── */
 export default function AnalyticsDashboard() {
   const { user } = useAuth()
-  const [data, setData]       = useState(null)
-  const [days, setDays]       = useState(30)
+  const [data, setData]         = useState(null)
+  const [days, setDays]         = useState(30)
+  const [platform, setPlatform] = useState('all')
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(false)
 
-  useEffect(() => { fetchAnalytics(days) }, [days, user])
+  useEffect(() => { fetchAnalytics(days) }, [days, user, platform])
 
   async function fetchAnalytics(d) {
     if (!user) return
@@ -180,7 +181,7 @@ export default function AnalyticsDashboard() {
     setError(false)
     try {
       const token = await user.getIdToken()
-      const res   = await fetch(`${API_URL}/api/analytics/summary?days=${d}`, {
+      const res   = await fetch(`${API_URL}/api/analytics/summary?days=${d}&platform=${platform}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error('Failed')
@@ -281,6 +282,17 @@ export default function AnalyticsDashboard() {
             <option value={90}>Last 3 months</option>
             <option value={180}>Last 6 months</option>
           </select>
+          <div style={{ display: 'flex', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: 3, gap: 2 }}>
+            {[{ value: 'all', label: 'All' }, { value: 'google_business', label: '⭐ Business' }, { value: 'google_play', label: '🎮 Play' }].map(({ value, label }) => (
+              <button key={value} onClick={() => setPlatform(value)} style={{
+                background: platform === value ? 'var(--accent)' : 'none',
+                color: platform === value ? '#fff' : 'var(--ink-3)',
+                border: 'none', borderRadius: 6, padding: '5px 10px',
+                fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+                fontFamily: 'var(--font-body)', transition: 'all .15s',
+              }}>{label}</button>
+            ))}
+          </div>
           <button onClick={() => fetchAnalytics(days)} title="Refresh" style={{
             background: 'var(--bg-card)', border: '1px solid var(--border)',
             borderRadius: 8, padding: '7px 10px', cursor: 'pointer',
@@ -401,6 +413,25 @@ export default function AnalyticsDashboard() {
               )}
             </div>
           </div>
+
+          {/* Play: Version Rating Trend */}
+          {platform === 'google_play' && data?.versionRatings?.length > 0 && (
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 22 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 16 }}>Version vs Rating</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {data.versionRatings.map(({ version, rating, count }) => (
+                  <div key={version} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 50, fontSize: 12, fontFamily: 'monospace', color: 'var(--ink-3)', flexShrink: 0 }}>v{version}</div>
+                    <div style={{ flex: 1, height: 10, background: 'var(--border)', borderRadius: 5, overflow: 'hidden' }}>
+                      <div style={{ width: `${(rating/5)*100}%`, height: '100%', borderRadius: 5, background: rating >= 4 ? '#10b981' : rating >= 3 ? '#f59e0b' : '#ef4444', transition: 'width .5s' }} />
+                    </div>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', width: 30, textAlign: 'right' }}>{rating.toFixed(1)}</div>
+                    <div style={{ fontSize: 11.5, color: 'var(--ink-3)', width: 40 }}>{count} rev</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* ── Widget 4: Keywords ── */}
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 22 }}>

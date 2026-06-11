@@ -4,6 +4,7 @@ import { fetchGoogleReviews, generateMockReviews } from '../services/googleRevie
 import { getUserSettings, shouldSkipReview } from '../services/replyModeHandler.js';
 import { analyzeSentiment } from '../services/sentimentAnalysis.js';
 import { trackEvent } from '../utils/analytics.js';
+import { fetchAndStorePlayReviews } from '../services/playStoreReviews.js';
 
 async function syncReviewsForUser(uid) {
   console.log(`[CRON] Syncing reviews for user: ${uid}`);
@@ -98,8 +99,54 @@ export async function runDailySync() {
 
     console.log(`[CRON] Daily sync complete — ${successCount} success, ${failCount} failed`);
 
+  // Play Store sync
+  await syncPlayStoreReviews();
+
   } catch (err) {
     console.error('[CRON] Daily sync error:', err);
+  }
+}
+
+// Sync Play Store reviews for all connected users
+async function syncPlayStoreReviews() {
+  console.log('[CRON] Starting Play Store review sync...');
+
+  try {
+    const usersSnapshot = await db
+      .collection('users')
+      .where('playAuth.connected', '==', true)
+      .get();
+
+    console.log(`[CRON] Found ${usersSnapshot.size} Play Console connected users`);
+
+    for (const userDoc of usersSnapshot.docs) {
+      const uid = userDoc.id;
+      try {
+        const appsSnapshot = await db
+          .collection('users')
+          .doc(uid)
+          .collection('playApps')
+          .get();
+
+        for (const appDoc of appsSnapshot.docs) {
+          const packageName = appDoc.data().packageName;
+          try {
+            await fetchAndStorePlayReviews(uid, packageName);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 1s delay between apps
+          } catch (err) {
+            console.error(`[CRON] Play sync failed for ${packageName} (${uid}):`, err.message);
+          }
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 2000)); // 2s delay between users
+      } catch (err) {
+        console.error(`[CRON] Play sync failed for user ${uid}:`, err.message);
+      }
+    }
+
+    console.log('[CRON] Play Store sync complete');
+  } catch (err) {
+    console.error('[CRON] Play Store sync error:', err.message);
   }
 }
 

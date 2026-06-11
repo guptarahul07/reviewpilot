@@ -1,5 +1,6 @@
 // src/pages/Settings.jsx
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { API_URL } from '../config/api'
 import Button from '../components/ui/Button'
@@ -8,7 +9,7 @@ import Toast from '../components/ui/Toast'
 import FeedbackWidget from '../components/FeedbackWidget'
 import {
   Building2, Palette, Zap, AlertTriangle,
-  Shield, ChevronRight, Check,
+  Shield, ChevronRight, Check, Link2, Gamepad2, Unlink,
 } from 'lucide-react'
 import './Settings.css'
 import { sanitizeSettings } from '../utils/sanitize'
@@ -84,6 +85,14 @@ export default function Settings() {
   const [loading,             setLoading]             = useState(true)
   const [toast,               setToast]               = useState(null)
   const [previewMode,         setPreviewMode]         = useState(false)
+  const [playConnected,      setPlayConnected]      = useState(false)
+  const [playApps,           setPlayApps]           = useState([])
+  const [playEmail,          setPlayEmail]          = useState('')
+  const [newPkgName,         setNewPkgName]         = useState('')
+  const [newAppName,         setNewAppName]         = useState('')
+  const [addingApp,          setAddingApp]          = useState(false)
+  const [disconnectingPlay,  setDisconnectingPlay]  = useState(false)
+  const [searchParams]                              = useSearchParams()
 
   /* ── Load settings from backend ─────────────────────────────── */
   useEffect(() => {
@@ -118,9 +127,56 @@ export default function Settings() {
       } finally {
         setLoading(false)
       }
+      // Load Play Console status
+      try {
+        const token2 = await user.getIdToken()
+        const playRes = await fetch(`${API_URL}/api/play/status`, {
+          headers: { Authorization: `Bearer ${token2}` },
+        })
+        if (playRes.ok) {
+          const playData = await playRes.json()
+          setPlayConnected(playData.connected ?? false)
+          setPlayApps(playData.apps || [])
+          setPlayEmail(playData.email || '')
+        }
+      } catch { /* non-blocking */ }
     }
     loadSettings()
-  }, [user, profile])
+    if (searchParams.get('play') === 'connected') setPlayConnected(true)
+  }, [user, profile, searchParams])
+
+  /* ── Play Console handlers ──────────────────────────────────── */
+  function handleConnectPlay() { window.location.href = `${API_URL}/api/play/auth/google` }
+
+  async function handleDisconnectPlay() {
+    setDisconnectingPlay(true)
+    try {
+      const token = await user.getIdToken()
+      await fetch(`${API_URL}/api/play/auth/disconnect`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
+      setPlayConnected(false); setPlayApps([]); setPlayEmail('')
+    } catch {} finally { setDisconnectingPlay(false) }
+  }
+
+  async function handleAddPlayApp(e) {
+    e.preventDefault(); if (!newPkgName.trim()) return
+    setAddingApp(true)
+    try {
+      const token = await user.getIdToken()
+      const res = await fetch(`${API_URL}/api/play/apps`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ packageName: newPkgName.trim(), appName: newAppName.trim() || newPkgName.trim() }),
+      })
+      if (res.ok) { setPlayApps(prev => [...prev, { packageName: newPkgName.trim(), appName: newAppName.trim() || newPkgName.trim() }]); setNewPkgName(''); setNewAppName('') }
+    } catch {} finally { setAddingApp(false) }
+  }
+
+  async function handleRemovePlayApp(pkgName) {
+    try {
+      const token = await user.getIdToken()
+      await fetch(`${API_URL}/api/play/apps/${pkgName}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+      setPlayApps(prev => prev.filter(a => a.packageName !== pkgName))
+    } catch {}
+  }
 
   /* ── Save settings — optimistic update ──────────────────────── */
   async function handleSave(e) {
@@ -196,6 +252,81 @@ export default function Settings() {
       </div>
 
       <form onSubmit={handleSave} className="settings__form">
+
+        {/* ── Connected Platforms ─────────────────────────────────── */}
+        <section className="settings-section">
+          <div className="settings-section__label">
+            <Link2 size={15} />
+            Connected Platforms
+          </div>
+          <div className="settings-section__body">
+            {/* Google Business Profile — always connected */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(79,124,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>⭐</div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>Google Business Profile</div>
+                  <div style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>Manage customer reviews for your business</div>
+                </div>
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 100, background: 'rgba(34,208,138,.1)', color: 'var(--green)', border: '1px solid rgba(34,208,138,.2)' }}>Connected ✅</span>
+            </div>
+
+            {/* Google Play Console */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: playConnected ? 14 : 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(124,92,252,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Gamepad2 size={18} style={{ color: '#a78bfa' }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>Google Play Console</div>
+                    <div style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>{playConnected ? playEmail : 'Manage reviews for your Android apps'}</div>
+                  </div>
+                </div>
+                {!playConnected
+                  ? <button onClick={handleConnectPlay} style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Gamepad2 size={13} /> Connect Play Console
+                    </button>
+                  : <button onClick={handleDisconnectPlay} disabled={disconnectingPlay} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-3)', cursor: 'pointer', fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <Unlink size={12} /> {disconnectingPlay ? 'Disconnecting…' : 'Disconnect'}
+                    </button>
+                }
+              </div>
+
+              {playConnected && (
+                <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 10, padding: 16 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 10 }}>Your Apps</div>
+                  {playApps.length === 0
+                    ? <p style={{ fontSize: 13.5, color: 'var(--ink-3)', marginBottom: 12 }}>No apps added yet.</p>
+                    : <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                        {playApps.map(app => (
+                          <div key={app.packageName} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                            <div>
+                              <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{app.appName}</div>
+                              <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'monospace' }}>{app.packageName}</div>
+                            </div>
+                            <button onClick={() => handleRemovePlayApp(app.packageName)} style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: 4 }}>×</button>
+                          </div>
+                        ))}
+                      </div>
+                  }
+                  <form onSubmit={handleAddPlayApp} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <input type="text" value={newPkgName} onChange={e => setNewPkgName(e.target.value)} placeholder="com.yourcompany.app"
+                      style={{ flex: 2, minWidth: 160, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '7px 10px', fontFamily: 'monospace', fontSize: 13, color: 'var(--ink)', outline: 'none' }} />
+                    <input type="text" value={newAppName} onChange={e => setNewAppName(e.target.value)} placeholder="App name"
+                      style={{ flex: 1, minWidth: 100, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '7px 10px', fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--ink)', outline: 'none' }} />
+                    <button type="submit" disabled={addingApp || !newPkgName.trim()} style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', opacity: !newPkgName.trim() ? 0.5 : 1 }}>
+                      {addingApp ? '…' : '+ Add'}
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {!playConnected && <p className="settings__hint" style={{ marginTop: 8 }}>Connect to manage Google Play reviews. No approval needed — works immediately.</p>}
+            </div>
+          </div>
+        </section>
 
         {/* ── Reply Mode ─────────────────────────────────────────── */}
         <section className="settings-section">

@@ -28,6 +28,7 @@ import { checkLimit, incrementUsage } from './utils/planLimits.js';
 import couponsRouter from './routes/coupons.js';
 import billingRouter from './routes/billing.js';
 import analyticsDashboardRouter from './routes/analytics_dashboard.js';
+import playRouter from './routes/play.js';
 import siteMessagesRouter from './routes/siteMessages.js';
 
 const app = express();
@@ -49,6 +50,7 @@ app.use('/api/settings', settingsRouter);
 app.use('/api/reviews', reviewsRouter);
 app.use('/api/billing', billingRouter);
 app.use('/api/analytics', analyticsDashboardRouter);
+app.use('/api/play', playRouter);
 app.use('/api/admin/coupons', couponsRouter);
 app.use('/api/admin/site-messages', siteMessagesRouter);
 app.use('/api/site-messages', siteMessagesRouter);

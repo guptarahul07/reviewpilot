@@ -400,16 +400,32 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
         e.currentTarget.style.transform = "translateY(0)";
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <strong style={{ color: "#111827" }}>{review.reviewer}</strong>
+      {/* Platform badge */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span style={{
+          fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 100,
+          background: review.platform === 'google_play' ? 'rgba(124,92,252,.1)' : 'rgba(79,124,255,.1)',
+          color: review.platform === 'google_play' ? '#a78bfa' : 'var(--accent)',
+          border: `1px solid ${review.platform === 'google_play' ? 'rgba(124,92,252,.2)' : 'rgba(79,124,255,.2)'}`,
+        }}>
+          {review.platform === 'google_play' ? '🎮 Google Play' : '⭐ Google Business'}
+        </span>
         <span style={{ fontSize: 12, color: "#718096" }}>
           {review.date || new Date(review.createTime).toLocaleDateString()}
         </span>
       </div>
-
-      <Stars rating={review.rating} />
-
-      <p style={{ marginTop: 8, color: "#1f2937" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: 'center', marginBottom: 4 }}>
+        <strong style={{ color: "var(--ink)" }}>{review.reviewer}</strong>
+        <Stars rating={review.rating} />
+      </div>
+      {review.platform === 'google_play' && (review.device || review.appVersion) && (
+        <div style={{ display: 'flex', gap: 12, marginBottom: 6, flexWrap: 'wrap' }}>
+          {review.device && <span style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>📱 {review.device}</span>}
+          {review.appVersion && <span style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>v{review.appVersion}</span>}
+          {review.thumbsUpCount > 0 && <span style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>👍 {review.thumbsUpCount}</span>}
+        </div>
+      )}
+      <p style={{ marginTop: 4, color: "var(--ink-2)" }}>
         {review.text}
       </p>
 
@@ -602,6 +618,7 @@ export default function ReviewsInboxPage() {
   const [showInsightsModal, setShowInsightsModal] = useState(false);
   const [lastSyncAt, setLastSyncAt]         = useState(null);
   const [ratingFilter, setRatingFilter]     = useState('all');
+  const [platformFilter, setPlatformFilter] = useState('all');
   const [selectedReviews, setSelectedReviews] = useState([]);
   const [bulkPosting, setBulkPosting]       = useState(false);
   const [bulkProgress, setBulkProgress]     = useState({ current: 0, total: 0 });
@@ -739,11 +756,14 @@ export default function ReviewsInboxPage() {
     else if (tab === "needs_attention") list = reviews.filter(r => r.status === "needs_attention");
     else list = reviews.filter(r => r.status !== "needs_attention");
 
+    if (platformFilter !== 'all') {
+      list = list.filter(r => (r.platform || 'google_business') === platformFilter)
+    }
     if (ratingFilter !== 'all') {
       list = list.filter(r => r.rating === parseInt(ratingFilter))
     }
     return list
-  }, [reviews, tab, ratingFilter]);
+  }, [reviews, tab, ratingFilter, platformFilter]);
 
   // Alias for bulk operations
   const filteredReviews = filtered || [];
@@ -1049,6 +1069,22 @@ export default function ReviewsInboxPage() {
 
       {/* Rating filter + bulk controls row */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+        {/* Platform filter */}
+        <select
+          value={platformFilter}
+          onChange={e => { setPlatformFilter(e.target.value); setSelectedReviews([]); }}
+          style={{
+            background: "var(--bg-card)", border: "1px solid var(--border)",
+            borderRadius: 8, padding: "7px 12px",
+            fontFamily: "var(--font-body)", fontSize: 13.5, color: "var(--ink)",
+            cursor: "pointer", outline: "none",
+          }}
+        >
+          <option value="all">All Platforms</option>
+          <option value="google_business">⭐ Google Business</option>
+          <option value="google_play">🎮 Google Play</option>
+        </select>
+
         {/* Rating filter */}
         <select
           value={ratingFilter}
