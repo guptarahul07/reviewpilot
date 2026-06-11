@@ -405,6 +405,7 @@ export default function ConnectGoogle() {
 
   // 'idle' | 'loading' | 'connected' | 'error' | 'disconnecting'
   const [state, setState]               = useState('idle');
+  const [platform, setPlatform]         = useState('gbp'); // 'gbp' | 'play'
   const [business, setBusiness]         = useState(null);
   const [errorMsg, setErrorMsg]         = useState('');
   // Track if this is a fresh OAuth connection (show confetti) vs revisit (no confetti)
@@ -481,6 +482,11 @@ export default function ConnectGoogle() {
   /* ── Start OAuth flow ───────────────────────────────────────────────── */
   async function handleConnect() {
     if (!user) { navigate('/login'); return; }
+    // If Play Store selected, redirect to Play OAuth
+    if (platform === 'play') {
+      window.location.href = `${API_URL}/api/play/auth/google`
+      return
+    }
     // Activate trial before connecting (Task 1)
     try {
       const token = await user.getIdToken()
@@ -574,11 +580,42 @@ export default function ConnectGoogle() {
                     <div className="orbit-dot2" />
                   </div>
 
+                  {/* Platform choice toggle */}
+                  <div style={{ display: 'flex', background: 'rgba(0,0,0,.06)', borderRadius: 12, padding: 4, gap: 4, marginBottom: 24 }}>
+                    {[
+                      { id: 'gbp',  label: '⭐ Google Business', desc: 'For restaurants, salons, clinics' },
+                      { id: 'play', label: '🎮 Google Play',     desc: 'For Android app developers' },
+                    ].map(({ id, label, desc }) => (
+                      <button key={id} onClick={() => setPlatform(id)} style={{
+                        flex: 1, padding: '10px 8px', border: 'none', borderRadius: 9,
+                        background: platform === id ? '#fff' : 'none',
+                        boxShadow: platform === id ? '0 1px 4px rgba(0,0,0,.12)' : 'none',
+                        cursor: 'pointer', transition: 'all .2s',
+                        fontFamily: "'Figtree', sans-serif",
+                      }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 700, color: platform === id ? '#0f1623' : '#6b7280', marginBottom: 2 }}>{label}</div>
+                        <div style={{ fontSize: 11, color: '#9ca3af' }}>{desc}</div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {platform === 'gbp' ? (
+                    <>
                   <p className="card-eyebrow afu d1">Connect Google Business</p>
                   <h1 className="card-title afu d2">Link Your Business Profile</h1>
                   <p className="card-sub afu d3">
                     Grant ReviewPilot access to read and reply to your Google Business reviews.
                   </p>
+                    </>
+                  ) : (
+                    <>
+                  <p className="card-eyebrow afu d1">Connect Google Play</p>
+                  <h1 className="card-title afu d2">Link Your Play Console</h1>
+                  <p className="card-sub afu d3">
+                    Grant ReviewPilot access to read and reply to your Android app reviews.
+                  </p>
+                    </>
+                  )}
 
                   {/* Permissions list */}
                   <div className="perms afu d3">
@@ -587,16 +624,21 @@ export default function ConnectGoogle() {
                       <div className="perm-icon"><EyeIcon /></div>
                       <div>
                         <div className="perm-name">View your reviews</div>
-                        <div className="perm-desc">Read all public reviews on your Business Profile</div>
+                        <div className="perm-desc">{platform === 'play' ? 'Read all reviews on your Play Store apps' : 'Read all public reviews on your Business Profile'}</div>
                       </div>
                     </div>
                     <div className="perm-row">
                       <div className="perm-icon"><MessageIcon /></div>
                       <div>
                         <div className="perm-name">Post replies</div>
-                        <div className="perm-desc">Publish owner responses on your behalf</div>
+                        <div className="perm-desc">{platform === 'play' ? 'Publish developer responses on your Play Store apps' : 'Publish owner responses on your behalf'}</div>
                       </div>
                     </div>
+                    {platform === 'play' && (
+                      <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(124,92,252,.08)', border: '1px solid rgba(124,92,252,.2)', borderRadius: 8, fontSize: 12.5, color: '#7c3aed' }}>
+                        📦 After connecting, you'll add your app's package name (e.g. com.yourcompany.app)
+                      </div>
+                    )}
                   </div>
 
                   {/* Security note */}
