@@ -33,6 +33,11 @@ import Checkout from './pages/Checkout'
 import AdminCoupons from './pages/AdminCoupons'
 import AdminMessages from './pages/AdminMessages'
 import PlayOnboarding from './pages/PlayOnboarding'
+import Onboarding from './pages/Onboarding'
+import GoogleReviews from './pages/products/GoogleReviews'
+import PlayStoreReviews from './pages/products/PlayStoreReviews'
+import InsightPilot from './pages/products/InsightPilot'
+import Status from './pages/Status'
 
 export default function App() {
   return (
@@ -50,6 +55,10 @@ export default function App() {
             <Route path="/privacy"      element={<PrivacyPolicyPage />} />
             <Route path="/help-center"  element={<HelpCenter />} />
             <Route path="/free-audit"   element={<FreeAudit />} />
+            <Route path="/products/google-reviews"    element={<GoogleReviews />} />
+            <Route path="/products/play-store-reviews" element={<PlayStoreReviews />} />
+            <Route path="/products/insightspilot"     element={<InsightPilot />} />
+            <Route path="/status"                    element={<Status />} />
             <Route path="/restaurants"  element={<Restaurants />} />
             <Route path="/cafes"        element={<Restaurants />} />
             <Route path="/salons"       element={<Salons />} />
@@ -81,6 +90,7 @@ export default function App() {
             <Route path="/settings/billing"      element={<Billing />} />
             <Route path="/dashboard"            element={<Navigate to="/reviews" replace />} />
             <Route path="/play/onboarding"       element={<PlayOnboarding />} />
+            <Route path="/onboarding"              element={<Onboarding />} />
           </Route>
 
           {/* ── Catch-all ── */}

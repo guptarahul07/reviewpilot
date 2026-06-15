@@ -30,6 +30,10 @@ import billingRouter from './routes/billing.js';
 import analyticsDashboardRouter from './routes/analytics_dashboard.js';
 import playRouter from './routes/play.js';
 import siteMessagesRouter from './routes/siteMessages.js';
+import userRouter from './routes/user.js';
+import { checkProductAccess } from './middleware/checkProductAccess.js';
+import './cron/emailCron.js';
+import './cron/tokenHealthCheck.js';
 
 const app = express();
 
@@ -50,7 +54,9 @@ app.use('/api/settings', settingsRouter);
 app.use('/api/reviews', reviewsRouter);
 app.use('/api/billing', billingRouter);
 app.use('/api/analytics', analyticsDashboardRouter);
-app.use('/api/play', playRouter);
+app.use('/api/play', checkProductAccess('play'), playRouter);
+app.use('/api/user', userRouter);
+app.use('/api/waitlist', userRouter);
 app.use('/api/admin/coupons', couponsRouter);
 app.use('/api/admin/site-messages', siteMessagesRouter);
 app.use('/api/site-messages', siteMessagesRouter);

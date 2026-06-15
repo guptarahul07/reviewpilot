@@ -69,12 +69,11 @@ export default function Home() {
           Beta Offer · First 2 months FREE with annual plan
         </div>
         <h1 className="hero__title animate-fade-up delay-2">
-          Never miss a review again —<br />
-          <span className="hero__gradient">AI replies in seconds</span>
+          One Dashboard for All Your<br />
+          <span className="hero__gradient">Business Reviews</span>
         </h1>
         <p className="hero__sub animate-fade-up delay-3">
-          Manage all your Google Business reviews with AI. Respond faster, build stronger
-          customer relationships, and improve your online reputation — all from one dashboard.
+          AI-powered review management across Google Business, Play Store, and beyond. Built for Indian businesses.
         </p>
         <div className="hero__actions animate-fade-up delay-4">
           <Link to="/signup"><Button size="lg">Start Free Trial <ArrowRight size={16} /></Button></Link>
@@ -126,6 +125,43 @@ export default function Home() {
               <div className="stat-card__label">{label}</div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ── Products Section ────────────────── */}
+      <section style={{ padding: '72px 0', background: 'var(--bg-card)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+        <div className="container">
+          <p style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 10 }}>Our Products</p>
+          <h2 className="section-title" style={{ textAlign: 'center', marginBottom: 12 }}>Everything you need to manage reviews</h2>
+          <p style={{ textAlign: 'center', fontSize: 15, color: 'var(--ink-3)', marginBottom: 48, maxWidth: 500, margin: '0 auto 48px', lineHeight: 1.65 }}>
+            One platform, multiple products — built for Indian businesses of every kind.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))', gap: 20 }}>
+            {[
+              { emoji: '⭐', title: 'Google Business Reviews', desc: 'Manage and reply to your Google reviews with AI. Auto-sync, bulk reply, sentiment analysis — all in one inbox.', features: ['AI replies in your tone', 'Auto/Semi-Auto/Manual modes', 'Multi-location support', 'Sentiment dashboard'], link: '/products/google-reviews', linkLabel: 'Learn More →', soon: false },
+              { emoji: '🎮', title: 'Play Store Reviews', desc: 'AI replies for Android app reviews — within 350-char limit. Version-wise trends, device breakdown, multi-app inbox.', features: ['Multi-app inbox', 'Version-wise rating trends', 'Device analytics', 'AI replies within 350 chars'], link: '/products/play-store-reviews', linkLabel: 'Learn More →', soon: false },
+              { emoji: '📊', title: 'InsightPilot', desc: 'Deep analytics from Zomato, Swiggy, Reddit & more. Know what customers really think — and how you compare to competitors.', features: ['Zomato + Swiggy analysis', 'Competitor comparison', 'Menu item insights', 'All platforms in one dashboard'], link: '/products/insightspilot', linkLabel: 'Join Waitlist →', soon: true },
+            ].map(({ emoji, title, desc, features, link, linkLabel, soon }) => (
+              <div key={title} style={{ background: 'var(--bg)', border: soon ? '2px dashed var(--border)' : '1px solid var(--border)', borderRadius: 20, padding: 26, display: 'flex', flexDirection: 'column', opacity: soon ? 0.85 : 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <span style={{ fontSize: 32 }}>{emoji}</span>
+                  {soon && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: 'rgba(245,166,35,.1)', color: 'var(--amber)', border: '1px solid rgba(245,166,35,.2)' }}>COMING SOON</span>}
+                </div>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800, color: 'var(--ink)', marginBottom: 10 }}>{title}</h3>
+                <p style={{ fontSize: 13.5, color: 'var(--ink-3)', lineHeight: 1.65, flex: 1, marginBottom: 18 }}>{desc}</p>
+                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
+                  {features.map(f => (
+                    <li key={f} style={{ fontSize: 13, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ color: soon ? 'var(--amber)' : 'var(--green)', fontSize: 13 }}>{soon ? '⏳' : '✓'}</span> {f}
+                    </li>
+                  ))}
+                </ul>
+                <a href={link} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: soon ? 'var(--amber)' : 'var(--accent)', fontWeight: 600, fontSize: 13.5, textDecoration: 'none' }}>
+                  {linkLabel}
+                </a>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

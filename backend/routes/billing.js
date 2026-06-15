@@ -18,6 +18,8 @@ const razorpay = new Razorpay({
 
 // ─────────────────────────────────────────────
 // Plan config — prices in paise (INR * 100)
+// Full plan config lives in config/plans.js
+// Below is billing-specific shorthand for Razorpay
 // ─────────────────────────────────────────────
 export const PLANS = {
   starter: {
@@ -142,6 +144,20 @@ router.post('/activate-trial', verifyFirebaseToken, async (req, res) => {
     }, { merge: true });
 
     console.log(`✅ [activate-trial] Trial activated for user: ${uid} — ${trialDays} days (beta: ${isBetaUser})`);
+
+
+    // Send welcome email
+    try {
+      const userDoc2 = await db.collection('users').doc(uid).get();
+      const userData2 = userDoc2.data() || {};
+      if (userData2.email) {
+        const { sendWelcomeEmail } = await import('../services/emailService.js');
+        const name = userData2.profile?.displayName || userData2.displayName || 'there';
+        await sendWelcomeEmail({ to: userData2.email, name, trialDays, isBetaUser });
+      }
+    } catch (emailErr) {
+      console.warn('[activate-trial] Welcome email failed:', emailErr.message);
+    }
 
     res.json({
       success: true,
@@ -532,6 +548,24 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
             });
         }
 
+        // Send payment success email
+        if (uid) {
+          const chargedUserDoc = await db.collection('users').doc(uid).get();
+          const chargedUserData = chargedUserDoc.data() || {};
+          if (chargedUserData.email) {
+            const name = chargedUserData.profile?.displayName || chargedUserData.displayName || 'there';
+            const nextBillingDate = new Date(sub.current_end * 1000).toLocaleDateString('en-IN', {
+              day: 'numeric', month: 'long', year: 'numeric'
+            });
+            await sendPaymentSuccessEmail({
+              to: chargedUserData.email,
+              name,
+              amount: payment?.amount || 0,
+              planName: chargedUserData.subscription?.plan || 'your plan',
+              nextBillingDate
+            });
+          }
+        }
         console.log(`✅ Payment charged for user: ${uid}`);
         break;
       }
@@ -581,9 +615,21 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
         if (!usersSnapshot.empty) {
           const uid = usersSnapshot.docs[0].id;
+          const userData = usersSnapshot.docs[0].data();
           await db.collection('users').doc(uid).set({
             subscription: { lastPaymentFailed: true, lastPaymentFailedAt: new Date() }
           }, { merge: true });
+
+          // Send payment failed email
+          if (userData.email) {
+            const name = userData.profile?.displayName || userData.displayName || 'there';
+            await sendPaymentFailedEmail({
+              to: userData.email,
+              name,
+              amount: payment?.amount || 0,
+              planName: userData.subscription?.plan || 'your plan'
+            });
+          }
           console.log(`⚠️ Payment failed for user: ${uid}`);
         }
         break;

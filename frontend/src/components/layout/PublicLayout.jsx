@@ -20,24 +20,44 @@ export default function PublicLayout() {
           
           {/* Navigation Links */}
           <div className="pub-nav__links">
-            <NavLink 
-              to="/pricing" 
-              className={({ isActive }) => isActive ? 'pub-nav__link active' : 'pub-nav__link'}
-            >
+
+            {/* Products dropdown */}
+            <div className="pub-nav__dropdown">
+              <button className="pub-nav__link pub-nav__dropdown-trigger">
+                Products ▾
+              </button>
+              <div className="pub-nav__dropdown-menu">
+                <Link to="/products/google-reviews" className="pub-nav__dropdown-item">
+                  <span>⭐</span>
+                  <div>
+                    <div className="pub-nav__dropdown-item-title">Google Business Reviews</div>
+                    <div className="pub-nav__dropdown-item-desc">Manage & reply to Google reviews</div>
+                  </div>
+                </Link>
+                <Link to="/products/play-store-reviews" className="pub-nav__dropdown-item">
+                  <span>🎮</span>
+                  <div>
+                    <div className="pub-nav__dropdown-item-title">Play Store Reviews</div>
+                    <div className="pub-nav__dropdown-item-desc">AI replies for Android apps</div>
+                  </div>
+                </Link>
+                <Link to="/products/insightspilot" className="pub-nav__dropdown-item pub-nav__dropdown-item--soon">
+                  <span>📊</span>
+                  <div>
+                    <div className="pub-nav__dropdown-item-title">InsightPilot <span className="pub-nav__soon-badge">Soon</span></div>
+                    <div className="pub-nav__dropdown-item-desc">Zomato, Swiggy & more</div>
+                  </div>
+                </Link>
+              </div>
+            </div>
+
+            <NavLink to="/pricing" className={({ isActive }) => isActive ? 'pub-nav__link active' : 'pub-nav__link'}>
               Pricing
             </NavLink>
-            
-            {/* ADD Contact Link Here */}
-            <NavLink 
-              to="/contact" 
-              className={({ isActive }) => isActive ? 'pub-nav__link active' : 'pub-nav__link'}
-            >
+            <NavLink to="/contact" className={({ isActive }) => isActive ? 'pub-nav__link active' : 'pub-nav__link'}>
               Contact
             </NavLink>
-            <NavLink 
-              to="/help-center" 
-              className={({ isActive }) => isActive ? 'pub-nav__link active' : 'pub-nav__link'}
-            >
+            <NavLink to="/help-center" className={({ isActive }) => isActive ? 'pub-nav__link active' : 'pub-nav__link'}>
               Help Center
             </NavLink>
           </div>

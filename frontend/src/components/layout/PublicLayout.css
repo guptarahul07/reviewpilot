@@ -146,3 +146,56 @@
     font-size: 13px;
   }
 }
+/* ── Products dropdown ──────────────────────────────────────────── */
+.pub-nav__dropdown { position: relative; }
+
+.pub-nav__dropdown-trigger {
+  background: none; border: none; cursor: pointer;
+  font-family: var(--font-body); font-size: 14px;
+  color: var(--ink-2); font-weight: 500;
+  padding: 0; display: flex; align-items: center; gap: 4px;
+  transition: color .15s;
+}
+.pub-nav__dropdown-trigger:hover { color: var(--ink); }
+
+.pub-nav__dropdown-menu {
+  position: absolute; top: calc(100% + 12px); left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 8px;
+  min-width: 260px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.25);
+  opacity: 0; pointer-events: none;
+  transform: translateX(-50%) translateY(-8px);
+  transition: opacity .2s, transform .2s;
+  z-index: 200;
+}
+.pub-nav__dropdown:hover .pub-nav__dropdown-menu {
+  opacity: 1; pointer-events: all;
+  transform: translateX(-50%) translateY(0);
+}
+
+.pub-nav__dropdown-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 10px 12px; border-radius: 10px;
+  text-decoration: none; transition: background .15s;
+  cursor: pointer;
+}
+.pub-nav__dropdown-item:hover { background: var(--bg-hover); }
+.pub-nav__dropdown-item--soon { opacity: 0.65; }
+.pub-nav__dropdown-item--soon:hover { opacity: 0.9; }
+
+.pub-nav__dropdown-item > span { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.pub-nav__dropdown-item-title { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-bottom: 2px; display: flex; align-items: center; gap: 6px; }
+.pub-nav__dropdown-item-desc  { font-size: 12px; color: var(--ink-3); }
+
+.pub-nav__soon-badge {
+  font-size: 10px; font-weight: 700; padding: 1px 6px;
+  background: rgba(245,166,35,.15); color: var(--amber);
+  border: 1px solid rgba(245,166,35,.25); border-radius: 100px;
+}
+
+@media (max-width: 768px) {
+  .pub-nav__dropdown-menu { left: 0; transform: none; min-width: 240px; }
+  .pub-nav__dropdown:hover .pub-nav__dropdown-menu { transform: none; }
+}

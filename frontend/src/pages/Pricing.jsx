@@ -124,6 +124,7 @@ const FAQS = [
 ───────────────────────────────────────────────────────────────── */
 export default function Pricing() {
   const [billing, setBilling]   = useState('annual')
+  const [pricingTab, setPricingTab] = useState('individual') // 'individual' | 'bundles'
   const [openFaq, setOpenFaq]   = useState(null)
   const { user, isTrialActive, isExpired } = useAuth()
   const navigate = useNavigate()
@@ -205,6 +206,22 @@ export default function Pricing() {
       </div>
 
       <DynamicBanner location="pricing-banner" />
+
+      {/* Product/Bundle tab selector */}
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0 0' }}>
+        <div style={{ display: 'flex', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: 4, gap: 4 }}>
+          {[{ id: 'individual', label: 'Individual Products' }, { id: 'bundles', label: '🔥 Bundles — Save more' }].map(({ id, label }) => (
+            <button key={id} onClick={() => setPricingTab(id)} style={{
+              padding: '9px 18px', border: 'none', borderRadius: 9,
+              background: pricingTab === id ? 'var(--accent)' : 'none',
+              color: pricingTab === id ? '#fff' : 'var(--ink-3)',
+              fontSize: 14, fontWeight: 600, cursor: 'pointer',
+              fontFamily: 'var(--font-body)', transition: 'all .15s', whiteSpace: 'nowrap',
+            }}>{label}</button>
+          ))}
+        </div>
+      </div>
+
       <div className="pricing-body">
 
         {/* ── Beta banner ── */}
@@ -390,6 +407,35 @@ export default function Pricing() {
             ))}
           </div>
         </div>
+
+        {/* ── Bundles Tab ── */}
+        {pricingTab === 'bundles' && (
+          <div style={{ marginBottom: 48 }}>
+            <p style={{ textAlign: 'center', fontSize: 15, color: 'var(--ink-3)', marginBottom: 36 }}>
+              Get more products at a discounted rate.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 20 }}>
+              {[
+                { name: 'Starter Bundle', price: 799, savings: 199, badge: null, includes: ['GBP Starter + Play Starter', '1 location + 1 app', 'AI replies', 'Email support'] },
+                { name: 'Growth Bundle', price: 1799, savings: 899, badge: 'Most Popular 🔥', includes: ['GBP Growth + Play Growth', '3 locations + 3 apps', 'InsightPilot Basic (free)', 'Advanced analytics', 'WhatsApp support'] },
+                { name: 'Business Suite', price: 3499, savings: 1498, badge: 'Best Value', includes: ['All Pro plans', 'Unlimited locations & apps', 'InsightPilot Pro', 'Dedicated manager', 'API access'] },
+              ].map(({ name, price, savings, badge, includes }) => (
+                <div key={name} style={{ background: 'var(--bg-card)', border: badge === 'Most Popular 🔥' ? '2px solid var(--accent)' : '1px solid var(--border)', borderRadius: 20, padding: 24, position: 'relative', display: 'flex', flexDirection: 'column' }}>
+                  {badge && <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', fontSize: 11, fontWeight: 700, background: badge.includes('Popular') ? 'var(--accent)' : 'var(--green)', color: '#fff', padding: '3px 12px', borderRadius: 100, whiteSpace: 'nowrap' }}>{badge}</div>}
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800, color: 'var(--ink)', marginBottom: 8 }}>{name}</h3>
+                  <div style={{ marginBottom: 4 }}><span style={{ fontSize: 28, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>₹{price.toLocaleString('en-IN')}</span><span style={{ fontSize: 13, color: 'var(--ink-3)' }}>/mo</span></div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--green)', marginBottom: 16 }}>Save ₹{savings.toLocaleString('en-IN')}/mo</div>
+                  <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 20, flex: 1 }}>
+                    {includes.map(f => <li key={f} style={{ fontSize: 13, color: 'var(--ink-2)', display: 'flex', gap: 7 }}><span style={{ color: 'var(--green)' }}>✓</span>{f}</li>)}
+                  </ul>
+                  <a href={'/checkout?plan=' + name.toLowerCase().replace(/\s+/g, '_') + '&billing=monthly'} style={{ display: 'block', background: badge === 'Most Popular 🔥' ? 'var(--accent)' : 'var(--bg)', border: badge === 'Most Popular 🔥' ? 'none' : '1px solid var(--border)', color: badge === 'Most Popular 🔥' ? '#fff' : 'var(--ink)', borderRadius: 10, padding: '10px 0', textAlign: 'center', textDecoration: 'none', fontSize: 14, fontWeight: 700 }}>
+                    Get Started
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── FAQ ── */}
         <div className="pricing-faq">
