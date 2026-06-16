@@ -491,19 +491,28 @@ export default function ConnectGoogle() {
     // Case A: pending OAuth callback — user just became available
     if (pendingCallback && user) {
       setPendingCallback(false);
-      fetchProfile(user.uid)
-        .then((prof) => {
-          populateBusiness(prof);
-          setState('connected');
-        })
-        .catch(() => {
-          setBusiness({
-            name:     'Your Business',
-            address:  'Google Business Profile connected',
-            initials: 'YB',
-          });
-          setState('connected');
-        });
+      // Use API instead of Firestore — works even when Firestore is offline
+      user.getIdToken().then(token =>
+        fetch(`${API_URL}/api/settings`, { headers: { Authorization: `Bearer ${token}` } })
+          .then(r => r.ok ? r.json() : null)
+          .then(data => {
+            setBusiness({
+              name:     data?.google?.businessName || data?.settings?.businessName || 'Your Business',
+              address:  data?.google?.email || 'Google Business Profile connected',
+              initials: getInitials(data?.google?.businessName || data?.settings?.businessName || 'YB'),
+            });
+            setApiConnected(true);
+            setState('connected');
+          })
+          .catch(() => {
+            // Fallback if API also fails
+            setBusiness({ name: 'Your Business', address: 'Google Business Profile connected', initials: 'YB' });
+            setState('connected');
+          })
+      ).catch(() => {
+        setBusiness({ name: 'Your Business', address: 'Google Business Profile connected', initials: 'YB' });
+        setState('connected');
+      });
       return;
     }
 
