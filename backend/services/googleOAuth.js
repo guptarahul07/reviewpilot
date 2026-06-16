@@ -134,9 +134,12 @@ console.log('✅ Accounts found:', accounts.map(a => a.name));
     }
     
     const location = locations[0];
-    const locationId = location.name.split('/')[3];
+    // location.name format from mybusinessbusinessinformation: "locations/{locationId}"
+    // Extract last segment to handle both formats safely
+    const locationNameParts = location.name.split('/');
+    const locationId = locationNameParts[locationNameParts.length - 1];
     
-    console.log(`✅ Found location: ${location.title}`);
+    console.log(`✅ Found location: ${location.title}, name: ${location.name}, locationId: ${locationId}`);
     
     return {
       accountId,
