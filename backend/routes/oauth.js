@@ -124,4 +124,59 @@ router.get('/auth/google/callback', async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────
+// POST /auth/google/refresh-business-info
+// Re-fetches real accountId/locationId for users stuck with pending-verification
+// Call this once after Google API quota approval
+// ─────────────────────────────────────────────
+router.post('/auth/google/refresh-business-info', verifyFirebaseToken, async (req, res) => {
+  const uid = req.uid;
+  console.log(`🔄 [refresh-business-info] Fetching real business info for user: ${uid}`);
+
+  try {
+    const { db } = await import('../firebaseAdmin.js');
+    const userDoc = await db.collection('users').doc(uid).get();
+    const userData = userDoc.data();
+
+    if (!userData?.google?.connected) {
+      return res.status(400).json({ success: false, error: 'Google account not connected' });
+    }
+
+    // Get existing tokens and use them to fetch business info
+    const { getAuthenticatedClient } = await import('../services/googleOAuth.js');
+    const { getUserBusinessLocations } = await import('../services/googleOAuth.js');
+
+    // Get current tokens to pass to getUserBusinessLocations
+    const { decrypt } = await import('../utils/crypto.js');
+    const encryptedRefreshToken = userData.googleRefreshToken;
+
+    if (!encryptedRefreshToken) {
+      return res.status(400).json({ success: false, error: 'No refresh token found. Please reconnect.' });
+    }
+
+    const refreshToken = decrypt(encryptedRefreshToken);
+    const businessInfo = await getUserBusinessLocations({ refresh_token: refreshToken });
+
+    // Update Firestore with real IDs
+    await db.collection('users').doc(uid).update({
+      googleAccountId: businessInfo.accountId,
+      googleLocationId: businessInfo.locationId,
+      'settings.businessName': businessInfo.businessName,
+      businessAddress: businessInfo.businessAddress
+    });
+
+    console.log(`✅ [refresh-business-info] Updated for user: ${uid} — ${businessInfo.businessName}`);
+    res.json({
+      success: true,
+      businessName: businessInfo.businessName,
+      accountId: businessInfo.accountId,
+      locationId: businessInfo.locationId
+    });
+
+  } catch (err) {
+    console.error('❌ [refresh-business-info] Error:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;

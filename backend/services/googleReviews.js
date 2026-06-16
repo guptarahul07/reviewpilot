@@ -3,7 +3,6 @@
 // Service to fetch and post reviews via Google My Business API
 // Uses authenticated OAuth2 client with user's refresh token
 
-import { google } from 'googleapis';
 import { getAuthenticatedClient } from './googleOAuth.js';
 import { db } from '../firebaseAdmin.js';
 
@@ -33,28 +32,38 @@ export async function fetchGoogleReviews(uid) {
       throw new Error('Google Business Profile not connected');
     }
     
+    if (googleAccountId === 'pending-verification' || googleLocationId === 'pending-verification') {
+      throw new Error('Google Business Profile account/location not set. Please reconnect your Google account.');
+    }
+
     console.log(`📍 Account: ${googleAccountId}, Location: ${googleLocationId}`);
-    
-    // Initialize My Business Business Information API
-    const mybusinessbusinessinformation = google.mybusinessbusinessinformation({
-      version: 'v1',
-      auth: authClient
-    });
-    
-    // Fetch reviews
+
+    // Get access token from auth client
+    const tokenResponse = await authClient.getAccessToken();
+    const accessToken = tokenResponse.token;
+
+    // Fetch reviews via direct HTTP — mybusiness v4 API
     console.log('🔍 Calling Google My Business API...');
-    
-    const response = await mybusinessbusinessinformation.accounts.locations.reviews.list({
-      parent: `accounts/${googleAccountId}/locations/${googleLocationId}`
+
+    const url = `https://mybusiness.googleapis.com/v4/accounts/${googleAccountId}/locations/${googleLocationId}/reviews`;
+
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
     });
-    
-    const reviews = response.data.reviews || [];
-    
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || `HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    const reviews = data.reviews || [];
+
     console.log(`✅ Found ${reviews.length} reviews`);
-    
+
     // Parse and format reviews
     const formattedReviews = reviews.map(review => parseGoogleReview(review));
-    
+
     return formattedReviews;
     
   } catch (err) {

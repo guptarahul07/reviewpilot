@@ -404,7 +404,7 @@ export default function ConnectGoogle() {
   const [searchParams] = useSearchParams();
 
   // 'idle' | 'loading' | 'connected' | 'error' | 'disconnecting'
-  const [state, setState]               = useState('idle');
+  const [state, setState]               = useState(isGoogleConnected ? 'connected' : 'idle');
   const [platform, setPlatform]         = useState('gbp'); // 'gbp' | 'play'
   const [business, setBusiness]         = useState(null);
   const [errorMsg, setErrorMsg]         = useState('');
@@ -734,6 +734,35 @@ export default function ConnectGoogle() {
                   <button className="continue-btn" onClick={handleContinue}>
                     Go to Reviews Dashboard <ArrowIcon />
                   </button>
+
+                  {/* Also connect Play Console */}
+                  <div style={{
+                    margin: '16px 0 8px',
+                    padding: '16px',
+                    background: 'rgba(124,92,252,.06)',
+                    border: '1px solid rgba(124,92,252,.2)',
+                    borderRadius: 12,
+                    textAlign: 'center',
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#7c3aed', marginBottom: 4 }}>
+                      🎮 Also manage Play Store reviews?
+                    </div>
+                    <div style={{ fontSize: 12.5, color: 'var(--slatelt)', marginBottom: 12, lineHeight: 1.5 }}>
+                      Connect your Google Play Console to manage Android app reviews too.
+                    </div>
+                    <button
+                      onClick={() => { window.location.href = `${API_URL}/api/play/auth/google` }}
+                      style={{
+                        background: 'rgba(124,92,252,.15)', color: '#7c3aed',
+                        border: '1px solid rgba(124,92,252,.3)', borderRadius: 8,
+                        padding: '8px 18px', fontSize: 13.5, fontWeight: 600,
+                        cursor: 'pointer', fontFamily: 'var(--font-body)',
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                      }}
+                    >
+                      Connect Play Console →
+                    </button>
+                  </div>
 
                   {/* Disconnect */}
                   <button
