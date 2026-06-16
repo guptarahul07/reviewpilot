@@ -217,17 +217,24 @@ export default function AnalyticsDashboard() {
     <div style={{ textAlign: 'center', padding: '60px 24px' }}>
       <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
       <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', marginBottom: 8 }}>No analytics yet!</div>
-      <div style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 24, maxWidth: 280, margin: '0 auto 24px' }}>
-        Connect your Google Business Profile to start seeing insights.
+      <div style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 24, maxWidth: 280, margin: '0 auto 24px', lineHeight: 1.6 }}>
+        {platform === 'google_play'
+          ? 'Connect your Play Console and import historical reviews to see full analytics.'
+          : 'Connect your Google Business Profile to start seeing insights.'}
       </div>
       <Link to="/connect" style={{
         background: 'var(--accent)', color: '#fff', textDecoration: 'none',
         borderRadius: 8, padding: '10px 22px', fontSize: 14, fontWeight: 600,
       }}>
-        Connect Google Business
+        {platform === 'google_play' ? 'Connect Play Console' : 'Connect Google Business'}
       </Link>
     </div>
   )
+
+  // FE-CSV-05: Thin data empty state for Play (few recent reviews, no historical import yet)
+  if (!loading && data && data.totalReviews > 0 && data.totalReviews < 20 && platform === 'google_play' && !hasHistoricalData) {
+    // Show thin-data nudge ABOVE the dashboard (not instead of it) — rendered inline below
+  }
 
   const sentiment    = data?.sentiment        || {}
   const ratingTrend  = data?.ratingTrend      || []
@@ -235,7 +242,8 @@ export default function AnalyticsDashboard() {
   const responseRate = data?.responseRate     || {}
   const responseSpeed= data?.responseSpeed    || {}
   const insight      = data?.aiInsight        || null
-  const isMockData   = data?.isMockData       || false
+  const isMockData        = data?.isMockData           || false
+  const hasHistoricalData = data?.hasHistoricalData    || false
 
   const posCount = sentiment.positive || 0
   const neuCount = sentiment.neutral  || 0
@@ -304,6 +312,26 @@ export default function AnalyticsDashboard() {
       </div>
 
       {/* Mock data banner */}
+      {/* FE-CSV-05: Thin data nudge for Play with <20 reviews */}
+      {platform === 'google_play' && !hasHistoricalData && data?.totalReviews > 0 && data.totalReviews < 20 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10,
+          background: 'rgba(79,124,255,.06)', border: '1px solid rgba(79,124,255,.15)',
+          borderRadius: 10, padding: '12px 16px', marginBottom: 16,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 18 }}>📂</span>
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--ink)' }}>You have more reviews than this!</div>
+              <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>Play Store API only shows last 7 days. Import your full history for complete insights.</div>
+            </div>
+          </div>
+          <a href="/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'var(--accent)', color: '#fff', textDecoration: 'none', borderRadius: 7, padding: '7px 14px', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
+            Import Historical Reviews →
+          </a>
+        </div>
+      )}
+
       {isMockData && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
@@ -417,7 +445,14 @@ export default function AnalyticsDashboard() {
           {/* Play: Version Rating Trend */}
           {platform === 'google_play' && data?.versionRatings?.length > 0 && (
             <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 22 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 16 }}>Version vs Rating</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.06em' }}>Version vs Rating</div>
+                {hasHistoricalData && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 600, color: 'var(--accent)', background: 'rgba(79,124,255,.08)', border: '1px solid rgba(79,124,255,.2)', padding: '3px 9px', borderRadius: 100 }}>
+                    📂 Includes historical data
+                  </span>
+                )}
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {data.versionRatings.map(({ version, rating, count }) => (
                   <div key={version} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

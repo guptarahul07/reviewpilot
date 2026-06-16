@@ -10,7 +10,9 @@ import FeedbackWidget from '../components/FeedbackWidget'
 import {
   Building2, Palette, Zap, AlertTriangle,
   Shield, ChevronRight, Check, Link2, Gamepad2, Unlink,
+  FolderOpen,
 } from 'lucide-react'
+import CSVImportModal from '../components/CSVImportModal'
 import './Settings.css'
 import { sanitizeSettings } from '../utils/sanitize'
 
@@ -74,7 +76,7 @@ const TONES = [
    COMPONENT
 ───────────────────────────────────────────────────────────────── */
 export default function Settings() {
-  const { user, profile, fetchProfile } = useAuth()
+  const { user, profile, fetchProfile, subscription } = useAuth()
 
   const [businessName,        setBusinessName]        = useState('')
   const [replyTone,           setReplyTone]           = useState('friendly')
@@ -93,6 +95,8 @@ export default function Settings() {
   const [addingApp,          setAddingApp]          = useState(false)
   const [disconnectingPlay,  setDisconnectingPlay]  = useState(false)
   const [searchParams]                              = useSearchParams()
+  const [importModalApp,  setImportModalApp]  = useState(null)     // { packageName, appName } | null
+  const [importHistory,   setImportHistory]   = useState({})       // { [pkgName]: jobs[] }
 
   /* ── Load settings from backend ─────────────────────────────── */
   useEffect(() => {
@@ -138,6 +142,22 @@ export default function Settings() {
           setPlayConnected(playData.connected ?? false)
           setPlayApps(playData.apps || [])
           setPlayEmail(playData.email || '')
+        }
+      } catch { /* non-blocking */ }
+      // Load import history
+      try {
+        const token3 = await user.getIdToken()
+        const histRes = await fetch(`${API_URL}/api/play/import-history`, {
+          headers: { Authorization: `Bearer ${token3}` },
+        })
+        if (histRes.ok) {
+          const histData = await histRes.json()
+          const byPkg = {}
+          ;(histData.imports || []).forEach(job => {
+            if (!byPkg[job.packageName]) byPkg[job.packageName] = []
+            byPkg[job.packageName].push(job)
+          })
+          setImportHistory(byPkg)
         }
       } catch { /* non-blocking */ }
     }
@@ -300,15 +320,76 @@ export default function Settings() {
                   {playApps.length === 0
                     ? <p style={{ fontSize: 13.5, color: 'var(--ink-3)', marginBottom: 12 }}>No apps added yet.</p>
                     : <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-                        {playApps.map(app => (
-                          <div key={app.packageName} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                            <div>
-                              <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{app.appName}</div>
-                              <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'monospace' }}>{app.packageName}</div>
+                        {playApps.map(app => {
+                          const plan = subscription?.plan || profile?.plan || 'free'
+                          const isGrowthPlus = ['growth', 'pro', 'bundle_growth', 'bundle_suite', 'admin'].includes(plan)
+                          const appJobs = importHistory[app.packageName] || []
+                          const lastJob = appJobs[0]
+                          return (
+                            <div key={app.packageName} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px' }}>
+                              {/* App header row */}
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
+                                <div>
+                                  <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{app.appName}</div>
+                                  <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'monospace' }}>{app.packageName}</div>
+                                </div>
+                                <button onClick={() => handleRemovePlayApp(app.packageName)} style={{ background: 'none', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 12, fontFamily: 'var(--font-body)', padding: '3px 8px', border: '1px solid var(--border)', borderRadius: 6 }}>
+                                  Remove
+                                </button>
+                              </div>
+
+                              {/* Historical import section */}
+                              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <FolderOpen size={13} style={{ color: isGrowthPlus ? 'var(--ink-3)' : 'var(--border)' }} />
+                                    <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)' }}>Historical Reviews</span>
+                                    {!isGrowthPlus && (
+                                      <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 100, background: 'rgba(79,124,255,.1)', color: 'var(--accent)', border: '1px solid rgba(79,124,255,.2)' }}>Growth+</span>
+                                    )}
+                                  </div>
+                                  {isGrowthPlus ? (
+                                    <button
+                                      onClick={() => setImportModalApp({ packageName: app.packageName, appName: app.appName })}
+                                      style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 7, padding: '5px 12px', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+                                    >
+                                      <FolderOpen size={12} /> Import from CSV
+                                    </button>
+                                  ) : (
+                                    <a href="/checkout?plan=growth" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--accent)', textDecoration: 'none' }}>
+                                      Upgrade to Growth →
+                                    </a>
+                                  )}
+                                </div>
+
+                                {/* Import history */}
+                                {isGrowthPlus && appJobs.length > 0 && (
+                                  <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 2 }}>Import history</div>
+                                    {appJobs.slice(0, 3).map(job => {
+                                      const d = job.startedAt?.toDate ? job.startedAt.toDate() : new Date(job.startedAt)
+                                      return (
+                                        <div key={job.jobId} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-3)' }}>
+                                          <span>{job.status === 'completed' ? '✅' : job.status === 'failed' ? '❌' : '⏳'}</span>
+                                          <span>{isNaN(d) ? '' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} —</span>
+                                          <span style={{ color: 'var(--ink-2)' }}>{job.importedReviews ?? 0} imported</span>
+                                          {job.skippedReviews > 0 && <span>, {job.skippedReviews} skipped</span>}
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                )}
+
+                                {/* Locked state hint */}
+                                {!isGrowthPlus && (
+                                  <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 6, lineHeight: 1.5 }}>
+                                    Import your full review history beyond 7 days. Unlock version trends and full sentiment analysis.
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                            <button onClick={() => handleRemovePlayApp(app.packageName)} style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: 4 }}>×</button>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                   }
                   <form onSubmit={handleAddPlayApp} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -539,6 +620,31 @@ export default function Settings() {
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* CSV Import Modal */}
+      {importModalApp && (
+        <CSVImportModal
+          packageName={importModalApp.packageName}
+          appName={importModalApp.appName}
+          plan={subscription?.plan || profile?.plan || 'free'}
+          onClose={() => setImportModalApp(null)}
+          onComplete={() => {
+            setImportModalApp(null)
+            user.getIdToken().then(token =>
+              fetch(`${API_URL}/api/play/import-history`, { headers: { Authorization: `Bearer ${token}` } })
+                .then(r => r.json())
+                .then(data => {
+                  const byPkg = {}
+                  ;(data.imports || []).forEach(job => {
+                    if (!byPkg[job.packageName]) byPkg[job.packageName] = []
+                    byPkg[job.packageName].push(job)
+                  })
+                  setImportHistory(byPkg)
+                }).catch(() => {})
+            ).catch(() => {})
+          }}
         />
       )}
 

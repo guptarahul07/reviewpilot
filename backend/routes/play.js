@@ -19,8 +19,30 @@ import {
   postPlayReply,
   validatePackageOwnership
 } from '../services/playStoreReviews.js';
+import multer from 'multer';
+import { parsePlayConsoleCsv } from '../utils/csvParser.js';
+import { validateCsvFormat, validateCsvHeaders } from '../utils/csvValidator.js';
+import { queueCsvImport } from '../services/csvImportService.js';
+import { checkPlanLevel } from '../middleware/checkPlanLevel.js';
+import Papa from 'papaparse';
 
 const router = express.Router();
+
+// Multer config for CSV upload — memory storage, 10MB limit, csv only
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'text/csv' || file.originalname.toLowerCase().endsWith('.csv')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only CSV files are accepted'));
+    }
+  }
+});
+
+// Plans allowed to use CSV import
+const CSV_IMPORT_PLANS = ['growth', 'play_growth', 'gbp_growth', 'bundle_growth', 'play_pro', 'gbp_pro', 'bundle_suite', 'pro'];
 
 // ─────────────────────────────────────────────
 // PL-03: OAuth — Initiate Play Console connection
@@ -524,5 +546,172 @@ Respond with ONLY the reply text. No quotes, no explanation.`;
 
   return reply;
 }
+
+// ─────────────────────────────────────────────
+// CSV-01: POST /api/play/import-csv
+// Upload Play Console review export — Growth/Pro only
+// ─────────────────────────────────────────────
+router.post('/import-csv',
+  verifyFirebaseToken,
+  checkPlanLevel(CSV_IMPORT_PLANS),
+  upload.single('reviewsCsv'),
+  async (req, res) => {
+    const uid = req.uid;
+    const { packageName } = req.body;
+
+    console.log(`📂 [POST /api/play/import-csv] User: ${uid}, Package: ${packageName}`);
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No file uploaded' });
+    }
+
+    if (!packageName) {
+      return res.status(400).json({ success: false, error: 'packageName is required' });
+    }
+
+    try {
+      // Verify user owns this app
+      const isOwner = await validatePackageOwnership(uid, packageName);
+      if (!isOwner) {
+        return res.status(403).json({ success: false, error: 'App not connected to your account' });
+      }
+
+      // Quick header check before full parse — catches obviously wrong files fast
+      const csvString = req.file.buffer.toString('utf-8').replace(/^\uFEFF/, '');
+      const headerLine = csvString.split('\n')[0];
+      const rawHeaders = Papa.parse(headerLine).data[0] || [];
+      const headerCheck = validateCsvHeaders(rawHeaders);
+
+      if (!headerCheck.valid) {
+        return res.status(400).json({
+          success: false,
+          error: 'INVALID_CSV_FORMAT',
+          message: headerCheck.message
+        });
+      }
+
+      const reviews = await parsePlayConsoleCsv(req.file.buffer);
+
+      const validation = validateCsvFormat(reviews);
+      if (!validation.valid) {
+        return res.status(400).json({
+          success: false,
+          error: 'INVALID_CSV_FORMAT',
+          message: validation.message
+        });
+      }
+
+      // Package name mismatch check
+      const csvPackageName = reviews[0]?.packageName;
+      if (csvPackageName !== packageName) {
+        return res.status(400).json({
+          success: false,
+          error: 'PACKAGE_NAME_MISMATCH',
+          message: `CSV is for ${csvPackageName} but you selected ${packageName}`
+        });
+      }
+
+      // Plan-based import limit — Pro = unlimited, Growth = 1000
+      const isPro = ['play_pro', 'gbp_pro', 'pro', 'bundle_suite'].includes(req.planKey);
+      const importLimit = isPro ? Infinity : 1000;
+
+      const reviewsToImport = reviews.slice(0, importLimit);
+      const truncated = reviews.length > importLimit;
+
+      const jobId = await queueCsvImport(uid, packageName, reviewsToImport);
+
+      console.log(`✅ [import-csv] Job queued: ${jobId} — ${reviewsToImport.length}/${reviews.length} reviews`);
+
+      res.json({
+        success: true,
+        jobId,
+        totalInFile: reviews.length,
+        toImport: reviewsToImport.length,
+        truncated,
+        message: truncated
+          ? `Growth plan limit: importing first 1,000 of ${reviews.length} reviews. Upgrade to Pro for unlimited.`
+          : `Importing ${reviewsToImport.length} reviews...`
+      });
+
+    } catch (err) {
+      console.error('❌ [import-csv] Error:', err.message);
+      res.status(500).json({ success: false, error: err.message || 'Failed to process CSV' });
+    }
+  }
+);
+
+// ─────────────────────────────────────────────
+// CSV-05: GET /api/play/import-status/:jobId
+// Poll import job progress
+// ─────────────────────────────────────────────
+router.get('/import-status/:jobId', verifyFirebaseToken, async (req, res) => {
+  const uid = req.uid;
+  const { jobId } = req.params;
+
+  try {
+    const jobDoc = await db.collection('importJobs').doc(jobId).get();
+
+    if (!jobDoc.exists) {
+      return res.status(404).json({ success: false, error: 'Job not found' });
+    }
+
+    const data = jobDoc.data();
+
+    if (data.userId !== uid) {
+      return res.status(403).json({ success: false, error: 'Forbidden' });
+    }
+
+    const progress = data.totalReviews > 0
+      ? Math.round((data.processedReviews / data.totalReviews) * 100)
+      : 0;
+
+    res.json({
+      success: true,
+      status: data.status, // processing | completed | failed
+      progress,
+      totalReviews: data.totalReviews,
+      importedReviews: data.importedReviews,
+      skippedReviews: data.skippedReviews,
+      completedAt: data.completedAt,
+      error: data.error
+    });
+
+  } catch (err) {
+    console.error('❌ [import-status] Error:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch import status' });
+  }
+});
+
+// ─────────────────────────────────────────────
+// CSV-07: GET /api/play/import-history
+// Last 10 import jobs for this user
+// ─────────────────────────────────────────────
+router.get('/import-history', verifyFirebaseToken, async (req, res) => {
+  const uid = req.uid;
+
+  try {
+    const snapshot = await db.collection('importJobs')
+      .where('userId', '==', uid)
+      .orderBy('startedAt', 'desc')
+      .limit(10)
+      .get();
+
+    const imports = snapshot.docs.map(doc => ({
+      jobId: doc.id,
+      packageName: doc.data().packageName,
+      status: doc.data().status,
+      importedReviews: doc.data().importedReviews,
+      skippedReviews: doc.data().skippedReviews,
+      startedAt: doc.data().startedAt,
+      completedAt: doc.data().completedAt
+    }));
+
+    res.json({ success: true, imports });
+
+  } catch (err) {
+    console.error('❌ [import-history] Error:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch import history' });
+  }
+});
 
 export default router;
