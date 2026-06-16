@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 // General API limit — all /api routes
 export const apiLimiter = rateLimit({
@@ -6,7 +6,7 @@ export const apiLimiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.uid || req.ip,
+  keyGenerator: (req) => req.uid || ipKeyGenerator(req),
   handler: (req, res) => {
     res.status(429).json({
       success: false,
@@ -22,7 +22,7 @@ export const aiLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.uid || req.ip,
+  keyGenerator: (req) => req.uid || ipKeyGenerator(req),
   handler: (req, res) => {
     res.status(429).json({
       success: false,
@@ -38,7 +38,7 @@ export const authLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip,
+  keyGenerator: (req) => ipKeyGenerator(req),
   handler: (req, res) => {
     res.status(429).json({
       success: false,

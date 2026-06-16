@@ -404,7 +404,7 @@ export default function ConnectGoogle() {
   const [searchParams] = useSearchParams();
 
   // 'idle' | 'loading' | 'connected' | 'error' | 'disconnecting'
-  const [state, setState]               = useState(isGoogleConnected ? 'connected' : 'idle');
+  const [state, setState]               = useState('idle');
   const [platform, setPlatform]         = useState('gbp'); // 'gbp' | 'play'
   const [business, setBusiness]         = useState(null);
   const [errorMsg, setErrorMsg]         = useState('');
@@ -472,10 +472,15 @@ export default function ConnectGoogle() {
     }
 
     // Case B: already connected (page revisit or async profile load)
-    if (isGoogleConnected && profile && !pendingCallback && state !== 'connected') {
+    // No state guard — always sync to actual connection status
+    if (isGoogleConnected && profile && !pendingCallback) {
       populateBusiness(profile);
       setState('connected');
       setFreshConnect(false);
+    } else if (!isGoogleConnected && profile && state === 'connected' && !pendingCallback) {
+      // Disconnected externally — reset to idle
+      setState('idle');
+      setBusiness(null);
     }
   }, [user, profile, isGoogleConnected, pendingCallback]); // eslint-disable-line
 
