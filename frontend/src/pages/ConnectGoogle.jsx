@@ -453,30 +453,37 @@ export default function ConnectGoogle() {
 
   /* ── Effect 2b: check connection via API on mount (works even if Firestore offline) ── */
   useEffect(() => {
+    console.log('[2b] START — user:', !!user, 'isGoogleConnected:', isGoogleConnected, 'profile:', !!profile)
     // First check from profile if already loaded
     if (isGoogleConnected && profile) {
+      console.log('[2b] profile path — connected')
       populateBusiness(profile)
       setState('connected')
       return
     }
-    // Fallback: check backend directly — reliable even when Firestore is offline
-    if (!user) return
+    // Fallback: check backend directly
+    if (!user) { console.log('[2b] no user, returning'); return }
+    console.log('[2b] calling /api/settings...')
     user.getIdToken().then(token =>
       fetch(`${API_URL}/api/settings`, { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.ok ? r.json() : null)
+        .then(r => { console.log('[2b] /api/settings status:', r.status); return r.ok ? r.json() : null })
         .then(data => {
+          console.log('[2b] /api/settings data:', JSON.stringify(data?.google), '| data.settings.google:', JSON.stringify(data?.settings?.google))
           if (data?.google?.connected || data?.settings?.google?.connected) {
+            console.log('[2b] API says connected — setting state')
             setApiConnected(true)
             setBusiness({
-              name:     data?.settings?.businessName || data?.businessName || 'Your Business',
+              name:     data?.settings?.businessName || data?.google?.businessName || data?.businessName || 'Your Business',
               address:  data?.businessAddress || 'Google Business Profile connected',
-              initials: getInitials(data?.settings?.businessName || data?.businessName || 'YB'),
+              initials: getInitials(data?.settings?.businessName || data?.google?.businessName || 'YB'),
             })
             setState('connected')
+          } else {
+            console.log('[2b] API says NOT connected')
           }
         })
-        .catch(() => {})
-    ).catch(() => {})
+        .catch(err => console.log('[2b] fetch error:', err))
+    ).catch(err => console.log('[2b] getIdToken error:', err))
   }, []) // eslint-disable-line — runs once on mount only
 
   /* ── Effect 2: react to auth/profile/connection changes ─────────────── */
