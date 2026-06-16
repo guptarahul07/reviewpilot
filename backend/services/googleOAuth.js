@@ -92,10 +92,10 @@ export async function getUserBusinessLocations(tokens) {
     const client = getOAuth2Client();
     client.setCredentials(tokens);
     
-    const mybusiness = google.mybusinessaccountmanagement({ 
-      version: 'v1', 
-      auth: client 
-    });
+    // Step 1: Accounts via mybusinessaccountmanagement
+    const mybusiness = google.mybusinessaccountmanagement({ version: 'v1', auth: client });
+    // Step 2: Locations via mybusinessbusinessinformation (separate API)
+    const locationsApi = google.mybusinessbusinessinformation({ version: 'v1', auth: client });
     
     // Get accounts
     // Get accounts
@@ -122,7 +122,7 @@ console.log('✅ Accounts found:', accounts.map(a => a.name));
     console.log(`✅ Found account: ${accountName}`);
     
     // Get locations
-    const locationsResponse = await mybusiness.accounts.locations.list({
+    const locationsResponse = await locationsApi.accounts.locations.list({
       parent: accountName,
       readMask: 'name,title,storefrontAddress'
     });

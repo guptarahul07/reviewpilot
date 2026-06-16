@@ -29,9 +29,15 @@ router.get('/', verifyFirebaseToken, async (req, res) => {
     ]);
 
     const userData = userDoc.data() || {};
+    // google.connected is set by OAuth callback
+    // businessName is stored as nested settings.businessName by storeUserTokens
+    // Fallback: if google.connected missing, check if googleAccountId exists as proxy
+    const isConnected = userData.google?.connected === true ||
+      (userData.googleAccountId && userData.googleAccountId !== 'pending-verification');
+
     const google = {
-      connected: userData.google?.connected === true,
-      businessName: userData.settings?.businessName || userData.googleBusinessName || null,
+      connected: isConnected,
+      businessName: userData.settings?.businessName || null,
       email: userData.google?.email || null
     };
 
