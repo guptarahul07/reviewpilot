@@ -23,20 +23,25 @@ router.get('/', verifyFirebaseToken, async (req, res) => {
   console.log(`⚙️ [GET /api/settings] User: ${uid}`);
 
   try {
-    const settingsDoc = await db
-      .collection('users')
-      .doc(uid)
-      .collection('settings')
-      .doc('preferences')
-      .get();
+    const [settingsDoc, userDoc] = await Promise.all([
+      db.collection('users').doc(uid).collection('settings').doc('preferences').get(),
+      db.collection('users').doc(uid).get()
+    ]);
+
+    const userData = userDoc.data() || {};
+    const google = {
+      connected: userData.google?.connected === true,
+      businessName: userData.settings?.businessName || userData.googleBusinessName || null,
+      email: userData.google?.email || null
+    };
 
     if (!settingsDoc.exists) {
       console.log(`⚙️ [GET /api/settings] No settings found, returning defaults`);
-      return res.json({ success: true, settings: getDefaultSettings() });
+      return res.json({ success: true, settings: getDefaultSettings(), google });
     }
 
     console.log(`⚙️ [GET /api/settings] Settings found`);
-    res.json({ success: true, settings: settingsDoc.data() });
+    res.json({ success: true, settings: settingsDoc.data(), google });
 
   } catch (err) {
     console.error(`❌ [GET /api/settings] Error:`, err.message);
@@ -47,8 +52,7 @@ router.get('/', verifyFirebaseToken, async (req, res) => {
 // PUT /api/settings
 router.put('/', verifyFirebaseToken, async (req, res) => {
   const uid = req.uid;
-  const start = Date.now(); // ← ADD THIS  
-  console.log(`⚙️ [PUT /api/settings] Started for user: ${uid}`);
+  console.log(`⚙️ [PUT /api/settings] User: ${uid}`, req.body);
 
   // Sanitize inputs before processing
   const sanitizedBody = sanitizeSettingsInput(req.body);
@@ -92,7 +96,7 @@ router.put('/', verifyFirebaseToken, async (req, res) => {
       .doc('preferences')
       .set(updates, { merge: true });
 
-      console.log(`⚙️ [PUT /api/settings] Done in ${Date.now() - start}ms`); // ← ADD THIS
+    console.log(`✅ [PUT /api/settings] Settings updated for user: ${uid}`);
     res.json({ success: true, settings: updates });
 
   } catch (err) {

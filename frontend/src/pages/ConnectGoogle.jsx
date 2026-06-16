@@ -412,6 +412,7 @@ export default function ConnectGoogle() {
   const [freshConnect, setFreshConnect] = useState(false);
   // True when connected=true param arrives before Firebase user is ready
   const [pendingCallback, setPendingCallback] = useState(false);
+  const [apiConnected,    setApiConnected]    = useState(false); // fallback when Firestore offline
 
   /* ── Helper: populate business card from a profile object ───────────── */
   function populateBusiness(prof) {
@@ -450,13 +451,32 @@ export default function ConnectGoogle() {
     }
   }, []); // eslint-disable-line — intentionally runs once on mount
 
-  /* ── Effect 2b: immediate check on mount if already connected ──────────── */
+  /* ── Effect 2b: check connection via API on mount (works even if Firestore offline) ── */
   useEffect(() => {
-    console.log('[ConnectGoogle] mount — isGoogleConnected:', isGoogleConnected, '| profile:', !!profile, '| state:', state)
+    // First check from profile if already loaded
     if (isGoogleConnected && profile) {
       populateBusiness(profile)
       setState('connected')
+      return
     }
+    // Fallback: check backend directly — reliable even when Firestore is offline
+    if (!user) return
+    user.getIdToken().then(token =>
+      fetch(`${API_URL}/api/settings`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.google?.connected || data?.settings?.google?.connected) {
+            setApiConnected(true)
+            setBusiness({
+              name:     data?.settings?.businessName || data?.businessName || 'Your Business',
+              address:  data?.businessAddress || 'Google Business Profile connected',
+              initials: getInitials(data?.settings?.businessName || data?.businessName || 'YB'),
+            })
+            setState('connected')
+          }
+        })
+        .catch(() => {})
+    ).catch(() => {})
   }, []) // eslint-disable-line — runs once on mount only
 
   /* ── Effect 2: react to auth/profile/connection changes ─────────────── */
@@ -482,8 +502,7 @@ export default function ConnectGoogle() {
 
     // Case B: already connected (page revisit or async profile load)
     // No state guard — always sync to actual connection status
-    console.log('[ConnectGoogle] Effect2 — isGoogleConnected:', isGoogleConnected, '| profile:', !!profile, '| pendingCallback:', pendingCallback, '| state:', state)
-    if (isGoogleConnected && profile && !pendingCallback) {
+    if ((isGoogleConnected || apiConnected) && profile && !pendingCallback) {
       populateBusiness(profile);
       setState('connected');
       setFreshConnect(false);
@@ -690,7 +709,7 @@ export default function ConnectGoogle() {
               {/* ═══════════════════════════════════════════════════
                   CONNECTED / DISCONNECTING  — success state
               ═══════════════════════════════════════════════════ */}
-              {(state === 'connected' || state === 'disconnecting' || isGoogleConnected) && (
+              {(state === 'connected' || state === 'disconnecting' || isGoogleConnected || apiConnected) && (
                 <div className="success-state">
 
                   {/* Confetti — only on fresh OAuth connection, not on revisit */}
