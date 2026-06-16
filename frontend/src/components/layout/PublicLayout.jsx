@@ -44,7 +44,7 @@ export default function PublicLayout() {
               >
                 Products {dropdownOpen ? '▴' : '▾'}
               </button>
-              <div className={`pub-nav__dropdown-menu${dropdownOpen ? ' pub-nav__dropdown-menu--open' : ''}`}>
+              <div className="pub-nav__dropdown-menu" style={{ display: dropdownOpen ? 'block' : 'none', opacity: 1, transform: 'translateX(-50%) translateY(0)', pointerEvents: 'all' }}>
                 <Link to="/products/google-reviews" className="pub-nav__dropdown-item" onClick={() => setDropdownOpen(false)}>
                   <span>⭐</span>
                   <div>
