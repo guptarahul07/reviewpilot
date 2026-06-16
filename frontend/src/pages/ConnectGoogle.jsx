@@ -452,6 +452,7 @@ export default function ConnectGoogle() {
 
   /* ── Effect 2b: immediate check on mount if already connected ──────────── */
   useEffect(() => {
+    console.log('[ConnectGoogle] mount — isGoogleConnected:', isGoogleConnected, '| profile:', !!profile, '| state:', state)
     if (isGoogleConnected && profile) {
       populateBusiness(profile)
       setState('connected')
@@ -481,6 +482,7 @@ export default function ConnectGoogle() {
 
     // Case B: already connected (page revisit or async profile load)
     // No state guard — always sync to actual connection status
+    console.log('[ConnectGoogle] Effect2 — isGoogleConnected:', isGoogleConnected, '| profile:', !!profile, '| pendingCallback:', pendingCallback, '| state:', state)
     if (isGoogleConnected && profile && !pendingCallback) {
       populateBusiness(profile);
       setState('connected');
