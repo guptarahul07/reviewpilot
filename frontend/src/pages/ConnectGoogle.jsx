@@ -450,6 +450,14 @@ export default function ConnectGoogle() {
     }
   }, []); // eslint-disable-line — intentionally runs once on mount
 
+  /* ── Effect 2b: immediate check on mount if already connected ──────────── */
+  useEffect(() => {
+    if (isGoogleConnected && profile) {
+      populateBusiness(profile)
+      setState('connected')
+    }
+  }, []) // eslint-disable-line — runs once on mount only
+
   /* ── Effect 2: react to auth/profile/connection changes ─────────────── */
   useEffect(() => {
     // Case A: pending OAuth callback — user just became available
@@ -680,7 +688,7 @@ export default function ConnectGoogle() {
               {/* ═══════════════════════════════════════════════════
                   CONNECTED / DISCONNECTING  — success state
               ═══════════════════════════════════════════════════ */}
-              {(state === 'connected' || state === 'disconnecting') && business && (
+              {(state === 'connected' || state === 'disconnecting' || isGoogleConnected) && (
                 <div className="success-state">
 
                   {/* Confetti — only on fresh OAuth connection, not on revisit */}
@@ -721,9 +729,9 @@ export default function ConnectGoogle() {
 
                   {/* Business card */}
                   <div className="business-card">
-                    <div className="biz-avatar">{business.initials}</div>
+                    <div className="biz-avatar">{business?.initials || getInitials(profile?.settings?.businessName || 'YB')}</div>
                     <div>
-                      <div className="biz-name">{business.name}</div>
+                      <div className="biz-name">{business?.name || profile?.settings?.businessName || 'Your Business'}</div>
                       <div className="biz-address">
                         <PinIcon />
                         {business.address}
