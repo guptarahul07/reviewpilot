@@ -1,7 +1,6 @@
 // src/pages/products/InsightPilot.jsx
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import PublicLayout from '../../components/layout/PublicLayout'
 import Button from '../../components/ui/Button'
 import Toast from '../../components/ui/Toast'
 import SEOMeta from '../../components/ui/SEOMeta'
@@ -49,7 +48,7 @@ export default function InsightPilot() {
   }
 
   return (
-    <PublicLayout>
+    <>
       <SEOMeta
         title="InsightPilot — Coming Soon | ReviewPilot"
         description="Deep analytics from Zomato, Swiggy, Reddit & more. Know what customers really think. Join the waitlist for early access."
@@ -163,6 +162,6 @@ export default function InsightPilot() {
       </section>
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-    </PublicLayout>
+    </>
   )
 }

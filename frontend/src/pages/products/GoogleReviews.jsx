@@ -1,6 +1,5 @@
 // src/pages/products/GoogleReviews.jsx
 import { Link } from 'react-router-dom'
-import PublicLayout from '../../components/layout/PublicLayout'
 import Button from '../../components/ui/Button'
 import SEOMeta from '../../components/ui/SEOMeta'
 
@@ -27,7 +26,7 @@ const PLANS = [
 
 export default function GoogleReviews() {
   return (
-    <PublicLayout>
+    <>
       <SEOMeta
         title="Google Business Reviews — ReviewPilot"
         description="Manage and reply to your Google Business reviews with AI. Auto-sync, bulk reply, sentiment analysis. Built for Indian businesses."
@@ -128,6 +127,6 @@ export default function GoogleReviews() {
           <Link to="/signup"><Button size="lg">Start Free Trial →</Button></Link>
         </div>
       </section>
-    </PublicLayout>
+    </>
   )
 }

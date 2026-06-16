@@ -1,6 +1,5 @@
 // src/pages/products/PlayStoreReviews.jsx
 import { Link } from 'react-router-dom'
-import PublicLayout from '../../components/layout/PublicLayout'
 import Button from '../../components/ui/Button'
 import SEOMeta from '../../components/ui/SEOMeta'
 
@@ -21,7 +20,7 @@ const STEPS = [
 
 export default function PlayStoreReviews() {
   return (
-    <PublicLayout>
+    <>
       <SEOMeta
         title="Play Store Reviews — ReviewPilot"
         description="AI replies for Android app reviews within Play Store's 350-char limit. Version-wise trends, device breakdown, multi-app inbox."
@@ -120,6 +119,6 @@ export default function PlayStoreReviews() {
           <Link to="/signup"><Button size="lg">Start Free Trial →</Button></Link>
         </div>
       </section>
-    </PublicLayout>
+    </>
   )
 }

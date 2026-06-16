@@ -1,10 +1,24 @@
 import { Outlet, Link, NavLink } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { Zap } from 'lucide-react'
 import Button from '../ui/Button'
 import './PublicLayout.css'
 
 export default function PublicLayout() {
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
   const { user } = useAuth()
   
   return (
@@ -22,26 +36,30 @@ export default function PublicLayout() {
           <div className="pub-nav__links">
 
             {/* Products dropdown */}
-            <div className="pub-nav__dropdown">
-              <button className="pub-nav__link pub-nav__dropdown-trigger">
-                Products ▾
+            <div className="pub-nav__dropdown" ref={dropdownRef}>
+              <button
+                className="pub-nav__link pub-nav__dropdown-trigger"
+                onClick={() => setDropdownOpen(o => !o)}
+                aria-expanded={dropdownOpen}
+              >
+                Products {dropdownOpen ? '▴' : '▾'}
               </button>
-              <div className="pub-nav__dropdown-menu">
-                <Link to="/products/google-reviews" className="pub-nav__dropdown-item">
+              <div className={`pub-nav__dropdown-menu${dropdownOpen ? ' pub-nav__dropdown-menu--open' : ''}`}>
+                <Link to="/products/google-reviews" className="pub-nav__dropdown-item" onClick={() => setDropdownOpen(false)}>
                   <span>⭐</span>
                   <div>
                     <div className="pub-nav__dropdown-item-title">Google Business Reviews</div>
                     <div className="pub-nav__dropdown-item-desc">Manage & reply to Google reviews</div>
                   </div>
                 </Link>
-                <Link to="/products/play-store-reviews" className="pub-nav__dropdown-item">
+                <Link to="/products/play-store-reviews" className="pub-nav__dropdown-item" onClick={() => setDropdownOpen(false)}>
                   <span>🎮</span>
                   <div>
                     <div className="pub-nav__dropdown-item-title">Play Store Reviews</div>
                     <div className="pub-nav__dropdown-item-desc">AI replies for Android apps</div>
                   </div>
                 </Link>
-                <Link to="/products/insightspilot" className="pub-nav__dropdown-item pub-nav__dropdown-item--soon">
+                <Link to="/products/insightspilot" className="pub-nav__dropdown-item pub-nav__dropdown-item--soon" onClick={() => setDropdownOpen(false)}>
                   <span>📊</span>
                   <div>
                     <div className="pub-nav__dropdown-item-title">InsightPilot <span className="pub-nav__soon-badge">Soon</span></div>
