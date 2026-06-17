@@ -29,16 +29,26 @@ router.get('/', verifyFirebaseToken, async (req, res) => {
     ]);
 
     const userData = userDoc.data() || {};
+    console.log(`⚙️ [GET /api/settings] userData keys:`, Object.keys(userData));
+    console.log(`⚙️ [GET /api/settings] google field:`, userData.google);
+    console.log(`⚙️ [GET /api/settings] settings field:`, userData.settings);
     // google.connected is set by OAuth callback
-    // businessName is stored as nested settings.businessName by storeUserTokens
-    // Fallback: if google.connected missing, check if googleAccountId exists as proxy
+    // businessName stored by storeUserTokens as dotted 'settings.businessName' -> nested field
+    // Also check top-level googleBusinessName as fallback
     const isConnected = userData.google?.connected === true ||
       (userData.googleAccountId && userData.googleAccountId !== 'pending-verification');
 
+    // storeUserTokens uses set({ 'settings.businessName': value }) which Firestore
+    // stores as nested settings.businessName — read via userData.settings?.businessName
+    const businessName = userData.settings?.businessName
+      || userData.googleBusinessName
+      || userData.businessName
+      || null;
+
     const google = {
       connected: isConnected,
-      businessName: userData.settings?.businessName || null,
-      email: userData.google?.email || null
+      businessName,
+      email: userData.google?.email || userData.googleEmail || null
     };
 
     if (!settingsDoc.exists) {

@@ -124,4 +124,41 @@ router.get('/public/:location', async (req, res) => {
   }
 });
 
+// Alias — also serve without /public/ prefix for convenience
+// GET /api/site-messages/:location (no auth, same as /public/:location)
+router.get('/:location', async (req, res) => {
+  const { location } = req.params;
+
+  // Don't intercept admin routes
+  if (location === 'admin') return res.status(404).json({ success: false });
+
+  try {
+    const doc = await db.collection('config').doc('site-messages').get();
+
+    if (!doc.exists) {
+      return res.json({ success: true, message: null });
+    }
+
+    const messageData = doc.data()?.[location];
+
+    if (!messageData || !messageData.enabled) {
+      return res.json({ success: true, message: null });
+    }
+
+    const now = new Date();
+    if (messageData.startDate && now < messageData.startDate.toDate()) {
+      return res.json({ success: true, message: null });
+    }
+    if (messageData.endDate && now > messageData.endDate.toDate()) {
+      return res.json({ success: true, message: null });
+    }
+
+    res.json({ success: true, message: messageData });
+
+  } catch (err) {
+    console.error(`❌ [GET /api/site-messages/${location}] Error:`, err.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch site message' });
+  }
+});
+
 export default router;
