@@ -415,7 +415,7 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
         </span>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: 'center', marginBottom: 4 }}>
-        <strong style={{ color: "var(--ink)" }}>{review.reviewer}</strong>
+        <strong style={{ color: "var(--ink)", fontSize: 14 }}>{review.reviewer || "Anonymous"}</strong>
         <Stars rating={review.rating} />
       </div>
       {review.platform === 'google_play' && (review.device || review.appVersion) && (
@@ -635,8 +635,10 @@ export default function ReviewsInboxPage() {
   /* ── Safely convert Firestore Timestamp OR ISO string to JS Date ── */
   function toJsDate(val) {
     if (!val) return null;
-    // Firestore Timestamp object has .toDate()
+    // Firestore Timestamp object with .toDate() method
     if (typeof val.toDate === 'function') return val.toDate();
+    // Firestore Timestamp as plain object {_seconds, _nanoseconds}
+    if (val._seconds) return new Date(val._seconds * 1000);
     // ISO string or number
     const d = new Date(val);
     return isNaN(d.getTime()) ? null : d;
@@ -682,9 +684,7 @@ export default function ReviewsInboxPage() {
       setReviews(reviewsData.reviews  || []);
       setInsights(insightsData || null); // store full object {tier, insights}
       if (reviewsData.lastSyncAt) setLastSyncAt(reviewsData.lastSyncAt);
-      // Debug — remove after confirming field names
-      console.log('[ReviewsInbox] lastSyncAt value:', reviewsData.lastSyncAt, '| type:', typeof reviewsData.lastSyncAt)
-      if (reviewsData.reviews?.length) console.log('[ReviewsInbox] first review keys:', Object.keys(reviewsData.reviews[0]), '| reviewer:', reviewsData.reviews[0].reviewer, '| authorName:', reviewsData.reviews[0].authorName, '| name:', reviewsData.reviews[0].name)
+
 
     } catch (err) {
       console.error('Load error:', err);
