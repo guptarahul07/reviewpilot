@@ -415,7 +415,7 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
         </span>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: 'center', marginBottom: 4 }}>
-        <strong style={{ color: "var(--ink)", fontSize: 14 }}>{review.reviewer || "Anonymous"}</strong>
+        <strong style={{ color: "#0ea5a0", fontSize: 13, fontWeight: 700 }}>{review.reviewer || "Anonymous"}</strong>
         <Stars rating={review.rating} />
       </div>
       {review.platform === 'google_play' && (review.device || review.appVersion) && (
