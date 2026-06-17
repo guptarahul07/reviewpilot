@@ -37,6 +37,7 @@ import Onboarding from './pages/Onboarding'
 import GoogleReviews from './pages/products/GoogleReviews'
 import PlayStoreReviews from './pages/products/PlayStoreReviews'
 import InsightPilot from './pages/products/InsightPilot'
+import AppStoreReviews from './pages/products/AppStoreReviews'
 import Status from './pages/Status'
 
 export default function App() {
@@ -58,6 +59,7 @@ export default function App() {
             <Route path="/products/google-reviews"    element={<GoogleReviews />} />
             <Route path="/products/play-store-reviews" element={<PlayStoreReviews />} />
             <Route path="/products/insightspilot"     element={<InsightPilot />} />
+            <Route path="/products/app-store-reviews"  element={<AppStoreReviews />} />
             <Route path="/status"                    element={<Status />} />
             <Route path="/restaurants"  element={<Restaurants />} />
             <Route path="/cafes"        element={<Restaurants />} />

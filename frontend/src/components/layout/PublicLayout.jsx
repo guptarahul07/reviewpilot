@@ -66,6 +66,13 @@ export default function PublicLayout() {
                     <div className="pub-nav__dropdown-item-desc">Zomato, Swiggy & more</div>
                   </div>
                 </Link>
+                <Link to="/products/app-store-reviews" className="pub-nav__dropdown-item pub-nav__dropdown-item--soon" onClick={() => setDropdownOpen(false)}>
+                  <span>🍎</span>
+                  <div>
+                    <div className="pub-nav__dropdown-item-title">App Store Reviews <span className="pub-nav__soon-badge">Soon</span></div>
+                    <div className="pub-nav__dropdown-item-desc">iOS reviews, unified with Play Store</div>
+                  </div>
+                </Link>
               </div>
             </div>
 

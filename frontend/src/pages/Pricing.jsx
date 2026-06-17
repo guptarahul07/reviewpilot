@@ -408,6 +408,27 @@ export default function Pricing() {
           </div>
         </div>
 
+        {/* ── App Store Coming Soon card (Individual tab only) ── */}
+        {pricingTab === 'individual' && (
+          <div style={{ marginTop: 24, background: 'var(--bg-card)', border: '2px dashed var(--border)', borderRadius: 20, padding: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, opacity: 0.85 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <span style={{ fontSize: 36 }}>🍎</span>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>App Store Reviews</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: 'rgba(245,166,35,.1)', color: 'var(--amber)', border: '1px solid rgba(245,166,35,.2)' }}>COMING SOON</span>
+                </div>
+                <p style={{ fontSize: 13.5, color: 'var(--ink-3)', margin: 0, lineHeight: 1.55 }}>
+                  AI-powered replies for Apple App Store reviews. Unified inbox with Play Store. Pricing TBD.
+                </p>
+              </div>
+            </div>
+            <a href="/products/app-store-reviews" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--ink-3)', textDecoration: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>
+              Notify Me →
+            </a>
+          </div>
+        )}
+
         {/* ── Bundles Tab ── */}
         {pricingTab === 'bundles' && (
           <div style={{ marginBottom: 48 }}>
