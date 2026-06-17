@@ -682,6 +682,9 @@ export default function ReviewsInboxPage() {
       setReviews(reviewsData.reviews  || []);
       setInsights(insightsData || null); // store full object {tier, insights}
       if (reviewsData.lastSyncAt) setLastSyncAt(reviewsData.lastSyncAt);
+      // Debug — remove after confirming field names
+      console.log('[ReviewsInbox] lastSyncAt value:', reviewsData.lastSyncAt, '| type:', typeof reviewsData.lastSyncAt)
+      if (reviewsData.reviews?.length) console.log('[ReviewsInbox] first review keys:', Object.keys(reviewsData.reviews[0]), '| reviewer:', reviewsData.reviews[0].reviewer, '| authorName:', reviewsData.reviews[0].authorName, '| name:', reviewsData.reviews[0].name)
 
     } catch (err) {
       console.error('Load error:', err);
