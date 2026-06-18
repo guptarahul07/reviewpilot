@@ -104,10 +104,10 @@ router.delete('/:code', verifyFirebaseToken, checkAdmin, async (req, res) => {
       return res.status(404).json({ success: false, error: 'Coupon not found' });
     }
 
-    await db.collection('coupons').doc(code).update({ active: false });
+    await db.collection('coupons').doc(code).delete();
 
-    console.log(`✅ Coupon deactivated: ${code}`);
-    res.json({ success: true, message: `Coupon ${code} deactivated` });
+    console.log(`✅ Coupon deleted: ${code}`);
+    res.json({ success: true, message: `Coupon ${code} deleted` });
 
   } catch (err) {
     console.error(`❌ [DELETE /api/admin/coupons/${code}] Error:`, err.message);
