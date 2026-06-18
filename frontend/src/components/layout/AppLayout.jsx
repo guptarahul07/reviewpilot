@@ -55,9 +55,30 @@ function formatName(name) {
 export default function AppLayout() {
   const { user, profile, logout, isGoogleConnected, isTrialActive, isExpired, trialDaysLeft, subscription } = useAuth()
   const [notifications, setNotifications] = useState([])
+  const [apiConnected, setApiConnected]   = useState(null) // null=loading, true/false=known
+
+  // Check Google connection via API (reliable even when Firestore offline)
+  useEffect(() => {
+    if (!user) return
+    // If Firestore already gave us the answer, use it
+    if (isGoogleConnected) { setApiConnected(true); return }
+    // Otherwise ask the backend
+    user.getIdToken().then(token =>
+      fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/settings`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => setApiConnected(data?.google?.connected === true))
+        .catch(() => setApiConnected(false))
+    ).catch(() => setApiConnected(false))
+  }, [user, isGoogleConnected])
 
   // Build priority-ordered notification banners
   useEffect(() => {
+    // Don't build banners until we know connection status
+    if (apiConnected === null) return
+
+    const connected = isGoogleConnected || apiConnected
     const banners = []
 
     // 1. CRITICAL — payment failed
@@ -93,8 +114,8 @@ export default function AppLayout() {
       })
     }
 
-    // 4. ACTION — not connected
-    if (!isGoogleConnected && !isExpired) {
+    // 4. Not connected — only show if API confirms not connected
+    if (!connected && !isExpired) {
       banners.push({
         id: 'connect',
         bg: 'rgba(245,166,35,.08)', border: 'rgba(245,166,35,.25)', color: '#fcd34d',
@@ -105,7 +126,7 @@ export default function AppLayout() {
     }
 
     setNotifications(banners)
-  }, [subscription, isTrialActive, isExpired, trialDaysLeft, isGoogleConnected])
+  }, [subscription, isTrialActive, isExpired, trialDaysLeft, isGoogleConnected, apiConnected])
 
   return (
     <div className="app-layout">
