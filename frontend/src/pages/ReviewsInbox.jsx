@@ -11,7 +11,7 @@ import TrialBanner from '../components/TrialBanner';
 import { ReviewCardSkeleton, InsightsCardSkeleton } from '../components/ReviewSkeleton';
 import ReplyHistory from '../components/ReplyHistory';
 import AnalyticsDashboard from '../components/AnalyticsDashboard';
-import ReplyTextarea from '../components/ReplyTextarea';
+import ReplyTextarea, { BusinessContextUpsell } from '../components/ReplyTextarea';
 import Toast from '../components/ui/Toast';
 
 /* ─────────────────────────────────────────────────────────────
@@ -504,6 +504,7 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
                 onChange={setEditedReply}
                 rows={4}
               />
+              <BusinessContextUpsell plan={subscription?.plan || profile?.plan || 'free'} />
             </div>
           ) : (
             <p style={{ marginTop: 6, color: "#1f2937" }}>
@@ -608,11 +609,12 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
 ───────────────────────────────────────────────────────────── */
 export default function ReviewsInboxPage() {
   const navigate = useNavigate();
-  const { profile, user, subscription } = useAuth();
+  const { profile, user, subscription, isTrialActive } = useAuth();
 
   const [reviews, setReviews]               = useState([]);
   const [tab, setTab]                       = useState("all");
   const [syncing, setSyncing]               = useState(false);
+  const [syncCooldown, setSyncCooldown]     = useState(0); // seconds remaining in cooldown
   const [loading, setLoading]               = useState(true);
   const [insights, setInsights]             = useState(null);
   const [showInsightsModal, setShowInsightsModal] = useState(false);
@@ -693,8 +695,16 @@ export default function ReviewsInboxPage() {
     }
   }
 
+  /* ── Cooldown timer ──────────────────────────────────────────── */
+  useEffect(() => {
+    if (syncCooldown <= 0) return;
+    const t = setTimeout(() => setSyncCooldown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [syncCooldown]);
+
   /* ── Manual sync: hit the sync endpoint then reload ─────────── */
   async function handleSync() {
+    if (syncCooldown > 0) return;
     setSyncing(true);
     try {
       const token = await user.getIdToken();
@@ -704,7 +714,8 @@ export default function ReviewsInboxPage() {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ force: true, platform: 'all' })
       });
 
       // Reload fresh data after sync
@@ -728,6 +739,7 @@ export default function ReviewsInboxPage() {
       console.error("Sync error:", err);
     } finally {
       setSyncing(false);
+      setSyncCooldown(300); // 5-minute cooldown
     }
   }
 
@@ -1121,7 +1133,7 @@ export default function ReviewsInboxPage() {
         )}
 
         {/* Bulk post button */}
-        {selectedReviews.length > 0 && !bulkPosting && (
+        {selectedReviews.length > 0 && !bulkPosting && !isTrialActive && (
           <button
             onClick={handleBulkReply}
             style={{
@@ -1180,17 +1192,17 @@ export default function ReviewsInboxPage() {
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4, marginBottom: 20 }}>
         <button
           onClick={handleSync}
-          disabled={syncing}
+          disabled={syncing || syncCooldown > 0}
           style={{
             background: "#1e2a3a", color: "white", border: "1px solid #2d3f55",
             padding: "7px 16px", borderRadius: 8, fontWeight: 600,
-            cursor: syncing ? "not-allowed" : "pointer",
+            cursor: (syncing || syncCooldown > 0) ? "not-allowed" : "pointer",
             boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-            opacity: syncing ? 0.6 : 1,
+            opacity: (syncing || syncCooldown > 0) ? 0.6 : 1,
             fontSize: 13,
           }}
         >
-          {syncing ? "⏳ Syncing..." : "🔄 Sync Now"}
+          {syncing ? "⏳ Syncing..." : syncCooldown > 0 ? `⏳ Wait ${syncCooldown}s` : "🔄 Sync Now"}
         </button>
         {/* Last synced — always show when available, regardless of loading state */}
         {lastSyncAt && !syncing && (
@@ -1201,6 +1213,22 @@ export default function ReviewsInboxPage() {
         )}
         {syncing && (
           <span style={{ fontSize: 12, color: "#9ca3af" }}>Syncing your reviews…</span>
+        )}
+
+        {/* Trial reply counter */}
+        {isTrialActive && subscription?.trialRepliesLimit > 0 && (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            fontSize: 12, fontWeight: 600,
+            color: (subscription.trialRepliesUsed || 0) >= subscription.trialRepliesLimit ? '#ef4444' : '#f59e0b',
+            background: 'rgba(245,166,35,.08)', border: '1px solid rgba(245,166,35,.2)',
+            borderRadius: 100, padding: '3px 10px', marginLeft: 'auto',
+          }}>
+            ⚡ Trial: {subscription.trialRepliesUsed || 0}/{subscription.trialRepliesLimit} AI replies used
+            <a href="/checkout" style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>
+              Upgrade →
+            </a>
+          </span>
         )}
       </div>
 

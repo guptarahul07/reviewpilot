@@ -39,6 +39,7 @@ import PlayStoreReviews from './pages/products/PlayStoreReviews'
 import InsightPilot from './pages/products/InsightPilot'
 import AppStoreReviews from './pages/products/AppStoreReviews'
 import Status from './pages/Status'
+import ProfilePage from './pages/ProfilePage'
 
 export default function App() {
   return (
@@ -90,6 +91,7 @@ export default function App() {
             <Route path="/admin/coupons"         element={<AdminCoupons />} />
             <Route path="/admin/messages"        element={<AdminMessages />} />
             <Route path="/settings/billing"      element={<Billing />} />
+            <Route path="/settings/profile"      element={<ProfilePage />} />
             <Route path="/dashboard"            element={<Navigate to="/reviews" replace />} />
             <Route path="/play/onboarding"       element={<PlayOnboarding />} />
             <Route path="/onboarding"              element={<Onboarding />} />

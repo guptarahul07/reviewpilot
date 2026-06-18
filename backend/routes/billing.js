@@ -274,6 +274,13 @@ router.post('/create-subscription', verifyFirebaseToken, async (req, res) => {
 
     console.log(`✅ Subscription saved to Firestore for user: ${uid}`);
 
+    // Track trial_converted if user was on trial
+    const userDocCheck = await db.collection('users').doc(uid).get();
+    if (userDocCheck.data()?.subscription?.status === 'trial') {
+      const { trackEvent } = await import('../utils/analytics.js');
+      await trackEvent(uid, 'trial_converted', { plan, billingCycle });
+    }
+
     // Mark coupon as used
     if (appliedCoupon) {
       await markCouponUsed(appliedCoupon);
@@ -514,6 +521,8 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
           }
         }, { merge: true });
 
+        const { trackEvent: trackActivated } = await import('../utils/analytics.js');
+        await trackActivated(uid, 'plan_upgraded', { plan: sub.notes?.plan, billingCycle: sub.notes?.billingCycle });
         console.log(`✅ Subscription activated for user: ${uid}`);
         break;
       }
@@ -630,6 +639,8 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
               planName: userData.subscription?.plan || 'your plan'
             });
           }
+          const { trackEvent: trackPayFail } = await import('../utils/analytics.js');
+          await trackPayFail(uid, 'payment_failed', { amount: payment?.amount, plan: userData.subscription?.plan });
           console.log(`⚠️ Payment failed for user: ${uid}`);
         }
         break;

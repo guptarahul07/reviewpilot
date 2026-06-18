@@ -7,6 +7,7 @@ import {
   storeUserTokens 
 } from '../services/googleOAuth.js';
 import { trackEvent } from '../utils/analytics.js';
+import { refreshBusinessProfileIfNeeded } from '../services/businessProfileService.js';
 import { verifyFirebaseToken } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
 import admin from '../firebaseAdmin.js';
@@ -112,8 +113,24 @@ router.get('/auth/google/callback', async (req, res) => {
       businessName: businessInfo.businessName,
       locationId: businessInfo.locationId
     });
+    await trackEvent(uid, 'platform_connected', {
+      platform: 'gbp',
+      businessName: businessInfo.businessName
+    });
     
     console.log(`🎉 Google connection successful for user: ${uid}`);
+
+    // Section 13.5 — Fetch business profile immediately on connect
+    try {
+      const { db: dbRef } = await import('../firebaseAdmin.js');
+      const userDocForProfile = await dbRef.collection('users').doc(uid).get();
+      const locationId = userDocForProfile.data()?.googleLocationId;
+      if (locationId && locationId !== 'pending-verification') {
+        await refreshBusinessProfileIfNeeded(uid, locationId);
+      }
+    } catch (profileErr) {
+      console.warn('[OAuth] Business profile fetch failed (non-blocking):', profileErr.message);
+    }
     
     // Redirect back to the same domain that initiated the flow
     res.redirect(`${origin}/connect?connected=true`);

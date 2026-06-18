@@ -166,7 +166,10 @@ function ComparisonBar({ label, value, maxValue, color, suffix = '' }) {
    MAIN COMPONENT
 ───────────────────────────────────────────────────────────────── */
 export default function AnalyticsDashboard() {
-  const { user } = useAuth()
+  const { user, subscription, isTrialActive } = useAuth()
+  const plan = subscription?.plan || 'free'
+  const isGrowthPlus = ['growth', 'pro', 'bundle_growth', 'bundle_suite', 'admin'].includes(plan)
+  const isStarterPlus = isGrowthPlus || ['starter'].includes(plan)
   const [data, setData]         = useState(null)
   const [days, setDays]         = useState(30)
   const [platform, setPlatform] = useState('all')
@@ -468,82 +471,131 @@ export default function AnalyticsDashboard() {
             </div>
           )}
 
-          {/* ── Widget 4: Keywords ── */}
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 22 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 18 }}>
-              What Customers Say
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-                  <span style={{ fontSize: 14 }}>👍</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#10b981' }}>Customers love</span>
-                </div>
-                {posKeywords.length > 0
-                  ? posKeywords.slice(0, 8).map(k => (
-                      <KeywordBar key={k.word} word={k.word} count={k.count} maxCount={maxPosCount} color="#10b981" />
-                    ))
-                  : <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>No data yet</div>
-                }
+          {/* ── Widget 4: Keywords (Growth+ only) ── */}
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 22, position: 'relative', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                What Customers Say
               </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-                  <span style={{ fontSize: 14 }}>👎</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#ef4444' }}>Needs attention</span>
-                </div>
-                {negKeywords.length > 0
-                  ? negKeywords.slice(0, 8).map(k => (
-                      <KeywordBar key={k.word} word={k.word} count={k.count} maxCount={maxNegCount} color="#ef4444" />
-                    ))
-                  : <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>No data yet</div>
-                }
-              </div>
+              {!isGrowthPlus && (
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: 'rgba(79,124,255,.1)', color: 'var(--accent)', border: '1px solid rgba(79,124,255,.2)' }}>
+                  🔒 Growth+
+                </span>
+              )}
             </div>
+
+            {isGrowthPlus ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                    <span style={{ fontSize: 14 }}>👍</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#10b981' }}>Customers love</span>
+                  </div>
+                  {posKeywords.length > 0
+                    ? posKeywords.slice(0, 8).map(k => (
+                        <KeywordBar key={k.word} word={k.word} count={k.count} maxCount={maxPosCount} color="#10b981" />
+                      ))
+                    : <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>No data yet</div>
+                  }
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                    <span style={{ fontSize: 14 }}>👎</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#ef4444' }}>Needs attention</span>
+                  </div>
+                  {negKeywords.length > 0
+                    ? negKeywords.slice(0, 8).map(k => (
+                        <KeywordBar key={k.word} word={k.word} count={k.count} maxCount={maxNegCount} color="#ef4444" />
+                      ))
+                    : <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>No data yet</div>
+                  }
+                </div>
+              </div>
+            ) : (
+              /* Blurred preview + upgrade prompt */
+              <div style={{ position: 'relative' }}>
+                <div style={{ filter: 'blur(4px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.5 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                    <div>
+                      {[{word:'food',count:34},{word:'service',count:28},{word:'taste',count:19},{word:'staff',count:15}].map(k => (
+                        <KeywordBar key={k.word} word={k.word} count={k.count} maxCount={34} color="#10b981" />
+                      ))}
+                    </div>
+                    <div>
+                      {[{word:'wait',count:12},{word:'slow',count:9},{word:'price',count:7},{word:'cold',count:5}].map(k => (
+                        <KeywordBar key={k.word} word={k.word} count={k.count} maxCount={12} color="#ef4444" />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(10,12,15,.75)', backdropFilter: 'blur(2px)', borderRadius: 8, padding: 20, textAlign: 'center' }}>
+                  <div style={{ fontSize: 24, marginBottom: 8 }}>🔒</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 6 }}>Keyword Analysis</div>
+                  <div style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 16, lineHeight: 1.55, maxWidth: 260 }}>
+                    Unlock keyword trends, sentiment breakdown & more with Growth plan.
+                  </div>
+                  <a href="/checkout?plan=growth" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'var(--accent)', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600 }}>
+                    ⚡ Upgrade to Growth — ₹999/mo
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ── Row 4: Response Rate + Response Speed ── */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
-            {/* Widget 5: Response Rate */}
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 22 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 16 }}>
-                Response Rate
+            {/* Widget 5: Response Rate (Starter+ only) */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 22, position: 'relative', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.06em' }}>Response Rate</div>
+                {!isStarterPlus && <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: 'rgba(79,124,255,.1)', color: 'var(--accent)', border: '1px solid rgba(79,124,255,.2)' }}>🔒 Starter+</span>}
               </div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginBottom: 16 }}>
-                {myRate}%
-              </div>
-              <ComparisonBar label="You" value={myRate} maxValue={100} color="var(--accent)" suffix="%" />
-              <ComparisonBar label="Industry avg" value={industryRate} maxValue={100} color="var(--border-lit)" suffix="%" />
-              <div style={{ marginTop: 12, fontSize: 13, fontWeight: 600, color: myRate >= industryRate ? '#10b981' : 'var(--amber)' }}>
-                {myRate >= industryRate
-                  ? '✅ You\'re above industry average!'
-                  : myRate === industryRate
-                    ? '📊 You match the industry average'
-                    : '⚠️ Room to improve response rate'}
-              </div>
+              {isStarterPlus ? (
+                <>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginBottom: 16 }}>{myRate}%</div>
+                  <ComparisonBar label="You" value={myRate} maxValue={100} color="var(--accent)" suffix="%" />
+                  <ComparisonBar label="Industry avg" value={industryRate} maxValue={100} color="var(--border-lit)" suffix="%" />
+                  <div style={{ marginTop: 12, fontSize: 13, fontWeight: 600, color: myRate >= industryRate ? '#10b981' : 'var(--amber)' }}>
+                    {myRate >= industryRate ? '✅ You\'re above industry average!' : myRate === industryRate ? '📊 You match the industry average' : '⚠️ Room to improve response rate'}
+                  </div>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>🔒</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>Response Rate</div>
+                  <div style={{ fontSize: 12.5, color: 'var(--ink-3)', marginBottom: 14, lineHeight: 1.55 }}>See how your response rate compares to industry average.</div>
+                  <a href="/checkout?plan=starter" style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Upgrade to Starter →</a>
+                </div>
+              )}
             </div>
 
-            {/* Widget 6: Response Speed */}
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 22 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 16 }}>
-                Response Speed
+            {/* Widget 6: Response Speed (Starter+ only) */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 22, position: 'relative', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.06em' }}>Response Speed</div>
+                {!isStarterPlus && <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: 'rgba(79,124,255,.1)', color: 'var(--accent)', border: '1px solid rgba(79,124,255,.2)' }}>🔒 Starter+</span>}
               </div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginBottom: 6 }}>
-                {mySpeed}
-                <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-3)', marginLeft: 4 }}>hrs avg</span>
-              </div>
-              <div style={{ marginBottom: 16 }} />
-              <ComparisonBar label="You" value={mySpeed} maxValue={Math.max(mySpeed, industrySpeed) * 1.2} color="var(--accent)" suffix=" hrs" />
-              <ComparisonBar label="Industry avg" value={industrySpeed} maxValue={Math.max(mySpeed, industrySpeed) * 1.2} color="var(--border-lit)" suffix=" hrs" />
-              <div style={{ marginTop: 12, fontSize: 13, fontWeight: 600, color: mySpeed <= industrySpeed ? '#10b981' : 'var(--amber)' }}>
-                {mySpeed === 0
-                  ? '—'
-                  : mySpeed < industrySpeed
-                    ? `⚡ You respond ${(industrySpeed / mySpeed).toFixed(1)}x faster than average!`
-                    : mySpeed === industrySpeed
-                      ? '📊 You match the industry average'
-                      : '⏱️ Try to respond within 2 hours'}
-              </div>
+              {isStarterPlus ? (
+                <>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginBottom: 6 }}>
+                    {mySpeed}<span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-3)', marginLeft: 4 }}>hrs avg</span>
+                  </div>
+                  <div style={{ marginBottom: 16 }} />
+                  <ComparisonBar label="You" value={mySpeed} maxValue={Math.max(mySpeed, industrySpeed) * 1.2} color="var(--accent)" suffix=" hrs" />
+                  <ComparisonBar label="Industry avg" value={industrySpeed} maxValue={Math.max(mySpeed, industrySpeed) * 1.2} color="var(--border-lit)" suffix=" hrs" />
+                  <div style={{ marginTop: 12, fontSize: 13, fontWeight: 600, color: mySpeed <= industrySpeed ? '#10b981' : 'var(--amber)' }}>
+                    {mySpeed === 0 ? '—' : mySpeed < industrySpeed ? `⚡ You respond ${(industrySpeed / mySpeed).toFixed(1)}x faster than average!` : mySpeed === industrySpeed ? '📊 You match the industry average' : '⏱️ Try to respond within 2 hours'}
+                  </div>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>🔒</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>Response Speed</div>
+                  <div style={{ fontSize: 12.5, color: 'var(--ink-3)', marginBottom: 14, lineHeight: 1.55 }}>Track your average reply time vs industry average.</div>
+                  <a href="/checkout?plan=starter" style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Upgrade to Starter →</a>
+                </div>
+              )}
             </div>
           </div>
 

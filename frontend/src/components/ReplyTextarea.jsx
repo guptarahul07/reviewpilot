@@ -64,3 +64,32 @@ export default function ReplyTextarea({ value, onChange, placeholder, rows = 4, 
     </div>
   )
 }
+
+/* ─────────────────────────────────────────────────────────────────
+   Business Context Upsell — shown in reply modal for Trial/Starter
+   Usage: <BusinessContextUpsell plan={plan} />
+───────────────────────────────────────────────────────────────── */
+export function BusinessContextUpsell({ plan }) {
+  const locked = !['growth', 'pro', 'bundle_growth', 'bundle_suite', 'admin'].includes(plan)
+  if (!locked) return null
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: 10,
+      background: 'rgba(79,124,255,.06)', border: '1px solid rgba(79,124,255,.15)',
+      borderRadius: 10, padding: '10px 14px', marginTop: 10,
+    }}>
+      <span style={{ fontSize: 16, flexShrink: 0 }}>💡</span>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 3 }}>
+          Get AI replies tailored to your business
+        </div>
+        <div style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.55, marginBottom: 8 }}>
+          Upgrade to Growth for context-aware replies that mention your business name, location, and specialties — not generic templates.
+        </div>
+        <a href="/checkout?plan=growth" style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--accent)', textDecoration: 'none' }}>
+          ⚡ Upgrade to Growth — ₹999/mo →
+        </a>
+      </div>
+    </div>
+  )
+}

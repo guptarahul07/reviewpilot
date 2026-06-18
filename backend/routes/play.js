@@ -24,6 +24,8 @@ import { parsePlayConsoleCsv } from '../utils/csvParser.js';
 import { validateCsvFormat, validateCsvHeaders } from '../utils/csvValidator.js';
 import { queueCsvImport } from '../services/csvImportService.js';
 import { checkPlanLevel } from '../middleware/checkPlanLevel.js';
+import { checkTrialFeature } from '../middleware/trialGate.js';
+import { BUSINESS_TYPE_CONTEXT } from '../services/businessProfileService.js';
 import Papa from 'papaparse';
 
 const router = express.Router();
@@ -96,6 +98,7 @@ router.get('/auth/callback', async (req, res) => {
   try {
     const tokens = await exchangePlayCode(code);
     await storePlayTokens(uid, tokens);
+    await trackEvent(uid, 'platform_connected', { platform: 'play' });
 
     console.log(`✅ [Play OAuth] Tokens stored for user: ${uid}`);
     res.redirect(`${origin}/settings?play=connected`);
@@ -152,6 +155,7 @@ router.post('/auth/disconnect', verifyFirebaseToken, async (req, res) => {
 
   try {
     await removePlayTokens(uid);
+    await trackEvent(uid, 'platform_disconnected', { platform: 'play' });
     console.log(`✅ Play Console disconnected for user: ${uid}`);
     res.json({ success: true, message: 'Play Console disconnected' });
   } catch (err) {
@@ -244,6 +248,7 @@ router.post('/apps', verifyFirebaseToken, async (req, res) => {
       .set(appData);
 
     console.log(`✅ App added: ${packageName} for user: ${uid}`);
+    await trackEvent(uid, 'app_added', { packageName, platform: 'play' });
     res.status(201).json({ success: true, app: appData });
 
   } catch (err) {
@@ -397,7 +402,16 @@ router.post('/reviews/:reviewId/reply', verifyFirebaseToken, aiLimiter, async (r
         .get();
       const settings = settingsDoc.data() || {};
 
-      finalReply = await generatePlayReplyWithAI(review, settings);
+      // Build app context for context-aware replies (Section 13.7)
+      const appDocRef = await db.collection('users').doc(uid).collection('playApps').doc(packageName).get();
+      const appData = appDocRef.exists ? appDocRef.data() : null;
+      const appContext = appData ? {
+        appName: appData.appName || packageName,
+        packageName,
+        currentVersion: review.appVersion
+      } : null;
+
+      finalReply = await generatePlayReplyWithAI(review, settings, appContext);
 
       // Save as draft if just generating
       if (generateAI && !replyText) {
@@ -480,9 +494,17 @@ router.post('/sync', verifyFirebaseToken, async (req, res) => {
 // PL-08: AI reply generation for Play Store reviews
 // 300 char target (350 hard limit with buffer)
 // ─────────────────────────────────────────────
-async function generatePlayReplyWithAI(review, settings) {
-  const prompt = `You are responding to a Google Play Store app review on behalf of the app developer.
+async function generatePlayReplyWithAI(review, settings, appContext = null) {
+  // Section 13.7 — App context for Play Store replies
+  const appContextStr = appContext
+    ? `You are the developer of ${appContext.appName} (${appContext.packageName}).
+The reviewer is using version ${appContext.currentVersion || review.appVersion || 'Unknown'}.
+App context: ${BUSINESS_TYPE_CONTEXT['app_developer']}
+`
+    : `You are responding to a Google Play Store app review on behalf of the app developer.
+`;
 
+  const prompt = `${appContextStr}
 App Review:
 Rating: ${review.starRating}/5 stars
 Review: "${review.text}"
@@ -500,6 +522,7 @@ CRITICAL RULES:
 5. Do NOT mention competitor apps
 6. Do NOT make promises you cannot keep
 7. End with a call-to-action if appropriate (e.g., "Update to fix this!")
+${appContext ? '8. Reference the app name naturally if appropriate' : ''}
 
 Respond with ONLY the reply text. No quotes, no explanation.`;
 
@@ -554,6 +577,7 @@ Respond with ONLY the reply text. No quotes, no explanation.`;
 router.post('/import-csv',
   verifyFirebaseToken,
   checkPlanLevel(CSV_IMPORT_PLANS),
+  checkTrialFeature('csvImport'),
   upload.single('reviewsCsv'),
   async (req, res) => {
     const uid = req.uid;

@@ -4,6 +4,7 @@ import { fetchGoogleReviews, generateMockReviews } from '../services/googleRevie
 import { getUserSettings, shouldSkipReview } from '../services/replyModeHandler.js';
 import { analyzeSentiment } from '../services/sentimentAnalysis.js';
 import { trackEvent } from '../utils/analytics.js';
+import { refreshBusinessProfileIfNeeded } from '../services/businessProfileService.js';
 import { fetchAndStorePlayReviews } from '../services/playStoreReviews.js';
 
 async function syncReviewsForUser(uid) {
@@ -65,6 +66,17 @@ async function syncReviewsForUser(uid) {
   }
 
   await db.collection('users').doc(uid).set({ lastSyncAt: new Date() }, { merge: true });
+
+  // Section 13.5 — Refresh business profile weekly
+  try {
+    const userDoc = await db.collection('users').doc(uid).get();
+    const locationId = userDoc.data()?.googleLocationId;
+    if (locationId && locationId !== 'pending-verification') {
+      await refreshBusinessProfileIfNeeded(uid, locationId);
+    }
+  } catch (profileErr) {
+    console.warn(`[CRON] Business profile refresh failed for ${uid}:`, profileErr.message);
+  }
   await trackEvent(uid, 'reviews_synced', { count: synced, source: 'cron' });
 
   console.log(`[CRON] Synced ${synced} new reviews for user: ${uid}`);

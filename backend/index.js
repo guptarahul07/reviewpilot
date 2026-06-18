@@ -19,6 +19,8 @@ import settingsRouter from './routes/settings.js';
 import reviewsRouter from './routes/reviews.js';
 import { handleAutoMode, handleSemiAutoMode, handleManualMode, getUserSettings, shouldSkipReview } from './services/replyModeHandler.js';
 import { verifyFirebaseToken } from './middleware/auth.js';
+import { checkTrialFeature, incrementTrialReplyCount, getTrialStatus, CONTEXT_PLANS } from './middleware/trialGate.js';
+import { getBusinessProfile, detectBusinessType, BUSINESS_TYPE_CONTEXT } from './services/businessProfileService.js';
 import { apiLimiter, aiLimiter, authLimiter } from './middleware/rateLimiter.js';
 import { sanitizeReplyInput } from './utils/sanitize.js';
 import './cron/reviewSync.js';
@@ -124,7 +126,7 @@ async function getRecentReplies(uid) {
 /* ─────────────────────────────────────────────
    AI GENERATION FUNCTION
 ───────────────────────────────────────────── */
-async function generateAIReply(review, pastReplies = []) {
+async function generateAIReply(review, pastReplies = [], businessProfile = null) {
   const styles = [
     "casual",
     "friendly", 
@@ -140,9 +142,27 @@ async function generateAIReply(review, pastReplies = []) {
     ? `Acknowledge "${topic}" naturally in 1-2 words max.`
     : "";
 
-  const prompt = `
-You are a casual Indian cafe owner replying to a Google review.
+  // Build business context section if available
+  let businessContext = '';
+  if (businessProfile && businessProfile.businessName) {
+    const businessType = detectBusinessType(businessProfile.primaryCategory || '');
+    const contextHints = BUSINESS_TYPE_CONTEXT[businessType] || BUSINESS_TYPE_CONTEXT.general;
+    businessContext = `
+Business: ${businessProfile.businessName}
+Type: ${businessProfile.primaryCategory || businessType}
+Location: ${[businessProfile.city, businessProfile.state].filter(Boolean).join(', ') || 'India'}
+Key aspects: ${contextHints}
+${businessProfile.description ? `Description: ${businessProfile.description.substring(0, 100)}` : ''}`;
+  }
 
+  const ownerLabel = businessProfile?.businessName
+    ? `owner of ${businessProfile.businessName}`
+    : 'casual Indian business owner';
+
+  const prompt = `You are a ${ownerLabel} replying to a Google review.
+${businessContext ? `
+Business context:${businessContext}
+` : ''}
 CRITICAL RULES:
 - Maximum 25 words (strict limit!)
 - Write like a real person texting, not a corporation
@@ -151,6 +171,7 @@ CRITICAL RULES:
 - No multiple exclamation marks
 - One sentence is fine
 - Can use emojis (☕ 😊 🙏) sparingly
+${businessContext ? '- Reference specific aspects of the business type naturally' : ''}
 
 ${topicLine}
 
@@ -190,11 +211,11 @@ Reply (max 25 words):
 }
 
 // Task #67 - Retry wrapper for AI generation
-async function generateAIReplyWithRetry(review, pastReplies = [], maxRetries = 3) {
+async function generateAIReplyWithRetry(review, pastReplies = [], businessProfile = null, maxRetries = 3) {
   let lastError;
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      return await generateAIReply(review, pastReplies);
+      return await generateAIReply(review, pastReplies, businessProfile);
     } catch (err) {
       lastError = err;
       console.warn('[AI Retry] Attempt ' + attempt + '/' + maxRetries + ' failed: ' + err.message);
@@ -211,10 +232,35 @@ async function generateAIReplyWithRetry(review, pastReplies = [], maxRetries = 3
 /* ─────────────────────────────────────────────
    SYNC REVIEWS (SEMI-AUTOMATED LOGIC)
 ───────────────────────────────────────────── */
-app.post("/api/reviews/sync", verifyFirebaseToken, checkSubscription, aiLimiter, async (req, res) => {
+app.post("/api/reviews/sync", verifyFirebaseToken, checkSubscription, aiLimiter, checkTrialFeature("aiReply"), async (req, res) => {
 
   try {
-    const uid = req.uid;    
+    const uid = req.uid;
+    const { force = false } = req.body;
+
+    // Section 14.5 — Rate limit manual sync to once per 5 minutes
+    if (force) {
+      const userDoc = await db.collection('users').doc(uid).get();
+      const lastManualSync = userDoc.data()?.lastManualSyncAt;
+      if (lastManualSync) {
+        const lastMs = lastManualSync.toDate ? lastManualSync.toDate().getTime() : new Date(lastManualSync).getTime();
+        const cooldownMs = 5 * 60 * 1000;
+        const timeSince = Date.now() - lastMs;
+        if (timeSince < cooldownMs) {
+          const waitSeconds = Math.ceil((cooldownMs - timeSince) / 1000);
+          return res.status(429).json({
+            success: false,
+            error: 'SYNC_COOLDOWN',
+            message: `Please wait ${waitSeconds}s before syncing again`,
+            waitSeconds
+          });
+        }
+      }
+      // Record manual sync time
+      await db.collection('users').doc(uid).set({ lastManualSyncAt: new Date() }, { merge: true });
+      console.log(`🔄 [POST /api/reviews/sync] Force sync triggered for user: ${uid}`);
+    }
+
     // Fetch reviews from Google My Business API
     let googleReviews = [];
     
@@ -233,6 +279,22 @@ app.post("/api/reviews/sync", verifyFirebaseToken, checkSubscription, aiLimiter,
 
     const results = [];
     const pastReplies = await getRecentReplies(uid);
+
+    // Fetch business profile for context-aware AI replies (Section 13.6)
+    // Only for Growth/Pro plans — trial and starter get generic replies
+    let businessProfile = null;
+    try {
+      const userDoc = await db.collection('users').doc(uid).get();
+      const planKey = userDoc.data()?.subscription?.plan || 'trial';
+      const googleLocationId = userDoc.data()?.googleLocationId;
+
+      if (CONTEXT_PLANS.includes(planKey) && googleLocationId && googleLocationId !== 'pending-verification') {
+        businessProfile = await getBusinessProfile(uid, googleLocationId);
+        console.log(`[Sync] Using business context: ${businessProfile.businessName}`);
+      }
+    } catch (err) {
+      console.warn(`[Sync] Business profile fetch failed, using generic prompt: ${err.message}`);
+    }
 
     for (const review of googleReviews) {
       // Skip if already has a reply
@@ -258,8 +320,8 @@ app.post("/api/reviews/sync", verifyFirebaseToken, checkSubscription, aiLimiter,
         break; // Stop processing more reviews for this sync
       }
 
-      // Generate AI reply
-      const aiReply = await generateAIReplyWithRetry(review, pastReplies);
+      // Generate AI reply with business context if available
+      const aiReply = await generateAIReplyWithRetry(review, pastReplies, businessProfile);
 
       // Sentiment analysis
       const sentimentAnalysis = analyzeSentiment(review.text, review.rating);
@@ -294,6 +356,10 @@ app.post("/api/reviews/sync", verifyFirebaseToken, checkSubscription, aiLimiter,
 
       results.push({ ...review, aiReply });
       await incrementUsage(uid, 'reviewsGenerated');
+      // Increment trial reply counter if on trial
+      if (req.isTrialReply) {
+        await incrementTrialReplyCount(uid);
+      }
     }
 
     // Track event
@@ -309,10 +375,13 @@ app.post("/api/reviews/sync", verifyFirebaseToken, checkSubscription, aiLimiter,
 
     //console.log(`✅ Synced ${results.length} new reviews`);
 
-    res.json({ 
-      reviews: results, 
+    res.json({
+      success: true,
+      reviews: results,
       synced: results.length,
-      total: googleReviews.length
+      total: googleReviews.length,
+      forced: force,
+      syncedAt: new Date().toISOString()
     });
 
   } catch (err) {
@@ -324,7 +393,7 @@ app.post("/api/reviews/sync", verifyFirebaseToken, checkSubscription, aiLimiter,
 /* ─────────────────────────────────────────────
    REGENERATE AI REPLY
 ───────────────────────────────────────────── */
-app.post("/api/reviews/regenerate", verifyFirebaseToken, checkSubscription, aiLimiter, async (req, res) => {
+app.post("/api/reviews/regenerate", verifyFirebaseToken, checkSubscription, aiLimiter, checkTrialFeature("aiReply"), async (req, res) => {
   //console.log("🔥 HIT /api/reviews/regenerate");
 
   try {
@@ -481,6 +550,21 @@ app.get("/", (req, res) => {
 
 app.listen(5000, () => {
   console.log("Backend running on http://localhost:5000");
+});
+
+// ─────────────────────────────────────────────
+// GET /api/billing/trial-status
+// Returns trial reply counter for frontend display
+// ─────────────────────────────────────────────
+app.get("/api/billing/trial-status", verifyFirebaseToken, async (req, res) => {
+  const uid = req.uid;
+  try {
+    const status = await getTrialStatus(uid);
+    res.json({ success: true, ...status });
+  } catch (err) {
+    console.error('❌ [trial-status] Error:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch trial status' });
+  }
 });
 
 app.get("/api/reviews", verifyFirebaseToken, async (req, res) => {

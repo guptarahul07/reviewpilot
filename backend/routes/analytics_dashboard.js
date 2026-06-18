@@ -2,6 +2,7 @@ import express from 'express';
 import axios from 'axios';
 import { db } from '../firebaseAdmin.js';
 import { verifyFirebaseToken } from '../middleware/auth.js';
+import { checkTrialFeature } from '../middleware/trialGate.js';
 import { checkSubscription } from '../middleware/checkSubscription.js';
 
 const router = express.Router();
@@ -366,7 +367,7 @@ router.get('/sentiment', verifyFirebaseToken, checkSubscription, async (req, res
 // ─────────────────────────────────────────────
 // GET /api/analytics/keywords
 // ─────────────────────────────────────────────
-router.get('/keywords', verifyFirebaseToken, checkSubscription, async (req, res) => {
+router.get('/keywords', verifyFirebaseToken, checkSubscription, checkTrialFeature('keywordAnalysis'), async (req, res) => {
   const uid = req.uid;
   try {
     const data = await getOrCalculateAnalytics(uid);
@@ -392,7 +393,7 @@ router.get('/rating-trend', verifyFirebaseToken, checkSubscription, async (req, 
 // ─────────────────────────────────────────────
 // GET /api/analytics/response-stats
 // ─────────────────────────────────────────────
-router.get('/response-stats', verifyFirebaseToken, checkSubscription, async (req, res) => {
+router.get('/response-stats', verifyFirebaseToken, checkSubscription, checkTrialFeature('responseRate'), async (req, res) => {
   const uid = req.uid;
   try {
     const data = await getOrCalculateAnalytics(uid);
