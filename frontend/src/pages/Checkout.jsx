@@ -181,7 +181,7 @@ export default function Checkout() {
 
         {/* Back */}
         <button
-          onClick={() => navigate('/pricing')}
+          onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/pricing')}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             background: 'none', border: 'none', color: 'var(--ink-3)',
