@@ -449,7 +449,6 @@ function ReviewCard({ review, onStatusChange, onRegenerateReply }) {
                 <button
                   onClick={handleRegenerate}
                   disabled={regenerating || regenCount >= REGEN_LIMIT}
-                  disabled={regenerating}
                   style={{
                     padding: "4px 10px",
                     borderRadius: 6,
