@@ -22,18 +22,21 @@ const razorpay = new Razorpay({
 // Below is billing-specific shorthand for Razorpay
 // ─────────────────────────────────────────────
 export const PLANS = {
-  starter: {
-    monthly: { amount: 49900, period: 'monthly', interval: 1 },
-    annual:  { amount: 479000, period: 'yearly', interval: 1 }
-  },
-  growth: {
-    monthly: { amount: 99900, period: 'monthly', interval: 1 },
-    annual:  { amount: 899100, period: 'yearly', interval: 1 }
-  },
-  professional: {
-    monthly: { amount: 199900, period: 'monthly', interval: 1 },
-    annual:  { amount: 1679200, period: 'yearly', interval: 1 }
-  }
+  // GBP individual
+  starter:      { monthly: { amount: 49900,   period: 'monthly', interval: 1 }, annual: { amount: 479000,   period: 'yearly', interval: 1 } },
+  growth:       { monthly: { amount: 99900,   period: 'monthly', interval: 1 }, annual: { amount: 899100,   period: 'yearly', interval: 1 } },
+  professional: { monthly: { amount: 199900,  period: 'monthly', interval: 1 }, annual: { amount: 1679200,  period: 'yearly', interval: 1 } },
+  gbp_starter:  { monthly: { amount: 49900,   period: 'monthly', interval: 1 }, annual: { amount: 479000,   period: 'yearly', interval: 1 } },
+  gbp_growth:   { monthly: { amount: 99900,   period: 'monthly', interval: 1 }, annual: { amount: 899100,   period: 'yearly', interval: 1 } },
+  gbp_pro:      { monthly: { amount: 199900,  period: 'monthly', interval: 1 }, annual: { amount: 1679200,  period: 'yearly', interval: 1 } },
+  // Play Store individual
+  play_starter: { monthly: { amount: 49900,   period: 'monthly', interval: 1 }, annual: { amount: 479000,   period: 'yearly', interval: 1 } },
+  play_growth:  { monthly: { amount: 99900,   period: 'monthly', interval: 1 }, annual: { amount: 899100,   period: 'yearly', interval: 1 } },
+  play_pro:     { monthly: { amount: 199900,  period: 'monthly', interval: 1 }, annual: { amount: 1679200,  period: 'yearly', interval: 1 } },
+  // Bundles
+  bundle_starter: { monthly: { amount: 79900,  period: 'monthly', interval: 1 }, annual: { amount: 767040,   period: 'yearly', interval: 1 } },
+  bundle_growth:  { monthly: { amount: 179900, period: 'monthly', interval: 1 }, annual: { amount: 1619100,  period: 'yearly', interval: 1 } },
+  bundle_suite:   { monthly: { amount: 349900, period: 'monthly', interval: 1 }, annual: { amount: 2939160,  period: 'yearly', interval: 1 } },
 };
 
 const BETA_USER_LIMIT = 50;
@@ -188,7 +191,7 @@ router.post('/create-subscription', verifyFirebaseToken, async (req, res) => {
 
   // Validate inputs
   if (!plan || !PLANS[plan]) {
-    return res.status(400).json({ success: false, error: 'Invalid plan. Must be: starter, growth, or professional' });
+    return res.status(400).json({ success: false, error: `Invalid plan '${plan}'. Must be one of: ${Object.keys(PLANS).join(', ')}` });
   }
 
   if (!billingCycle || !['monthly', 'annual'].includes(billingCycle)) {
@@ -475,6 +478,119 @@ router.get('/invoices', verifyFirebaseToken, async (req, res) => {
 // POST /api/billing/webhook
 // Razorpay webhook handler
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// POST /api/billing/verify-payment
+// Called by frontend after Razorpay checkout completes
+// Verifies HMAC signature and confirms subscription active
+// ─────────────────────────────────────────────
+router.post('/verify-payment', verifyFirebaseToken, async (req, res) => {
+  const uid = req.uid;
+  const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature } = req.body;
+
+  console.log(`💳 [POST /api/billing/verify-payment] User: ${uid}`);
+
+  if (!razorpay_payment_id || !razorpay_subscription_id || !razorpay_signature) {
+    return res.status(400).json({ success: false, error: 'Missing payment verification fields' });
+  }
+
+  try {
+    // Verify HMAC signature
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(`${razorpay_payment_id}|${razorpay_subscription_id}`)
+      .digest('hex');
+
+    if (expectedSignature !== razorpay_signature) {
+      console.error(`❌ [verify-payment] Invalid signature for user: ${uid}`);
+      return res.status(400).json({ success: false, error: 'Invalid payment signature' });
+    }
+
+    // Fetch subscription status from Razorpay to confirm
+    const subscription = await razorpay.subscriptions.fetch(razorpay_subscription_id);
+
+    console.log(`✅ [verify-payment] Razorpay subscription status: ${subscription.status}`);
+
+    // Update Firestore with confirmed active status
+    await db.collection('users').doc(uid).set({
+      subscription: {
+        status: 'active',
+        razorpaySubscriptionId: razorpay_subscription_id,
+        razorpayPaymentId: razorpay_payment_id,
+        activatedAt: new Date()
+      }
+    }, { merge: true });
+
+    console.log(`✅ [verify-payment] Subscription confirmed for user: ${uid}`);
+
+    res.json({
+      success: true,
+      subscriptionId: razorpay_subscription_id,
+      status: subscription.status
+    });
+
+  } catch (err) {
+    console.error('❌ [verify-payment] Error:', err.message);
+    res.status(500).json({ success: false, error: 'Payment verification failed' });
+  }
+});
+
+// ─────────────────────────────────────────────
+// GET /api/billing/usage
+// Returns current usage stats for billing page
+// ─────────────────────────────────────────────
+router.get('/usage', verifyFirebaseToken, async (req, res) => {
+  const uid = req.uid;
+
+  try {
+    const userDoc = await db.collection('users').doc(uid).get();
+    const userData = userDoc.data() || {};
+    const usage = userData.usage || {};
+    const subscription = userData.subscription || {};
+
+    res.json({
+      success: true,
+      usage: {
+        reviewsGenerated: usage.reviewsGenerated || 0,
+        repliesPosted: usage.repliesPosted || 0,
+        locationsConnected: usage.locationsConnected ||
+          (userData.googleAccountId && userData.googleAccountId !== 'pending-verification' ? 1 : 0),
+        currentMonth: usage.currentMonth || null
+      },
+      limits: {
+        reviewsPerMonth: subscription.plan ? getPlanReviewLimit(subscription.plan) : 50,
+        repliesPerMonth: subscription.plan ? getPlanReviewLimit(subscription.plan) : 50,
+        locationsMax: subscription.plan ? getPlanLocationLimit(subscription.plan) : 1
+      }
+    });
+
+  } catch (err) {
+    console.error('❌ [GET /api/billing/usage] Error:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch usage' });
+  }
+});
+
+// Helper: get review limit for plan
+function getPlanReviewLimit(plan) {
+  const limits = {
+    starter: 50, gbp_starter: 50, play_starter: 50, bundle_starter: 100,
+    growth: 200, gbp_growth: 200, play_growth: 200, bundle_growth: 400,
+    professional: Infinity, gbp_pro: Infinity, play_pro: Infinity, bundle_suite: Infinity,
+    trial: 50, admin: Infinity
+  };
+  return limits[plan] ?? 50;
+}
+
+// Helper: get location limit for plan
+function getPlanLocationLimit(plan) {
+  const limits = {
+    starter: 1, gbp_starter: 1, play_starter: 1, bundle_starter: 1,
+    growth: 3, gbp_growth: 3, play_growth: 3, bundle_growth: 3,
+    professional: 999, gbp_pro: 999, play_pro: 999, bundle_suite: 999,
+    trial: 1, admin: 999
+  };
+  return limits[plan] ?? 1;
+}
+
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const signature = req.headers['x-razorpay-signature'];
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
