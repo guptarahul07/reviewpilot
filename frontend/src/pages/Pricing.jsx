@@ -249,6 +249,8 @@ export default function Pricing() {
           </div>
         </div>
 
+        {pricingTab === 'individual' && (
+          <>
         {/* ── Plan cards ── */}
         <div className="plans-label">Or choose a paid plan — starts with a 15-day free trial</div>
         <div className="plans-grid">
@@ -389,6 +391,9 @@ export default function Pricing() {
             </div>
           </div>
         </div>
+
+          </>
+        )}
 
         {/* ── Why free ── */}
         <div className="why-free">
