@@ -29,6 +29,7 @@ router.get('/', verifyFirebaseToken, async (req, res) => {
     ]);
 
     const userData = userDoc.data() || {};
+    const profile = userData.profile || {};
     // google.connected is set by OAuth callback
     // businessName stored by storeUserTokens as dotted 'settings.businessName' -> nested field
     // Also check top-level googleBusinessName as fallback
@@ -54,11 +55,11 @@ router.get('/', verifyFirebaseToken, async (req, res) => {
 
     if (!settingsDoc.exists) {
       console.log(`⚙️ [GET /api/settings] No settings found, returning defaults`);
-      return res.json({ success: true, settings: getDefaultSettings(), google });
+      return res.json({ success: true, settings: getDefaultSettings(), google, profile });
     }
 
     console.log(`⚙️ [GET /api/settings] Settings found`);
-    res.json({ success: true, settings: settingsDoc.data(), google });
+    res.json({ success: true, settings: settingsDoc.data(), google, profile });
 
   } catch (err) {
     console.error(`❌ [GET /api/settings] Error:`, err.message);
