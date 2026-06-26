@@ -32,6 +32,7 @@ router.get('/profile', verifyFirebaseToken, async (req, res) => {
     const userData = userDoc.data() || {};
     // profile is stored as nested map — direct access works fine here
     const profile = userData.profile || {};
+    console.log(`👤 [GET /api/user/profile] uid: ${uid}, profile keys: ${Object.keys(profile)}, raw profile:`, JSON.stringify(profile));
     res.json({ success: true, profile });
 
   } catch (err) {
