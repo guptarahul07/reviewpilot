@@ -116,7 +116,39 @@ export function AuthProvider({ children }) {
     return null
   }
 
-  /* ───────────────── FETCH PROFILE ───────────────── */
+  /* ───────────────── FETCH PROFILE FROM API ───────────────── */
+  // Primary source — Railway API (works even when Firestore offline)
+  async function fetchProfileFromAPI(firebaseUser) {
+    try {
+      const token = await firebaseUser.getIdToken()
+      const res   = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/settings`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        // Merge settings + profile fields into a unified profile object
+        const merged = {
+          ...(data.profile  || {}),
+          ...(data.user     || {}),
+          settings: data.settings || {},
+          google:   data.google   || {},
+          plan:     data.plan     || data.subscription?.plan || 'free',
+          // Map common fields
+          name:         data.profile?.displayName || data.user?.displayName || '',
+          displayName:  data.profile?.displayName || data.user?.displayName || '',
+          phone:        data.profile?.phone        || data.user?.phone       || '',
+          city:         data.profile?.city         || data.user?.city        || '',
+          state:        data.profile?.state        || data.user?.state       || '',
+          businessType: data.profile?.businessType || data.user?.businessType || '',
+        }
+        setProfile(merged)
+        return merged
+      }
+    } catch { /* non-blocking */ }
+    return null
+  }
+
+  /* ───────────────── FETCH PROFILE (Firestore fallback) ───────────────── */
 
   async function fetchProfile(uid) {
     try {
@@ -179,7 +211,12 @@ export function AuthProvider({ children }) {
             await enableNetwork(db)
             await new Promise(r => setTimeout(r, 500)) // small settle time
             await createUserDocIfMissing(firebaseUser)
-            await fetchProfile(firebaseUser.uid)
+            // Try API first — faster and works offline from Firestore
+            const apiProfile = await fetchProfileFromAPI(firebaseUser)
+            if (!apiProfile) {
+              // Fallback to Firestore only if API fails
+              await fetchProfile(firebaseUser.uid)
+            }
             fetchSubscription(firebaseUser) // non-blocking
             return // success — stop retrying
           } catch (err) {
@@ -210,8 +247,10 @@ export function AuthProvider({ children }) {
     login,
     logout,
     fetchProfile,
+    fetchProfileFromAPI,
     fetchSubscription,
-    isGoogleConnected: profile?.google?.connected ?? false,
+    // Check google connection from both Firestore profile and API profile
+    isGoogleConnected: profile?.google?.connected === true,
     // Helpers derived from subscription
     isTrialActive: subscription?.status === 'trial',
     isExpired:     subscription?.status === 'expired' || subscription?.requiresUpgrade === true,

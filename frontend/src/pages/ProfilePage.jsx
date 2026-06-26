@@ -26,7 +26,7 @@ const sectionStyle = {
 }
 
 export default function ProfilePage() {
-  const { user, profile } = useAuth()
+  const { user, profile, fetchProfileFromAPI } = useAuth()
   const [toast, setToast]               = useState(null)
   const [saving, setSaving]             = useState(false)
   const [exporting, setExporting]       = useState(false)
@@ -47,15 +47,43 @@ export default function ProfilePage() {
   const [emailNotifs, setEmailNotifs]   = useState(true)
 
   useEffect(() => {
-    if (!profile) return
-    setDisplayName(profile.name || profile.displayName || user?.displayName || '')
-    setPhone(profile.phone || '')
-    setBusinessType(profile.businessType || '')
-    setBusinessName(profile.settings?.businessName || profile.businessName || '')
-    setCity(profile.city || '')
-    setState_(profile.state || '')
-    setEmailNotifs(profile.emailNotifications !== false)
-  }, [profile, user])
+    if (!user) return
+    // Load from API first (works even when Firestore offline)
+    // fetchProfileFromAPI already updates AuthContext profile,
+    // but we also set local state directly for instant UI population
+    async function loadProfile() {
+      try {
+        const token = await user.getIdToken()
+        const res   = await fetch(`${API_URL}/api/settings`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const p = data.profile || data.user || {}
+          const s = data.settings || {}
+          setDisplayName(p.displayName || p.name || user?.displayName || '')
+          setPhone(p.phone || '')
+          setBusinessType(p.businessType || '')
+          setBusinessName(s.businessName || p.businessName || '')
+          setCity(p.city || '')
+          setState_(p.state || '')
+          setEmailNotifs(p.emailNotifications !== false)
+          return
+        }
+      } catch { /* fall through to Firestore profile */ }
+      // Fallback to Firestore profile if API fails
+      if (profile) {
+        setDisplayName(profile.name || profile.displayName || user?.displayName || '')
+        setPhone(profile.phone || '')
+        setBusinessType(profile.businessType || '')
+        setBusinessName(profile.settings?.businessName || profile.businessName || '')
+        setCity(profile.city || '')
+        setState_(profile.state || '')
+        setEmailNotifs(profile.emailNotifications !== false)
+      }
+    }
+    loadProfile()
+  }, [user]) // eslint-disable-line — run once on mount
 
   async function handleSave() {
     setSaving(true)
