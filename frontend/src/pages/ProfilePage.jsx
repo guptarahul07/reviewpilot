@@ -26,7 +26,7 @@ const sectionStyle = {
 }
 
 export default function ProfilePage() {
-  const { user, profile, fetchProfile } = useAuth()
+  const { user, profile } = useAuth()
   const [toast, setToast]               = useState(null)
   const [saving, setSaving]             = useState(false)
   const [exporting, setExporting]       = useState(false)
@@ -71,7 +71,18 @@ export default function ProfilePage() {
         }),
       })
       if (!res.ok) throw new Error()
-      await fetchProfile(user.uid)
+      const data = await res.json()
+      // Use returned profile directly — no Firestore re-fetch needed
+      // (fetchProfile goes to Firestore which may be slow/offline)
+      if (data?.profile) {
+        const p = data.profile
+        if (p.displayName) setDisplayName(p.displayName)
+        if (p.phone !== undefined) setPhone(p.phone || '')
+        if (p.businessType) setBusinessType(p.businessType)
+        if (p.businessName) setBusinessName(p.businessName)
+        if (p.city !== undefined) setCity(p.city || '')
+        if (p.state !== undefined) setState_(p.state || '')
+      }
       setToast({ type: 'success', message: 'Profile updated successfully!' })
     } catch {
       setToast({ type: 'error', message: 'Failed to save. Please try again.' })

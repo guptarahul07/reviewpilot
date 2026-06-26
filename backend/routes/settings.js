@@ -29,9 +29,6 @@ router.get('/', verifyFirebaseToken, async (req, res) => {
     ]);
 
     const userData = userDoc.data() || {};
-    console.log(`⚙️ [GET /api/settings] userData keys:`, Object.keys(userData));
-    console.log(`⚙️ [GET /api/settings] google field:`, userData.google);
-    console.log(`⚙️ [GET /api/settings] settings field:`, userData.settings);
     // google.connected is set by OAuth callback
     // businessName stored by storeUserTokens as dotted 'settings.businessName' -> nested field
     // Also check top-level googleBusinessName as fallback
