@@ -105,8 +105,10 @@ router.get('/auth/google/callback', async (req, res) => {
     // ✅ ADD THIS — mark google as connected for frontend
     const { db } = await import('../firebaseAdmin.js');
     await db.collection('users').doc(uid).set({
-      'google.connected': true,
-      'google.connectedAt': admin.firestore.FieldValue.serverTimestamp(),
+      google: {
+        connected: true,
+        connectedAt: admin.firestore.FieldValue.serverTimestamp()
+      },
     }, { merge: true });
     
     await trackEvent(uid, 'google_connected', {

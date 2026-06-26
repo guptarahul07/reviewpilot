@@ -24,7 +24,23 @@ export async function checkSubscription(req, res, next) {
 
   try {
     const userDoc = await db.collection('users').doc(uid).get();
-    const subscription = userDoc.data()?.subscription;
+    const userData = userDoc.data() || {};
+
+    // Support both old format (plan: "free" top-level) and new format (subscription map)
+    let subscription = userData.subscription;
+
+    // If subscription exists but has no status (incomplete doc), treat as trial
+    if (subscription && !subscription.status) {
+      subscription.status = 'trial';
+    }
+
+    // Fallback for old top-level plan field
+    if (!subscription && userData.plan) {
+      subscription = {
+        plan: userData.plan,
+        status: 'trial'
+      };
+    }
 
     if (!subscription || subscription.status !== 'active') {
       return res.status(403).json({

@@ -165,10 +165,17 @@ export async function storeUserTokens(uid, tokens, businessInfo) {
       googleRefreshToken: encryptedRefreshToken,
       googleAccountId: businessInfo.accountId,
       googleLocationId: businessInfo.locationId,
-      'settings.businessName': businessInfo.businessName,
       businessAddress: businessInfo.businessAddress,
       googleConnectedAt: new Date(),
-      lastSyncAt: null
+      lastSyncAt: null,
+      // Use proper nested objects — NOT dotted string keys
+      google: {
+        connected: true,
+        connectedAt: new Date()
+      },
+      settings: {
+        businessName: businessInfo.businessName
+      }
     }, { merge: true });
     
     console.log(`✅ Stored tokens for user: ${uid}`);

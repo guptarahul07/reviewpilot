@@ -29,7 +29,9 @@ router.get('/profile', verifyFirebaseToken, async (req, res) => {
       return res.json({ success: true, profile: null });
     }
 
-    const profile = userDoc.data()?.profile || {};
+    const userData = userDoc.data() || {};
+    // profile is stored as nested map — direct access works fine here
+    const profile = userData.profile || {};
     res.json({ success: true, profile });
 
   } catch (err) {
@@ -73,11 +75,24 @@ router.put('/profile', verifyFirebaseToken, async (req, res) => {
   };
 
   try {
-    await db.collection('users').doc(uid).set({
-      profile: profileUpdate
-    }, { merge: true });
+    const start = Date.now();
 
-    console.log(`✅ [PUT /api/user/profile] Updated for user: ${uid}`);
+    // Use dotted keys to update only specific fields — prevents overwriting entire profile map
+    const firestoreUpdate = {};
+    for (const [key, value] of Object.entries(profileUpdate)) {
+      firestoreUpdate[`profile.${key}`] = value;
+    }
+
+    // Use set+merge as fallback if doc doesn't exist (new user)
+    const userDocRef = db.collection('users').doc(uid);
+    const userSnap = await userDocRef.get();
+    if (userSnap.exists) {
+      await userDocRef.update(firestoreUpdate);
+    } else {
+      await userDocRef.set({ profile: profileUpdate }, { merge: true });
+    }
+
+    console.log(`✅ [PUT /api/user/profile] Updated for user: ${uid} in ${Date.now() - start}ms`);
     res.json({ success: true, profile: profileUpdate });
 
   } catch (err) {
