@@ -87,95 +87,90 @@ export async function exchangeCodeForTokens(code) {
 /**
  * Get user's Google Business accounts and locations
  */
+// Returns ALL locations for a user — used for location picker UI
 export async function getUserBusinessLocations(tokens) {
   try {
     const client = getOAuth2Client();
     client.setCredentials(tokens);
-    
+
     // Step 1: Accounts via mybusinessaccountmanagement
     const mybusiness = google.mybusinessaccountmanagement({ version: 'v1', auth: client });
-    // Step 2: Locations via mybusinessbusinessinformation (separate API)
+    // Step 2: Locations via mybusinessbusinessinformation
     const locationsApi = google.mybusinessbusinessinformation({ version: 'v1', auth: client });
-    
-    // Get accounts
-    // Get accounts
-console.log('🔍 Fetching Google Business accounts...');
-const accountsResponse = await mybusiness.accounts.list();
-console.log('📦 Raw response:', JSON.stringify(accountsResponse.data, null, 2));
 
-const accounts = accountsResponse.data.accounts || [];
+    console.log('🔍 Fetching Google Business accounts...');
+    const accountsResponse = await mybusiness.accounts.list();
+    const accounts = accountsResponse.data.accounts || [];
 
-console.log('📊 Number of accounts found:', accounts.length);
+    console.log(`📊 Number of accounts found: ${accounts.length}`);
 
-if (accounts.length === 0) {
-  console.error('❌ No Google Business accounts found!');
-  console.log('💡 Make sure you created a Google Business Profile at https://business.google.com');
-  console.log('💡 It can take a few minutes to appear in the API');
-  throw new Error('No Google Business accounts found. Please create a Google Business Profile first.');
-}
+    if (accounts.length === 0) {
+      throw new Error('No Google Business accounts found. Please create a Google Business Profile first.');
+    }
 
-console.log('✅ Accounts found:', accounts.map(a => a.name));
-    
     const accountName = accounts[0].name;
     const accountId = accountName.split('/')[1];
-    
     console.log(`✅ Found account: ${accountName}`);
-    
-    // Get locations
+
+    // Fetch all locations with locationState for isClosed check
     const locationsResponse = await locationsApi.accounts.locations.list({
       parent: accountName,
-      readMask: 'name,title,storefrontAddress'
+      readMask: 'name,title,storefrontAddress,metadata'
     });
-    
+
     const locations = locationsResponse.data.locations || [];
-    
+    console.log(`✅ Found ${locations.length} location(s)`);
+
     if (locations.length === 0) {
-      throw new Error('No business locations found');
+      throw new Error('No business locations found. Make sure your Google Business Profile has at least one location.');
     }
-    
-    const location = locations[0];
-    // location.name format from mybusinessbusinessinformation: "locations/{locationId}"
-    // Extract last segment to handle both formats safely
-    const locationNameParts = location.name.split('/');
-    const locationId = locationNameParts[locationNameParts.length - 1];
-    
-    console.log(`✅ Found location: ${location.title}, name: ${location.name}, locationId: ${locationId}`);
-    
-    return {
-      accountId,
-      locationId,
-      businessName: location.title || 'Your Business',
-      businessAddress: formatAddress(location.storefrontAddress)
-    };
-    
+
+    // Return ALL locations formatted for location picker
+    const formattedLocations = locations.map(loc => {
+      const nameParts = loc.name.split('/');
+      const locationId = nameParts[nameParts.length - 1];
+      return {
+        locationId,
+        locationName: loc.name, // full path: locations/{id}
+        accountId,
+        accountName,
+        displayName: loc.title || 'Unnamed Business',
+        address: loc.storefrontAddress?.addressLines?.[0] || '',
+        city: loc.storefrontAddress?.locality || '',
+        state: loc.storefrontAddress?.administrativeArea || '',
+        isClosed: loc.metadata?.isClosed || false,
+        businessAddress: formatAddress(loc.storefrontAddress)
+      };
+    });
+
+    return { accountId, accountName, locations: formattedLocations };
+
   } catch (err) {
     console.error('Get business locations error:', err);
-    throw new Error('Failed to fetch Google Business Profile information');
+    throw new Error(`Failed to fetch Google Business Profile: ${err.message}`);
   }
+}
+
+// Convenience — get a single location by locationId (used after user selects)
+export async function getSingleLocation(tokens, locationId) {
+  const { locations } = await getUserBusinessLocations(tokens);
+  const loc = locations.find(l => l.locationId === locationId);
+  if (!loc) throw new Error(`Location ${locationId} not found in your account`);
+  return loc;
 }
 
 /**
  * Store encrypted OAuth tokens in Firestore
  */
-export async function storeUserTokens(uid, tokens, businessInfo) {
+export async function storeUserTokens(uid, tokens, businessInfo = {}) {
   try {
     const encryptedRefreshToken = encrypt(tokens.refresh_token);
     
+    // storeUserTokens now only saves the refresh token
+    // Location info is saved separately in POST /api/gbp/locations/connect
     await db.collection('users').doc(uid).set({
       googleRefreshToken: encryptedRefreshToken,
-      googleAccountId: businessInfo.accountId,
-      googleLocationId: businessInfo.locationId,
-      businessAddress: businessInfo.businessAddress,
       googleConnectedAt: new Date(),
-      lastSyncAt: null,
-      // Use proper nested objects — NOT dotted string keys
-      google: {
-        connected: true,
-        connectedAt: new Date()
-      },
-      settings: {
-        businessName: businessInfo.businessName
-      }
     }, { merge: true });
     
     console.log(`✅ Stored tokens for user: ${uid}`);

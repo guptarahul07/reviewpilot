@@ -31,6 +31,7 @@ import couponsRouter from './routes/coupons.js';
 import billingRouter from './routes/billing.js';
 import analyticsDashboardRouter from './routes/analytics_dashboard.js';
 import playRouter from './routes/play.js';
+import gbpRouter from './routes/gbp.js';
 import siteMessagesRouter from './routes/siteMessages.js';
 import userRouter from './routes/user.js';
 import { checkProductAccess } from './middleware/checkProductAccess.js';
@@ -57,6 +58,7 @@ app.use('/api/reviews', reviewsRouter);
 app.use('/api/billing', billingRouter);
 app.use('/api/analytics', analyticsDashboardRouter);
 app.use('/api/play', checkProductAccess('play'), playRouter);
+app.use('/api/gbp', gbpRouter);
 app.use('/api/user', userRouter);
 app.use('/api/waitlist', userRouter);
 app.use('/api/admin/coupons', couponsRouter);
@@ -614,7 +616,8 @@ app.get("/api/reviews/insights", verifyFirebaseToken, checkSubscription, async (
     // Starter / trial / free → return null (frontend shows locked UI)
     // Growth / professional / admin → return full AI insights
     const userDoc = await db.collection('users').doc(uid).get();
-    const plan = userDoc.data()?.subscription?.plan || 'free';
+    const data = userDoc.data() || {};
+    const plan = data.subscription?.plan || data.plan || 'free';
     const basicPlans = ['free', 'trial', 'starter'];
     const tier = basicPlans.includes(plan) ? 'basic' : 'advanced';
 

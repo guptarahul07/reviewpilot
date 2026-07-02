@@ -40,6 +40,7 @@ import InsightPilot from './pages/products/InsightPilot'
 import AppStoreReviews from './pages/products/AppStoreReviews'
 import Status from './pages/Status'
 import ProfilePage from './pages/ProfilePage'
+import LocationSelector from './pages/LocationSelector'
 
 export default function App() {
   return (
@@ -92,6 +93,7 @@ export default function App() {
             <Route path="/admin/messages"        element={<AdminMessages />} />
             <Route path="/settings/billing"      element={<Billing />} />
             <Route path="/settings/profile"      element={<ProfilePage />} />
+            <Route path="/connect/select-locations" element={<LocationSelector />} />
             <Route path="/dashboard"            element={<Navigate to="/reviews" replace />} />
             <Route path="/play/onboarding"       element={<PlayOnboarding />} />
             <Route path="/onboarding"              element={<Onboarding />} />

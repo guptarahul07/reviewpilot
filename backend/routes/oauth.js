@@ -85,57 +85,45 @@ router.get('/auth/google/callback', async (req, res) => {
     const tokens = await exchangeCodeForTokens(code);
     console.log('✅ Tokens received from Google');
     
-    let businessInfo;
-    try {
-      businessInfo = await getUserBusinessLocations(tokens);
-      console.log(`✅ Real business info: ${businessInfo.businessName}`);
-    } catch (err) {
-      console.warn('⚠️ Could not fetch business from API, using mock data');
-      businessInfo = {
-        accountId: 'pending-verification',
-        locationId: 'pending-verification',
-        businessName: 'Test Cafe (Pending API Sync)',
-        businessAddress: 'Second Floor, E 3, East Ram Nagar, Mansarovar'
-      };
-    }
-    
-    await storeUserTokens(uid, tokens, businessInfo);
-    console.log('✅ Tokens stored in Firestore');
-
-    // ✅ ADD THIS — mark google as connected for frontend
+    // Part 2 — Save tokens only, fetch all locations, redirect to picker
+    // Do NOT auto-connect any location here
+    const { encrypt } = await import('../utils/crypto.js');
+    const encryptedRefreshToken = encrypt(tokens.refresh_token);
     const { db } = await import('../firebaseAdmin.js');
-    await db.collection('users').doc(uid).set({
-      google: {
-        connected: true,
-        connectedAt: admin.firestore.FieldValue.serverTimestamp()
-      },
-    }, { merge: true });
-    
-    await trackEvent(uid, 'google_connected', {
-      businessName: businessInfo.businessName,
-      locationId: businessInfo.locationId
-    });
-    await trackEvent(uid, 'platform_connected', {
-      platform: 'gbp',
-      businessName: businessInfo.businessName
-    });
-    
-    console.log(`🎉 Google connection successful for user: ${uid}`);
 
-    // Section 13.5 — Fetch business profile immediately on connect
-    try {
-      const { db: dbRef } = await import('../firebaseAdmin.js');
-      const userDocForProfile = await dbRef.collection('users').doc(uid).get();
-      const locationId = userDocForProfile.data()?.googleLocationId;
-      if (locationId && locationId !== 'pending-verification') {
-        await refreshBusinessProfileIfNeeded(uid, locationId);
+    await db.collection('users').doc(uid).set({
+      googleRefreshToken: encryptedRefreshToken,
+      googleConnectedAt: new Date(),
+      google: {
+        connected: false, // not fully connected until location selected
+        tokenSavedAt: new Date()
       }
-    } catch (profileErr) {
-      console.warn('[OAuth] Business profile fetch failed (non-blocking):', profileErr.message);
+    }, { merge: true });
+
+    console.log('✅ Tokens stored for user:', uid);
+
+    // Fetch all locations and save for location picker
+    let locationsData = null;
+    try {
+      locationsData = await getUserBusinessLocations(tokens);
+      console.log(`✅ Found ${locationsData.locations.length} location(s) for user: ${uid}`);
+
+      await db.collection('users').doc(uid).set({
+        googleAccountId: locationsData.accountId,
+        googleAccountName: locationsData.accountName,
+        gbpLocations: locationsData.locations
+      }, { merge: true });
+
+    } catch (err) {
+      console.warn('⚠️ Could not fetch locations:', err.message);
     }
-    
-    // Redirect back to the same domain that initiated the flow
-    res.redirect(`${origin}/connect?connected=true`);
+
+    await trackEvent(uid, 'platform_connected', { platform: 'gbp', step: 'token_saved' });
+
+    console.log(`🎉 Tokens saved, redirecting to location picker for user: ${uid}`);
+
+    // Redirect to location selection page
+    res.redirect(`${origin}/connect/select-locations`);
     
   } catch (err) {
     console.error('OAuth callback processing error:', err);
