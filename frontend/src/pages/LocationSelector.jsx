@@ -55,7 +55,7 @@ function LocationCard({ location, checked, onChange, disabled, disabledReason })
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: checked ? 'var(--accent)' : 'var(--ink)' }}>
-            {location.name || location.title}
+            {location.locationName || location.title || location.name || 'Unknown Location'}
           </span>
           {isClosed && (
             <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: 'rgba(239,68,68,.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,.2)' }}>
@@ -101,8 +101,15 @@ export default function LocationSelector() {
   const limit     = getPlanLimit(plan)
   const planLabel = getPlanLabel(limit)
 
-  const activeLocations = locations.filter(l => !l.permanentlyClosed && l.status !== 'CLOSED')
-  const closedLocations = locations.filter(l =>  l.permanentlyClosed || l.status === 'CLOSED')
+  // Sort alphabetically by name for display
+  const getLocName = l => l.locationName || l.title || l.name || l.storefrontAddress?.addressLines?.[0] || 'Unknown'
+  const getLocId   = (l, i) => l.name || l.id || l.locationId || l.placeId || `loc_${i}`
+  const activeLocations = locations
+    .filter(l => !l.permanentlyClosed && l.status !== 'CLOSED')
+    .sort((a, b) => getLocName(a).localeCompare(getLocName(b)))
+  const closedLocations = locations
+    .filter(l => l.permanentlyClosed || l.status === 'CLOSED')
+    .sort((a, b) => getLocName(a).localeCompare(getLocName(b)))
 
   /* ── Fetch locations ── */
   useEffect(() => {
@@ -116,7 +123,7 @@ export default function LocationSelector() {
         if (!res.ok) throw new Error('Failed to fetch locations')
         const data = await res.json()
         const locs = data.locations || []
-
+        console.log('[LocationSelector] raw locations:', JSON.stringify(locs.slice(0,2)))
         setLocations(locs)
 
         // Edge case 1: only 1 active location → auto-connect and skip selector
@@ -288,13 +295,13 @@ export default function LocationSelector() {
 
         {/* Active locations */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: closedLocations.length ? 20 : 28 }}>
-          {activeLocations.map(loc => {
-            const locId = loc.id || loc.name
+          {activeLocations.map((loc, i) => {
+            const locId = getLocId(loc, i)
             const isChecked = selected.includes(locId)
             const isDisabled = !isChecked && selected.length >= limit
             return (
               <LocationCard
-                key={locId}
+                key={`active_${i}_${locId}`}
                 location={loc}
                 checked={isChecked}
                 onChange={() => handleToggle(locId)}
@@ -312,9 +319,9 @@ export default function LocationSelector() {
               Closed locations (not selectable)
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {closedLocations.map(loc => (
+              {closedLocations.map((loc, i) => (
                 <LocationCard
-                  key={loc.id || loc.name}
+                  key={`closed_${i}_${getLocId(loc, i)}`}
                   location={loc}
                   checked={false}
                   onChange={() => {}}
