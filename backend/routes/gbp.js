@@ -8,6 +8,7 @@ import admin from '../firebaseAdmin.js';
 import { verifyFirebaseToken } from '../middleware/auth.js';
 import { getAuthenticatedClient } from '../services/googleOAuth.js';
 import { fetchGoogleReviews } from '../services/googleReviews.js';
+import { analyzeSentiment } from '../services/sentimentAnalysis.js';
 import { trackEvent } from '../utils/analytics.js';
 import { refreshBusinessProfileIfNeeded } from '../services/businessProfileService.js';
 
@@ -80,6 +81,16 @@ router.post('/locations/connect', verifyFirebaseToken, async (req, res) => {
 
   if (!Array.isArray(locationIds) || locationIds.length === 0) {
     return res.status(400).json({ success: false, error: 'locationIds must be a non-empty array' });
+  }
+
+  // Reject null/undefined values in the array
+  const invalidIds = locationIds.filter(id => !id);
+  if (invalidIds.length > 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'INVALID_LOCATION_ID',
+      message: 'locationIds contains null or undefined values. Please select a valid location.'
+    });
   }
 
   try {
@@ -158,14 +169,43 @@ router.post('/locations/connect', verifyFirebaseToken, async (req, res) => {
       try {
         console.log(`🔄 [gbp/locations/connect] Triggering initial sync for ${loc.displayName}`);
 
-        // Update primary location temporarily for fetchGoogleReviews
+        // Ensure user doc has correct locationId before fetching
         await db.collection('users').doc(uid).update({
           googleLocationId: loc.locationId,
           googleAccountId: loc.accountId
         });
 
         const reviews = await fetchGoogleReviews(uid);
+        console.log(`🔄 [gbp/locations/connect] Saving ${reviews.length} reviews to Firestore`);
+
+        // Save each review to Firestore with sentiment
+        const firestoreBatch = db.batch();
+        for (const review of reviews) {
+          const sentiment = analyzeSentiment(review.text || '', review.rating);
+          const reviewRef = db
+            .collection('users')
+            .doc(uid)
+            .collection('reviews')
+            .doc(review.id);
+
+          firestoreBatch.set(reviewRef, {
+            ...review,
+            sentiment: sentiment.label,
+            sentimentAnalysis: sentiment.indicators,
+            hasMixedSentiment: sentiment.isMixed,
+            status: 'pending',
+            syncedAt: new Date()
+          }, { merge: true });
+        }
+        await firestoreBatch.commit();
+
+        // Update lastSyncAt
+        await db.collection('users').doc(uid).set({
+          lastSyncAt: new Date()
+        }, { merge: true });
+
         syncResults.push({ locationId: loc.locationId, displayName: loc.displayName, reviewCount: reviews.length });
+        console.log(`✅ [gbp/locations/connect] Saved ${reviews.length} reviews for ${loc.displayName}`);
 
         // Trigger business profile cache
         try {
