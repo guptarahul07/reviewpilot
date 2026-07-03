@@ -42,27 +42,48 @@ export async function fetchGoogleReviews(uid) {
     const tokenResponse = await authClient.getAccessToken();
     const accessToken = tokenResponse.token;
 
-    // Fetch reviews via direct HTTP — mybusiness v4 API
+    // Fetch ALL reviews via pagination — Google returns max 50 per page
     console.log('🔍 Calling Google My Business API...');
 
-    const url = `https://mybusiness.googleapis.com/v4/accounts/${googleAccountId}/locations/${googleLocationId}/reviews`;
+    const baseUrl = `https://mybusiness.googleapis.com/v4/accounts/${googleAccountId}/locations/${googleLocationId}/reviews`;
+    let allReviews = [];
+    let nextPageToken = null;
+    let page = 1;
 
-    const response = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
+    do {
+      const url = nextPageToken
+        ? `${baseUrl}?pageToken=${nextPageToken}&pageSize=50`
+        : `${baseUrl}?pageSize=50`;
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || `HTTP ${response.status}`);
-    }
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
 
-    const data = await response.json();
-    const reviews = data.reviews || [];
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || `HTTP ${response.status}`);
+      }
 
-    console.log(`✅ Found ${reviews.length} reviews`);
+      const data = await response.json();
+      const reviews = data.reviews || [];
+      allReviews = [...allReviews, ...reviews];
+      nextPageToken = data.nextPageToken || null;
+
+      console.log(`✅ Page ${page}: fetched ${reviews.length} reviews (total so far: ${allReviews.length})`);
+      page++;
+
+      // Safety limit — max 20 pages (1000 reviews)
+      if (page > 20) {
+        console.warn('⚠️ Reached pagination limit of 20 pages');
+        break;
+      }
+
+    } while (nextPageToken);
+
+    console.log(`✅ Total reviews fetched: ${allReviews.length}`);
 
     // Parse and format reviews
-    const formattedReviews = reviews.map(review => parseGoogleReview(review));
+    const formattedReviews = allReviews.map(review => parseGoogleReview(review));
 
     return formattedReviews;
     
