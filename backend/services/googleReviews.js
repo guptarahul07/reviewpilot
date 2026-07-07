@@ -52,8 +52,8 @@ export async function fetchGoogleReviews(uid) {
 
     do {
       const url = nextPageToken
-        ? `${baseUrl}?pageToken=${nextPageToken}&pageSize=50`
-        : `${baseUrl}?pageSize=50`;
+        ? `${baseUrl}?pageToken=${nextPageToken}&pageSize=50&orderBy=updateTime desc`
+        : `${baseUrl}?pageSize=50&orderBy=updateTime desc`;
 
       const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${accessToken}` }
@@ -125,6 +125,7 @@ function parseGoogleReview(review) {
     text: review.comment || '',
     createTime: review.createTime,
     updateTime: review.updateTime,
+    lastModified: review.updateTime || review.createTime, // unified sort field
     hasReply: !!review.reviewReply,
     existingReply: review.reviewReply?.comment || null,
     replyTime: review.reviewReply?.updateTime || null
@@ -286,6 +287,7 @@ export function generateMockReviews() {
       text: 'Absolutely loved this place! Best cafe in town. Will definitely come back!',
       createTime: new Date().toISOString(),
       updateTime: new Date().toISOString(),
+      lastModified: new Date().toISOString(),
       hasReply: false,
       existingReply: null
     },
@@ -297,6 +299,7 @@ export function generateMockReviews() {
       text: 'Great food but terrible service. Waited 45 minutes for our order!',
       createTime: new Date().toISOString(),
       updateTime: new Date().toISOString(),
+      lastModified: new Date().toISOString(),
       hasReply: false,
       existingReply: null
     },
@@ -308,6 +311,7 @@ export function generateMockReviews() {
       text: 'Good coffee, nice ambiance. A bit pricey but worth it.',
       createTime: new Date().toISOString(),
       updateTime: new Date().toISOString(),
+      lastModified: new Date().toISOString(),
       hasReply: false,
       existingReply: null
     },
@@ -319,6 +323,7 @@ export function generateMockReviews() {
       text: 'Disappointed. The food was cold and the staff was rude.',
       createTime: new Date().toISOString(),
       updateTime: new Date().toISOString(),
+      lastModified: new Date().toISOString(),
       hasReply: false,
       existingReply: null
     }

@@ -671,7 +671,7 @@ export default function ReviewsInboxPage() {
       const token = await user.getIdToken();
 
       const [reviewsRes, insightsRes] = await Promise.all([
-        fetch(`${API_URL}/api/reviews`, {
+        fetch(`${API_URL}/api/reviews?sort=${sortOrder}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
         fetch(`${API_URL}/api/reviews/insights`, {
@@ -719,7 +719,7 @@ export default function ReviewsInboxPage() {
 
       // Reload fresh data after sync
       const [reviewsRes, insightsRes] = await Promise.all([
-        fetch(`${API_URL}/api/reviews`, {
+        fetch(`${API_URL}/api/reviews?sort=${sortOrder}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
         fetch(`${API_URL}/api/reviews/insights`, {
@@ -777,7 +777,7 @@ export default function ReviewsInboxPage() {
       list = list.filter(r => r.rating === parseInt(ratingFilter))
     }
     return list
-  }, [reviews, tab, ratingFilter, platformFilter]);
+  }, [reviews, tab, ratingFilter, platformFilter, sortOrder]);
 
   // Alias for bulk operations
   const filteredReviews = filtered || [];
@@ -836,7 +836,7 @@ export default function ReviewsInboxPage() {
       } catch { /* use default */ }
     }
     loadMode()
-  }, [user])
+  }, [user, sortOrder])
 
   const quickInsights = getQuickInsights();
 
@@ -856,7 +856,7 @@ export default function ReviewsInboxPage() {
       } catch { /* use default semi-auto */ }
     }
     loadReplyMode()
-  }, [user])
+  }, [user, sortOrder])
 
   function toggleSelect(id) {
     setSelectedReviews(prev =>
@@ -891,7 +891,7 @@ export default function ReviewsInboxPage() {
 
       // Re-fetch reviews from backend so posted status + reply text are accurate
       // This ensures the UI is correct when switching filters
-      const reviewsRes = await fetch(`${API_URL}/api/reviews`, {
+      const reviewsRes = await fetch(`${API_URL}/api/reviews?sort=${sortOrder}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (reviewsRes.ok) {
@@ -1116,6 +1116,21 @@ export default function ReviewsInboxPage() {
           <option value="3">★★★☆☆ 3 stars</option>
           <option value="2">★★☆☆☆ 2 stars</option>
           <option value="1">★☆☆☆☆ 1 star</option>
+        </select>
+
+        {/* Sort order */}
+        <select
+          value={sortOrder}
+          onChange={e => { setSortOrder(e.target.value); setSelectedReviews([]); }}
+          style={{
+            background: "var(--bg-card)", border: "1px solid var(--border)",
+            borderRadius: 8, padding: "7px 12px",
+            fontFamily: "var(--font-body)", fontSize: 13.5, color: "var(--ink)",
+            cursor: "pointer", outline: "none",
+          }}
+        >
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
         </select>
 
         {/* Select all */}

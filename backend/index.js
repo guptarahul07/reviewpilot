@@ -570,11 +570,19 @@ app.get("/api/billing/trial-status", verifyFirebaseToken, async (req, res) => {
 });
 
 app.get("/api/reviews", verifyFirebaseToken, async (req, res) => {
-  const uid = req.uid;  
+  const uid = req.uid;
+  const sort = req.query.sort || 'newest';
+  const sortDirection = sort === 'oldest' ? 'asc' : 'desc';
 
   try {
+    let reviewsQuery = db
+      .collection("users")
+      .doc(uid)
+      .collection("reviews")
+      .orderBy("lastModified", sortDirection);
+
     const [snapshot, userDoc] = await Promise.all([
-      db.collection("users").doc(uid).collection("reviews").get(),
+      reviewsQuery.get(),
       db.collection("users").doc(uid).get()
     ]);
 
@@ -582,16 +590,27 @@ app.get("/api/reviews", verifyFirebaseToken, async (req, res) => {
     let lastSyncAt = userDoc.data()?.lastSyncAt || null;
 
     // If never synced, set current timestamp as baseline
-    if (!lastSyncAt) {      
+    if (!lastSyncAt) {
       lastSyncAt = new Date();
       await db.collection("users").doc(uid).update({ lastSyncAt });
     }
 
-    console.log(`📖 [GET /api/reviews] Returning ${reviews.length} cached reviews, lastSyncAt: ${lastSyncAt?.toDate?.() || 'never'}`);
+    console.log(`📖 [GET /api/reviews] Returning ${reviews.length} cached reviews, sort: ${sort}, lastSyncAt: ${lastSyncAt?.toDate?.() || 'never'}`);
 
-    res.json({ reviews, lastSyncAt });
+    res.json({ reviews, lastSyncAt, sort });
 
   } catch (err) {
+    // Fallback if Firestore index not yet created — return unsorted
+    if (err.code === 9 || err.message?.includes('index')) {
+      console.warn('📖 [GET /api/reviews] Index missing — returning unsorted. Create index in Firebase Console.');
+      const [snapshot, userDoc] = await Promise.all([
+        db.collection("users").doc(uid).collection("reviews").get(),
+        db.collection("users").doc(uid).get()
+      ]);
+      const reviews = snapshot.docs.map(doc => doc.data());
+      const lastSyncAt = userDoc.data()?.lastSyncAt || null;
+      return res.json({ reviews, lastSyncAt, sort, indexMissing: true });
+    }
     console.error(`❌ [GET /api/reviews] Error:`, err.message);
     res.status(500).json({ error: "Failed to load reviews" });
   }

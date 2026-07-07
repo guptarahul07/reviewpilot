@@ -288,9 +288,10 @@ router.delete('/apps/:packageName', verifyFirebaseToken, async (req, res) => {
 // ─────────────────────────────────────────────
 router.get('/reviews', verifyFirebaseToken, async (req, res) => {
   const uid = req.uid;
-  const { packageName, rating, status, page = 1, limit = 20 } = req.query;
+  const { packageName, rating, status, page = 1, limit = 20, sort = 'newest' } = req.query;
+  const sortDirection = sort === 'oldest' ? 'asc' : 'desc';
 
-  console.log(`🎮 [GET /api/play/reviews] User: ${uid}, Package: ${packageName || 'all'}`);
+  console.log(`🎮 [GET /api/play/reviews] User: ${uid}, Package: ${packageName || 'all'}, sort: ${sort}`);
 
   try {
     let query = db.collection('playReviews').where('userId', '==', uid);
@@ -303,7 +304,7 @@ router.get('/reviews', verifyFirebaseToken, async (req, res) => {
       query = query.where('status', '==', status);
     }
 
-    const snapshot = await query.orderBy('lastModified', 'desc').get();
+    const snapshot = await query.orderBy('lastModified', sortDirection).get();
     let reviews = snapshot.docs.map(doc => doc.data());
 
     // Filter by rating if provided (comma-separated: "1,2")
