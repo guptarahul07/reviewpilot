@@ -620,6 +620,7 @@ export default function ReviewsInboxPage() {
   const [lastSyncAt, setLastSyncAt]         = useState(null);
   const [ratingFilter, setRatingFilter]     = useState('all');
   const [platformFilter, setPlatformFilter] = useState('all');
+  const [sortOrder,      setSortOrder]      = useState('newest'); // 'newest' | 'oldest'
   const [selectedReviews, setSelectedReviews] = useState([]);
   const [bulkPosting, setBulkPosting]       = useState(false);
   const [bulkProgress, setBulkProgress]     = useState({ current: 0, total: 0 });
