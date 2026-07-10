@@ -26,8 +26,16 @@ export async function fetchGoogleReviews(uid) {
     }
     
     const userData = userDoc.data();
-    const { googleAccountId, googleLocationId } = userData;
-    
+    let { googleAccountId, googleLocationId } = userData;
+
+    // Fallback — check connectedLocations array if primary fields missing
+    if ((!googleAccountId || !googleLocationId) && userData.connectedLocations?.length > 0) {
+      const primary = userData.connectedLocations[0];
+      googleAccountId = primary.accountId;
+      googleLocationId = primary.locationId;
+      console.log(`📍 Using connectedLocations fallback: ${googleAccountId}/${googleLocationId}`);
+    }
+
     if (!googleAccountId || !googleLocationId) {
       throw new Error('Google Business Profile not connected');
     }
