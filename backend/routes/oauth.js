@@ -94,10 +94,10 @@ router.get('/auth/google/callback', async (req, res) => {
     await db.collection('users').doc(uid).set({
       googleRefreshToken: encryptedRefreshToken,
       googleConnectedAt: new Date(),
-      google: {
-        connected: false, // not fully connected until location selected
-        tokenSavedAt: new Date()
-      }
+      // Reset location fields — will be set after location selection
+      googleLocationId: null,
+      'google.connected': false, // not fully connected until location selected
+      'google.tokenSavedAt': new Date()
     }, { merge: true });
 
     console.log('✅ Tokens stored for user:', uid);

@@ -152,13 +152,9 @@ router.post('/locations/connect', verifyFirebaseToken, async (req, res) => {
         city: l.city,
         connectedAt: new Date()
       }))),
-      google: {
-        connected: true,
-        connectedAt: new Date()
-      },
-      settings: {
-        businessName: primaryLocation.displayName
-      },
+      'google.connected': true,
+      'google.connectedAt': new Date(),
+      'settings.businessName': primaryLocation.displayName,
       // Update usage
       'usage.locationsConnected': selectedLocations.length + currentConnected
     }, { merge: true });
