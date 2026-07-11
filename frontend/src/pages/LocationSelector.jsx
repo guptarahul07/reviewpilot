@@ -96,6 +96,7 @@ export default function LocationSelector() {
   const [submitting, setSubmitting]   = useState(false)
   const [toast, setToast]             = useState(null)
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(false)
+  const [successInfo, setSuccessInfo]             = useState(null) // { locationName, reviewCount }
 
   const plan      = subscription?.plan || 'starter'
   const limit     = getPlanLimit(plan)
@@ -123,13 +124,12 @@ export default function LocationSelector() {
         if (!res.ok) throw new Error('Failed to fetch locations')
         const data = await res.json()
         const locs = data.locations || []
-        console.log('[LocationSelector] raw locations:', JSON.stringify(locs.slice(0,2)))
         setLocations(locs)
 
-        // Edge case 1: only 1 active location → auto-connect and skip selector
-        const active = locs.filter(l => !l.permanentlyClosed && l.status !== 'CLOSED')
-        if (active.length === 1) {
-          await autoConnect(active[0].id || active[0].name, token)
+        // Edge case 1: backend says autoConnect (only 1 active location)
+        if (data.autoConnect === true && locs.length > 0) {
+          const locId = locs[0].locationId || locs[0].id || locs[0].name
+          await autoConnect(locId, locs[0], token)
           return
         }
       } catch (err) {
@@ -141,15 +141,20 @@ export default function LocationSelector() {
     load()
   }, [user])
 
-  async function autoConnect(locationId, token) {
+  async function autoConnect(locationId, loc, token) {
     try {
-      const t = token || await user.getIdToken()
-      await fetch(`${API_URL}/api/gbp/locations/connect`, {
+      const t    = token || await user.getIdToken()
+      const res  = await fetch(`${API_URL}/api/gbp/locations/connect`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
         body:    JSON.stringify({ locationIds: [locationId] }),
       })
-      navigate('/reviews', { replace: true })
+      const data = await res.json()
+      const reviewCount = data.syncResults?.[0]?.reviewCount ?? null
+      const locName     = data.connectedLocations?.[0]?.displayName || getLocName(loc) || 'Your Business'
+      setSuccessInfo({ locationName: locName, reviewCount })
+      setLoading(false)
+      setTimeout(() => navigate('/reviews', { replace: true }), 2000)
     } catch {
       setLoading(false)
       setToast({ type: 'error', message: 'Auto-connect failed. Please select manually.' })
@@ -196,7 +201,10 @@ export default function LocationSelector() {
         throw new Error(data.message || 'Failed to connect locations')
       }
 
-      navigate('/reviews', { replace: true })
+      const reviewCount = data.syncResults?.[0]?.reviewCount ?? null
+      const locName     = data.connectedLocations?.[0]?.displayName || 'Your locations'
+      setSuccessInfo({ locationName: locName, reviewCount })
+      setTimeout(() => navigate('/reviews', { replace: true }), 2000)
     } catch (err) {
       setToast({ type: 'error', message: err.message || 'Something went wrong. Please try again.' })
     } finally {
@@ -207,12 +215,10 @@ export default function LocationSelector() {
   /* ── Loading skeleton ── */
   if (loading) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 560 }}>
-        <div style={{ height: 28, width: '60%', background: 'var(--border)', borderRadius: 8, marginBottom: 12, animation: 'skeletonPulse 1.5s ease-in-out infinite' }} />
-        <div style={{ height: 16, width: '40%', background: 'var(--border)', borderRadius: 6, marginBottom: 28, animation: 'skeletonPulse 1.5s ease-in-out infinite' }} />
-        {[1, 2, 3].map(i => (
-          <div key={i} style={{ height: 80, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, marginBottom: 12, animation: 'skeletonPulse 1.5s ease-in-out infinite' }} />
-        ))}
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ width: 48, height: 48, borderRadius: '50%', border: '4px solid var(--border)', borderTopColor: 'var(--accent)', animation: 'spin .7s linear infinite', margin: '0 auto 20px' }} />
+        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)', marginBottom: 6 }}>Connecting your location…</div>
+        <div style={{ fontSize: 13.5, color: 'var(--ink-3)' }}>This will only take a moment</div>
       </div>
     </div>
   )
@@ -244,6 +250,28 @@ export default function LocationSelector() {
             Go to Dashboard
           </button>
         </div>
+      </div>
+    </div>
+  )
+
+  /* ── Success screen ── */
+  if (successInfo) return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ textAlign: 'center', maxWidth: 440 }}>
+        <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 800, color: 'var(--ink)', marginBottom: 10, letterSpacing: '-.02em' }}>
+          Connected successfully!
+        </h1>
+        <p style={{ fontSize: 15, color: 'var(--ink-2)', marginBottom: 8, lineHeight: 1.65 }}>
+          <strong>{successInfo.locationName}</strong> is now connected to ReviewPilot.
+        </p>
+        {successInfo.reviewCount !== null && (
+          <p style={{ fontSize: 14, color: 'var(--green)', fontWeight: 600, marginBottom: 20 }}>
+            ✅ {successInfo.reviewCount} review{successInfo.reviewCount !== 1 ? 's' : ''} synced
+          </p>
+        )}
+        <p style={{ fontSize: 13, color: 'var(--ink-3)' }}>Redirecting to your dashboard…</p>
+        <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid var(--border)', borderTopColor: 'var(--accent)', animation: 'spin .7s linear infinite', margin: '16px auto 0' }} />
       </div>
     </div>
   )

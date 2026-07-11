@@ -59,7 +59,9 @@ router.get('/locations', verifyFirebaseToken, async (req, res) => {
       plan,
       limit,
       connectedCount,
-      canConnectMore: connectedCount < limit
+      canConnectMore: connectedCount < limit,
+      // Frontend hint — if only 1 location, auto-connect without showing picker
+      autoConnect: locations.length === 1
     });
 
   } catch (err) {
