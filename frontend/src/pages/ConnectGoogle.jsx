@@ -570,19 +570,17 @@ export default function ConnectGoogle() {
     setState('disconnecting');
     try {
       const token = await user.getIdToken();
-      await fetch(`${API_URL}/api/auth/google/disconnect`, {
+      // Fire-and-forget — don't await, reset UI immediately
+      fetch(`${API_URL}/api/auth/google/disconnect`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (user) await fetchProfile(user.uid);
-    } catch (err) {
-      console.error('Disconnect error:', err);
-      // Silently fall through — always reset UI so user can reconnect
-    } finally {
-      setState('idle');
-      setBusiness(null);
-      setFreshConnect(false);
-    }
+      }).catch(() => {}) // silently ignore errors
+    } catch { /* ignore */ }
+    // Reset UI immediately — no Firestore re-fetch needed
+    setState('idle');
+    setBusiness(null);
+    setApiConnected(false);
+    setFreshConnect(false);
   }
 
   /* ── Go to dashboard ────────────────────────────────────────────────── */
