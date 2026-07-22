@@ -298,71 +298,101 @@ app.post("/api/reviews/sync", verifyFirebaseToken, checkSubscription, aiLimiter,
       console.warn(`[Sync] Business profile fetch failed, using generic prompt: ${err.message}`);
     }
 
+    // Get settings ONCE before loop — not per review
+    const settings = await getUserSettings(uid);
+    const replyMode = settings.replyMode || 'manual';
+
+    // PHASE 1 — Save ALL reviews to Firestore first (no AI yet)
+    // This ensures all reviews are visible even if AI generation fails later
+    console.log(`[Sync] Phase 1: Saving ${googleReviews.length} reviews to Firestore...`);
+    const firestoreBatch = db.batch();
+
     for (const review of googleReviews) {
-      // Skip if already has a reply
-      if (review.hasReply) {
-        console.log(`⏭️ Skipping review ${review.id} - already has reply`);
-        continue;
-      }
+      const sentimentAnalysis = analyzeSentiment(review.text || '', review.rating);
+      const reviewRef = db.collection("users").doc(uid).collection("reviews").doc(review.id);
 
-      // Get user settings once per sync (outside loop would be more efficient
-      // but kept here for clarity — getUserSettings is a simple Firestore read)
-      const settings = await getUserSettings(uid);
+      firestoreBatch.set(reviewRef, {
+        ...review,
+        sentiment: sentimentAnalysis.label,
+        sentimentAnalysis: sentimentAnalysis.indicators,
+        hasMixedSentiment: sentimentAnalysis.isMixed,
+        // Mark already-replied reviews — visible in UI but no AI needed
+        status: review.hasReply ? 'replied' : 'pending',
+        syncedAt: new Date()
+      }, { merge: true });
+    }
 
-      // Skip rating-only reviews if user hasn't enabled that setting
-      if (shouldSkipReview(review, settings)) {
-        console.log(`⏭️ [Sync] Skipping rating-only review: ${review.id}`);
-        continue;
-      }
+    await firestoreBatch.commit();
+    console.log(`[Sync] Phase 1 complete — all ${googleReviews.length} reviews saved`);
 
-      // Check plan limit before generating
-      const limitCheck = await checkLimit(uid, 'generate_reply');
-      if (!limitCheck.allowed) {
-        console.warn(`[Sync] User ${uid} hit plan limit: ${limitCheck.message}`);
-        break; // Stop processing more reviews for this sync
-      }
+    // PHASE 2 — AI reply generation for pending reviews only
+    // Failures here don't affect review visibility
+    console.log(`[Sync] Phase 2: Generating AI replies...`);
 
-      // Generate AI reply with business context if available
-      const aiReply = await generateAIReplyWithRetry(review, pastReplies, businessProfile);
+    // Fetch existing reviews to skip ones already processed
+    const existingSnapshot = await db
+      .collection("users").doc(uid).collection("reviews")
+      .where("aiReply", "!=", null).get();
+    const existingIds = new Set(existingSnapshot.docs.map(d => d.id));
 
-      // Sentiment analysis
-      const sentimentAnalysis = analyzeSentiment(review.text, review.rating);
+    for (const review of googleReviews) {
+      try {
+        // Skip already-replied reviews — no AI needed
+        if (review.hasReply) {
+          console.log(`⏭️ [Sync] Skipping ${review.id} — already has reply on Google`);
+          continue;
+        }
 
-      // Save base review data to Firestore
-      await db
-        .collection("users")
-        .doc(uid)
-        .collection("reviews")
-        .doc(review.id)
-        .set({
-          ...review,
-          aiReply,
-          sentiment: sentimentAnalysis.label,
-          sentimentAnalysis: sentimentAnalysis.indicators,
-          hasMixedSentiment: sentimentAnalysis.isMixed,
-          createdAt: new Date(),
-          syncedAt: new Date()
-        }, { merge: true });
+        // Skip rating-only reviews if setting disabled
+        if (shouldSkipReview(review, settings)) {
+          console.log(`⏭️ [Sync] Skipping rating-only review: ${review.id}`);
+          continue;
+        }
 
-      // Apply reply mode logic — this updates status in Firestore
-      const replyMode = settings.replyMode || 'manual';
-      console.log(`⚙️ [Sync] Reply mode: ${replyMode}, Review: ${review.id}, Rating: ${review.rating}★`);
+        // Skip if AI reply already generated in a previous sync
+        if (existingIds.has(review.id)) {
+          console.log(`⏭️ [Sync] Skipping ${review.id} — AI reply already exists`);
+          continue;
+        }
 
-      if (replyMode === 'auto') {
-        await handleAutoMode(uid, review, aiReply);
-      } else if (replyMode === 'semi-auto') {
-        await handleSemiAutoMode(uid, review, aiReply);
-      } else {
-        await handleManualMode(uid, review, aiReply);
-      }
+        // Check plan limit — use continue not break so other reviews still save
+        const limitCheck = await checkLimit(uid, 'generate_reply');
+        if (!limitCheck.allowed) {
+          console.warn(`[Sync] Plan limit hit — skipping AI for ${review.id}`);
+          continue;
+        }
 
-      results.push({ ...review, aiReply });
-      await incrementUsage(uid, 'reviewsGenerated');
-      // Increment trial reply counter if on trial
-      if (req.isTrialReply) {
-        await incrementTrialReplyCount(uid);
+        // Generate AI reply — wrapped in try/catch so one failure doesn't stop others
+        const aiReply = await generateAIReplyWithRetry(review, pastReplies, businessProfile);
+
+        // Save AI reply + apply mode logic
+        await db.collection("users").doc(uid).collection("reviews").doc(review.id)
+          .set({ aiReply, createdAt: new Date() }, { merge: true });
+
+        console.log(`⚙️ [Sync] Reply mode: ${replyMode}, Review: ${review.id}, Rating: ${review.rating}★`);
+
+        if (replyMode === 'auto') {
+          await handleAutoMode(uid, review, aiReply);
+        } else if (replyMode === 'semi-auto') {
+          await handleSemiAutoMode(uid, review, aiReply);
+        } else {
+          await handleManualMode(uid, review, aiReply);
+        }
+
+        results.push({ ...review, aiReply });
+        await incrementUsage(uid, 'reviewsGenerated');
+
+        if (req.isTrialReply) {
+          await incrementTrialReplyCount(uid);
+        }
+
+      } catch (reviewErr) {
+        // One review failing doesn't stop the rest
+        console.error(`[Sync] Failed to generate AI reply for ${review.id}:`, reviewErr.message);
       }
     }
+
+    console.log(`[Sync] Phase 2 complete — AI replies generated for ${results.length} reviews`);
 
     // Track event
     await trackEvent(uid, 'reviews_synced', { 
